@@ -1,0 +1,131 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Employee Job Card Report | HR Module{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mt-2 mb-4 p-4 rounded-3 text-white shadow-sm" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);">
+        <div>
+            <span class="badge bg-white mb-2 font-monospace fw-bold" style="color: #1e3a8a;"><i class="fas fa-id-badge me-1"></i> ATTENDANCE JOB CARD</span>
+            <h2 class="mb-1 font-weight-bold">Employee Job Card Report</h2>
+            <p class="mb-0 opacity-75">Detailed monthly day-wise attendance job card (Day 1-31) for an employee.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button onclick="window.print()" class="btn btn-light rounded-pill px-4 font-weight-bold shadow-sm" style="color: #1e3a8a;"><i class="fas fa-print me-1"></i> Print Job Card</button>
+            <a href="{{ BASE_URL }}/hr/reports" class="btn btn-outline-light rounded-pill px-4 font-weight-bold shadow-sm"><i class="fas fa-arrow-left me-1"></i> Back to Reports</a>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 d-print-none">
+        <div class="card-body p-4">
+            <form method="GET" action="{{ BASE_URL }}/hr/reports/job-card" id="jobCardForm">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-primary">Year - Month</label>
+                        <input type="month" class="form-control" name="year_month" value="{{ filters.year_month }}" onchange="document.getElementById('jobCardForm').submit()">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-primary">Select Employee</label>
+                        <select class="form-select border-primary-subtle fw-semibold" name="employee_id" onchange="document.getElementById('jobCardForm').submit()">
+                            <option value="">-- Browse Employee --</option>
+                            {% for emp in allEmployees %}
+                                <option value="{{ emp.employee_id }}" {{ filters.employee_id == emp.employee_id ? 'selected' : '' }}>
+                                    #{{ emp.employee_id }} - {{ emp.employee_code }} ({{ emp.first_name }} {{ emp.last_name }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-muted">Or Write Emp Code</label>
+                        <input type="text" class="form-control font-monospace" name="emp_code" value="{{ filters.emp_code }}" placeholder="EMP-XXXX" onchange="document.getElementById('jobCardForm').submit()">
+                    </div>
+
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold w-100"><i class="fas fa-search me-1"></i> Generate</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if employee %}
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body p-4">
+            <!-- Official Header -->
+            <div class="text-center mb-4 pb-3 border-bottom">
+                <h3 class="fw-bold mb-1 text-uppercase">{{ companyName }}</h3>
+                <p class="mb-1 text-muted small">{{ companyAddress }}</p>
+                <h5 class="fw-bold text-primary text-uppercase mt-2">Employee Job Card Statement — {{ filters.year_month }}</h5>
+            </div>
+
+            <!-- Profile Summary Box -->
+            <div class="bg-light p-3 rounded-3 mb-4 border">
+                <div class="row g-3">
+                    <div class="col-md-3"><strong>Employee Name:</strong> <span class="text-primary fw-bold">{{ employee.first_name }} {{ employee.last_name }}</span></div>
+                    <div class="col-md-3"><strong>Emp Code / ID:</strong> <span class="font-monospace fw-bold">{{ employee.employee_code }}</span></div>
+                    <div class="col-md-3"><strong>Department:</strong> {{ employee.department_name|default('N/A') }}</div>
+                    <div class="col-md-3"><strong>Section:</strong> {{ employee.section_name|default('N/A') }}</div>
+                    <div class="col-md-3"><strong>Designation:</strong> {{ employee.position_name|default('N/A') }}</div>
+                    <div class="col-md-3"><strong>Joining Date:</strong> {{ employee.hire_date|default('N/A') }}</div>
+                    <div class="col-md-3"><strong>Employment Type:</strong> {{ employee.employment_type|default('Permanent') }}</div>
+                    <div class="col-md-3"><strong>Payable Days:</strong> <span class="badge bg-success px-3 py-1">{{ summary.payable_days }} Days</span></div>
+                </div>
+            </div>
+
+            <!-- Summary Badges -->
+            <div class="row mb-4">
+                <div class="col-md-2"><div class="p-2 border rounded text-center bg-success-subtle fw-bold text-success">Present: {{ summary.present }}</div></div>
+                <div class="col-md-2"><div class="p-2 border rounded text-center bg-danger-subtle fw-bold text-danger">Absent: {{ summary.absent }}</div></div>
+                <div class="col-md-2"><div class="p-2 border rounded text-center bg-warning-subtle fw-bold text-warning">Late: {{ summary.late }}</div></div>
+                <div class="col-md-2"><div class="p-2 border rounded text-center bg-secondary-subtle fw-bold text-secondary">Weekend: {{ summary.weekend }}</div></div>
+                <div class="col-md-2"><div class="p-2 border rounded text-center bg-info-subtle fw-bold text-info">Leave: {{ summary.leave }}</div></div>
+                <div class="col-md-2"><div class="p-2 border rounded text-center bg-primary-subtle fw-bold text-primary">OT: {{ summary.total_ot|number_format(1) }} Hrs</div></div>
+            </div>
+
+            <!-- Job Card Table -->
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle text-center mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Day</th>
+                            <th>In Time</th>
+                            <th>Out Time</th>
+                            <th>Late Mins</th>
+                            <th>Work Hrs</th>
+                            <th>OT Hrs</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in jobCardData %}
+                        <tr class="{{ row.status == 'W' ? 'table-secondary' : (row.status == 'A' ? 'table-danger' : '') }}">
+                            <td>{{ row.date }}</td>
+                            <td class="fw-semibold">{{ row.day }}</td>
+                            <td>{{ row.in }}</td>
+                            <td>{{ row.out }}</td>
+                            <td class="{{ row.late_mins > 0 ? 'text-danger fw-bold' : '' }}">{{ row.late_mins > 0 ? row.late_mins ~ ' m' : '-' }}</td>
+                            <td>{{ row.work_hrs > 0 ? row.work_hrs ~ ' h' : '-' }}</td>
+                            <td class="fw-bold text-primary">{{ row.ot_hrs > 0 ? row.ot_hrs ~ ' h' : '-' }}</td>
+                            <td>
+                                {% if row.status == 'P' %}<span class="badge bg-success px-3">Present</span>
+                                {% elseif row.status == 'L' %}<span class="badge bg-warning text-dark px-3">Late</span>
+                                {% elseif row.status == 'A' %}<span class="badge bg-danger px-3">Absent</span>
+                                {% elseif row.status == 'W' %}<span class="badge bg-secondary px-3">Weekend</span>
+                                {% else %}<span class="badge bg-info px-3">{{ row.status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

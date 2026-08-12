@@ -1,0 +1,264 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Assign Seat{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="text-white"><i class="fas fa-chair me-2"></i>Assign Seat</h2>
+    <a href="?page=employee_seat_allotment" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Back to List
+    </a>
+</div>
+
+<div class="row">
+    <!-- Left Panel: Allotment Details -->
+    <div class="col-md-5">
+        <div class="card bg-dark text-white border-0 shadow-sm h-100">
+            <div class="card-header bg-dark border-secondary">
+                <h5 class="mb-0 text-primary"><i class="fas fa-edit me-2"></i>Allotment Details</h5>
+            </div>
+            <div class="card-body">
+                <form action="?page=employee_seat_allotment&action=store" method="POST" id="allotmentForm">
+    {{ csrf_field() | raw }}
+                    <!-- Employee Search -->
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">EMPLOYEE <span class="text-danger">*</span></label>
+                        <div class="position-relative">
+                            <input type="text" id="employeeSearch" class="form-control bg-dark text-white border-secondary" placeholder="Type to search..." autocomplete="off">
+                            <input type="hidden" name="employee_id" id="employeeId" required>
+                            <div id="employeeResults" class="list-group position-absolute w-100 mt-1" style="z-index: 1000; display: none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Vehicle Selection -->
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">VEHICLE <span class="text-danger">*</span></label>
+                        <select name="vehicle_id" id="vehicleSelect" class="form-select bg-dark text-white border-secondary" required>
+                            <option value="">Select Vehicle</option>
+                            {% for vehicle in vehicles %}
+                                <option value="{{ vehicle.vehicle_id }}">{{ vehicle.vehicle_number }} - {{ vehicle.model }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Route Selection -->
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">ROUTE <span class="text-danger">*</span></label>
+                        <select name="route_id" id="routeSelect" class="form-select bg-dark text-white border-secondary" required>
+                            <option value="">Select Route</option>
+                            {% for route in routes %}
+                                <option value="{{ route.route_id }}">{{ route.route_name }} ({{ route.start_location }} - {{ route.end_location }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Selected Seat Status -->
+                    <div class="card bg-secondary bg-opacity-10 border-secondary mb-3">
+                        <div class="card-body p-3">
+                            <label class="form-label text-muted small fw-bold mb-2">SELECTED SEAT STATUS</label>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-chair text-white"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0" id="selectedSeatText">No seat selected</h6>
+                                    <small class="text-muted">Click on the map to select</small>
+                                    <input type="hidden" name="seat_number" id="seatNumber" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted small fw-bold">VALID FROM <span class="text-danger">*</span></label>
+                            <input type="date" name="valid_from" class="form-control bg-dark text-white border-secondary" value="{{ 'now'|date('Y-m-d') }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted small fw-bold">VALID UNTIL</label>
+                            <input type="date" name="valid_to" class="form-control bg-dark text-white border-secondary">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <small class="text-muted"><i class="fas fa-info-circle me-1"></i> Leave 'Valid Until' empty for permanent allocation</small>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check-circle me-2"></i> Confirm Allocation
+                        </button>
+                        <a href="?page=employee_seat_allotment" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel: Vehicle Visualization -->
+    <div class="col-md-7">
+        <div class="card bg-dark text-white border-0 shadow-sm h-100">
+            <div class="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-primary"><i class="fas fa-map me-2"></i>Vehicle Visualization</h5>
+                <button class="btn btn-sm btn-primary rounded-pill">
+                    <i class="fas fa-cube me-1"></i> Interactive 3D View
+                </button>
+            </div>
+            <div class="card-body d-flex flex-column align-items-center justify-content-center py-5">
+                <div id="vehicleVisualizationPlaceholder" class="text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-bus fa-5x text-secondary opacity-25"></i>
+                    </div>
+                    <h5 class="text-white">Ready to Visualize</h5>
+                    <p class="text-muted">Select a vehicle from the left panel to load the interactive seat map.</p>
+                </div>
+                
+                <!-- Simple 2D Seat Map (Hidden initially) -->
+                <div id="seatMap" style="display: none; width: 100%;">
+                    <div class="seat-grid d-flex flex-wrap justify-content-center gap-2 p-4 border border-secondary rounded bg-dark-subtle">
+                        <!-- Seats will be generated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.seat-item {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+.seat-available {
+    background-color: #343a40; /* Dark gray */
+    color: #fff;
+    border: 1px solid #6c757d;
+}
+.seat-available:hover {
+    background-color: #495057;
+}
+.seat-selected {
+    background-color: #0d6efd; /* Primary blue */
+    color: #fff;
+    border: 1px solid #0d6efd;
+    box-shadow: 0 0 10px rgba(13, 110, 253, 0.5);
+}
+.seat-occupied {
+    background-color: #dc3545; /* Danger red */
+    color: #fff;
+    border: 1px solid #dc3545;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Employee Search Logic
+    const employeeSearch = document.getElementById('employeeSearch');
+    const employeeResults = document.getElementById('employeeResults');
+    const employeeId = document.getElementById('employeeId');
+
+    employeeSearch.addEventListener('input', function() {
+        const query = this.value;
+        if (query.length < 2) {
+            employeeResults.style.display = 'none';
+            return;
+        }
+
+        fetch(`?page=employee_seat_allotment&action=search_employees&q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                employeeResults.innerHTML = '';
+                if (data.length > 0) {
+                    data.forEach(emp => {
+                        const item = document.createElement('a');
+                        item.href = '#';
+                        item.className = 'list-group-item list-group-item-action bg-dark text-white border-secondary';
+                        item.innerHTML = `<strong>${emp.first_name} ${emp.last_name}</strong> <small class="text-muted">(${emp.employee_code})</small>`;
+                        item.onclick = function(e) {
+                            e.preventDefault();
+                            employeeSearch.value = `${emp.first_name} ${emp.last_name}`;
+                            employeeId.value = emp.employee_id;
+                            employeeResults.style.display = 'none';
+                        };
+                        employeeResults.appendChild(item);
+                    });
+                    employeeResults.style.display = 'block';
+                } else {
+                    employeeResults.style.display = 'none';
+                }
+            });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!employeeSearch.contains(e.target) && !employeeResults.contains(e.target)) {
+            employeeResults.style.display = 'none';
+        }
+    });
+
+    // Seat Map Generation Logic
+    const vehicleSelect = document.getElementById('vehicleSelect');
+    const visualizationPlaceholder = document.getElementById('vehicleVisualizationPlaceholder');
+    const seatMap = document.getElementById('seatMap');
+    const seatGrid = document.querySelector('.seat-grid');
+    const selectedSeatText = document.getElementById('selectedSeatText');
+    const seatNumberInput = document.getElementById('seatNumber');
+
+    vehicleSelect.addEventListener('change', function() {
+        if (this.value) {
+            visualizationPlaceholder.style.display = 'none';
+            seatMap.style.display = 'block';
+            generateSeats(40); // Mocking 40 seats for now
+        } else {
+            visualizationPlaceholder.style.display = 'block';
+            seatMap.style.display = 'none';
+        }
+    });
+
+    function generateSeats(totalSeats) {
+        seatGrid.innerHTML = '';
+        // Add Driver Seat
+        const driverRow = document.createElement('div');
+        driverRow.className = 'w-100 d-flex justify-content-end mb-4';
+        driverRow.innerHTML = '<div class="seat-item bg-secondary text-white border-0" style="cursor: default;">D</div>';
+        seatGrid.appendChild(driverRow);
+
+        for (let i = 1; i <= totalSeats; i++) {
+            const seat = document.createElement('div');
+            seat.className = 'seat-item seat-available';
+            seat.textContent = i;
+            seat.onclick = function() {
+                selectSeat(this, i);
+            };
+            seatGrid.appendChild(seat);
+        }
+    }
+
+    function selectSeat(element, number) {
+        // Deselect previous
+        const previous = document.querySelector('.seat-selected');
+        if (previous) {
+            previous.classList.remove('seat-selected');
+            previous.classList.add('seat-available');
+        }
+
+        // Select new
+        element.classList.remove('seat-available');
+        element.classList.add('seat-selected');
+
+        // Update Text
+        selectedSeatText.textContent = 'Seat ' + number + ' selected';
+        seatNumberInput.value = number;
+    }
+});
+</script>
+{% endblock %}

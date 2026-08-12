@@ -1,0 +1,282 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Commercial • New Invoice{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="mb-4">
+        <a href="{{ BASE_URL }}/commercial/invoices" class="btn btn-sm btn-outline-secondary mb-3">
+            <i class="fas fa-arrow-left me-2"></i>Back to List
+        </a>
+        <h1 class="h3 mb-1">Create Commercial Invoice</h1>
+        <p class="text-muted">Generate a new invoice for a customer.</p>
+    </div>
+
+    <form id="invoiceForm">
+        <div class="row g-4">
+            <!-- Left Column: Invoice Details -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Customer <span class="text-danger">*</span></label>
+                                <select name="customer_id" class="form-select select2" required>
+                                    <option value="">Select Customer</option>
+                                    {% for c in customers %}
+                                        <option value="{{ c.customer_id }}">{{ c.customer_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Related Order (Optional)</label>
+                                <select name="order_id" class="form-select select2">
+                                    <option value="">Select Completed Order</option>
+                                    {% for o in orders %}
+                                        <option value="{{ o.po_id }}" data-customer="{{ o.buyer_id }}" data-value="{{ o.unit_price * o.quantity }}">
+                                            {{ o.order_number }} - {{ o.customer_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Invoice Date <span class="text-danger">*</span></label>
+                                <input type="date" name="invoice_date" class="form-control" value="{{ "now"|date("Y-m-d") }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Due Date <span class="text-danger">*</span></label>
+                                <input type="date" name="due_date" class="form-control" value="{{ "+30 days"|date("Y-m-d") }}" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Items Table -->
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold">Invoice Items</h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addRow()">
+                            <i class="fas fa-plus me-1"></i>Add Row
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="itemsTable">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="ps-4" style="width: 50%;">Description</th>
+                                        <th style="width: 15%;">Quantity</th>
+                                        <th style="width: 15%;">Unit Price</th>
+                                        <th class="text-end" style="width: 15%;">Total</th>
+                                        <th class="text-center" style="width: 5%;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="ps-4">
+                                            <input type="text" name="items[0][description]" class="form-control form-control-sm" required placeholder="Item description">
+                                        </td>
+                                        <td>
+                                            <input type="number" name="items[0][quantity]" class="form-control form-control-sm quantity" required min="1" step="0.01" onchange="calculate()">
+                                        </td>
+                                        <td>
+                                            <input type="number" name="items[0][unit_price]" class="form-control form-control-sm price" required min="0" step="0.01" onchange="calculate()">
+                                        </td>
+                                        <td class="text-end fw-bold px-3">
+                                            <span class="row-total">0.00</span>
+                                        </td>
+                                        <td class="text-center pe-3">
+                                            <button type="button" class="btn btn-link text-danger p-0" onclick="removeRow(this)" disabled>
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Summary & Notes -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0 fw-bold">Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Subtotal</span>
+                            <span class="fw-bold" id="subtotal">$0.00</span>
+                        </div>
+                        <div class="row g-2 mb-2 align-items-center">
+                            <div class="col-6">
+                                <span class="text-muted">Tax Rate (%)</span>
+                            </div>
+                            <div class="col-6">
+                                <input type="number" name="tax_rate" class="form-control form-control-sm text-end" value="0" min="0" step="0.1" onchange="calculate()">
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Tax Amount</span>
+                            <span class="fw-bold text-danger" id="taxAmount">$0.00</span>
+                        </div>
+                        <div class="row g-2 mb-3 align-items-center">
+                            <div class="col-6">
+                                <span class="text-muted">Discount ($)</span>
+                            </div>
+                            <div class="col-6">
+                                <input type="number" name="discount" class="form-control form-control-sm text-end" value="0" min="0" step="0.01" onchange="calculate()">
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center mb-0">
+                            <span class="h5 mb-0 fw-bold">Grand Total</span>
+                            <span class="h4 mb-0 fw-bold text-primary" id="grandTotal">$0.00</span>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-light border-0 p-3">
+                        <button type="submit" class="btn btn-primary w-100 py-2 shadow-sm rounded-pill">
+                            <i class="fas fa-save me-2"></i>Create Invoice
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-body">
+                        <label class="form-label small fw-bold">Notes / Terms</label>
+                        <textarea name="notes" class="form-control" rows="4" placeholder="Enter bank details or special terms..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    let rowCount = 1;
+
+    function addRow() {
+        const tbody = document.querySelector('#itemsTable tbody');
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td class="ps-4">
+                <input type="text" name="items[${rowCount}][description]" class="form-control form-control-sm" required placeholder="Item description">
+            </td>
+            <td>
+                <input type="number" name="items[${rowCount}][quantity]" class="form-control form-control-sm quantity" required min="1" step="0.01" onchange="calculate()">
+            </td>
+            <td>
+                <input type="number" name="items[${rowCount}][unit_price]" class="form-control form-control-sm price" required min="0" step="0.01" onchange="calculate()">
+            </td>
+            <td class="text-end fw-bold px-3">
+                <span class="row-total">0.00</span>
+            </td>
+            <td class="text-center pe-3">
+                <button type="button" class="btn btn-link text-danger p-0" onclick="removeRow(this)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(newRow);
+        rowCount++;
+        updateRemoveButtons();
+    }
+
+    function removeRow(btn) {
+        btn.closest('tr').remove();
+        calculate();
+        updateRemoveButtons();
+    }
+
+    function updateRemoveButtons() {
+        const buttons = document.querySelectorAll('#itemsTable tbody button');
+        buttons.forEach(btn => btn.disabled = (buttons.length === 1));
+    }
+
+    function calculate() {
+        let subtotal = 0;
+        document.querySelectorAll('#itemsTable tbody tr').forEach(row => {
+            const qty = parseFloat(row.querySelector('.quantity').value) || 0;
+            const price = parseFloat(row.querySelector('.price').value) || 0;
+            const total = qty * price;
+            row.querySelector('.row-total').textContent = total.toFixed(2);
+            subtotal += total;
+        });
+
+        const taxRate = parseFloat(document.querySelector('input[name="tax_rate"]').value) || 0;
+        const discount = parseFloat(document.querySelector('input[name="discount"]').value) || 0;
+        const taxAmount = (subtotal * taxRate) / 100;
+        const grandTotal = subtotal + taxAmount - discount;
+
+        document.querySelector('#subtotal').textContent = '$' + subtotal.toFixed(2);
+        document.querySelector('#taxAmount').textContent = '$' + taxAmount.toFixed(2);
+        document.querySelector('#grandTotal').textContent = '$' + grandTotal.toFixed(2);
+    }
+
+    document.querySelector('#invoiceForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const data = {
+            customer_id: formData.get('customer_id'),
+            order_id: formData.get('order_id'),
+            invoice_date: formData.get('invoice_date'),
+            due_date: formData.get('due_date'),
+            tax_rate: formData.get('tax_rate'),
+            discount: formData.get('discount'),
+            notes: formData.get('notes'),
+            items: []
+        };
+
+        // Collect items
+        document.querySelectorAll('#itemsTable tbody tr').forEach((row, index) => {
+            data.items.push({
+                description: row.querySelector(`input[name="items[${index}][description]"]`).value,
+                quantity: row.querySelector(`input[name="items[${index}][quantity]"]`).value,
+                unit_price: row.querySelector(`input[name="items[${index}][unit_price]"]`).value
+            });
+        });
+
+        try {
+            const response = await fetch('{{ BASE_URL }}/commercial/invoices/store', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                window.location.href = '{{ BASE_URL }}/commercial/invoices/show/' + result.invoice_id;
+            } else {
+                alert(result.message || 'Failed to save invoice');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An unexpected error occurred');
+        }
+    });
+
+    // Auto-fill customer if order is selected
+    document.querySelector('select[name="order_id"]').addEventListener('change', function() {
+        const option = this.options[this.selectedIndex];
+        if (option.value) {
+            const customerId = option.dataset.customer;
+            document.querySelector('select[name="customer_id"]').value = customerId;
+            
+            // Auto add row with order details if items table is empty or first row is empty
+            const firstRowDesc = document.querySelector('input[name="items[0][description]"]');
+            if (firstRowDesc && !firstRowDesc.value) {
+                firstRowDesc.value = "Order #" + option.text.split('-')[0].trim();
+                document.querySelector('input[name="items[0][quantity]"]').value = 1;
+                document.querySelector('input[name="items[0][unit_price]"]').value = option.dataset.value;
+                calculate();
+            }
+        }
+    });
+</script>
+
+<style>
+    .select2-container--bootstrap-5 .select2-selection { border-radius: 0.5rem; }
+</style>
+{% endblock %}

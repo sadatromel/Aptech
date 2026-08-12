@@ -1,0 +1,19 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Module: {{ module_name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+             <div class="card-header">
+                Module: {{ module_name }}
+             </div>
+             <div class="card-body">
+                 <!-- Render the Raw Content from the PHP Module -->
+                 {{ module_content | raw }}
+             </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

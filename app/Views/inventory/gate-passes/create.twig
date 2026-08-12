@@ -1,0 +1,348 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Create Gate Pass{% endblock %}
+
+{% block styles %}
+<style>
+    .premium-glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        border-radius: var(--border-radius);
+    }
+    [data-theme="dark"] .premium-glass-card {
+        background: rgba(30, 41, 59, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+    .form-control, .form-select {
+        background-color: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    [data-theme="dark"] .form-control, [data-theme="dark"] .form-select {
+        background-color: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: #fff;
+    }
+    .form-label {
+        font-weight: 500;
+        margin-bottom: 0.3rem;
+    }
+    [data-theme="dark"] .form-label {
+        color: #e2e8f0;
+    }
+    .items-table th {
+        background: rgba(248, 249, 250, 0.8);
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    [data-theme="dark"] .items-table th {
+        background: rgba(15, 23, 42, 0.8);
+        color: #e2e8f0;
+    }
+</style>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 pt-3">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0 px-0 bg-transparent">
+            <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard" class="text-decoration-none"><i class="fas fa-home"></i></a></li>
+            <li class="breadcrumb-item"><a href="{{ BASE_URL }}/inventory" class="text-decoration-none">Store & Inventory</a></li>
+            <li class="breadcrumb-item"><a href="{{ BASE_URL }}/inventory/gate-passes" class="text-decoration-none">Gate Passes</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Create</li>
+        </ol>
+    </nav>
+    <a href="{{ BASE_URL }}/inventory/gate-passes" class="btn btn-outline-secondary shadow-sm shadow-hover rounded-pill px-4">
+        <i class="fas fa-arrow-left me-2"></i> Back to List
+    </a>
+</div>
+
+{% if session.error %}
+<div class="alert alert-danger alert-dismissible fade show premium-glass-card" role="alert">
+    {{ session.error }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
+<form action="{{ BASE_URL }}/inventory/gate-passes/store" method="POST" id="gatePassForm">
+    {{ csrf_field() | raw }}
+    
+    <div class="row">
+        <!-- Master Data -->
+        <div class="col-xl-9 col-lg-8 mb-4">
+            <div class="card premium-glass-card border-0 h-100 p-4">
+                <h5 class="mb-4 text-primary"><i class="fas fa-file-invoice me-2"></i> Gate Pass Details</h5>
+                
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Gate Pass No</label>
+                        <input type="text" class="form-control bg-light" value="{{ gatePassNo }}" readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Date <span class="text-danger">*</span></label>
+                        <input type="date" name="date" class="form-control" value="{{ "now"|date("Y-m-d") }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Time <span class="text-danger">*</span></label>
+                        <input type="time" name="time" class="form-control" value="{{ "now"|date("H:i") }}" required>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Challan No</label>
+                        <input type="text" name="challan_no" class="form-control" placeholder="Optional">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Challan Date</label>
+                        <input type="date" name="challan_date" class="form-control">
+                    </div>
+                     <div class="col-md-4">
+                        <label class="form-label">Department</label>
+                        <select name="department_id" class="form-select select2">
+                            <option value="">Select Department</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.department_id }}">{{ dept.department_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Prepared For <span class="text-danger">*</span></label>
+                        <input type="text" name="prepared_for" class="form-control" required placeholder="Organization / Factory">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Address</label>
+                        <input type="text" name="address" class="form-control" placeholder="Destination Address">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Bearer By</label>
+                        <input type="text" name="bearer_by" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Name and Desig.</label>
+                        <input type="text" name="name_and_desig" class="form-control" placeholder="SAMPLE, etc">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Basis</label>
+                        <input type="text" name="basis" class="form-control" placeholder="e.g. Independent">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Details -->
+        <div class="col-xl-3 col-lg-4 mb-4">
+            <div class="card premium-glass-card border-0 h-100 p-4">
+                <h5 class="mb-4 text-primary"><i class="fas fa-cog me-2"></i> Options</h5>
+                
+                <div class="mb-3">
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" name="returnable" id="returnableSwitch" value="1">
+                        <label class="form-check-label ms-2" for="returnableSwitch">Returnable</label>
+                    </div>
+                </div>
+                
+                <div class="mb-3" id="returnDateBlock" style="display:none;">
+                    <label class="form-label">Exp. Return Date</label>
+                    <input type="date" name="exp_return_date" class="form-control">
+                </div>
+                
+                <hr class="my-4" style="opacity: 0.1">
+
+                <div class="mb-3">
+                    <label class="form-label">Verified By</label>
+                    <select name="verified_by" class="form-select select2">
+                        <option value="">Select User</option>
+                        {% for user in users %}
+                        <option value="{{ user.user_id }}">{{ user.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Approved By</label>
+                    <select name="approve_by" class="form-select select2">
+                        <option value="">Select User</option>
+                        {% for user in users %}
+                        <option value="{{ user.user_id }}">{{ user.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="card premium-glass-card border-0 mb-4 p-0 overflow-hidden">
+        <div class="p-4 border-bottom" style="border-color: rgba(0,0,0,0.05) !important;">
+            <h5 class="mb-0 text-primary"><i class="fas fa-list me-2"></i> Line Items</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table items-table mb-0" id="gpItemsTable">
+                <thead>
+                    <tr>
+                        <th style="width: 5%">SL</th>
+                        <th style="width: 15%">Buyer</th>
+                        <th style="width: 15%">Style</th>
+                        <th style="width: 15%">Category</th>
+                        <th style="width: 20%">Description</th>
+                        <th style="width: 8%">Size</th>
+                        <th style="width: 7%">Unit</th>
+                        <th style="width: 10%">Qty</th>
+                        <th style="width: 5%"></th>
+                    </tr>
+                </thead>
+                <tbody id="itemsContainer">
+                    <!-- Dynamic Rows -->
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="7" class="text-end fw-bold">Total:</td>
+                        <td class="fw-bold" id="totalQty">0.00</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="p-3 bg-light text-end">
+            <button type="button" class="btn btn-sm btn-outline-primary" id="addRowBtn">
+                <i class="fas fa-plus me-1"></i> Add Row
+            </button>
+        </div>
+    </div>
+    
+    <!-- Footer Actions -->
+    <div class="card premium-glass-card border-0 mb-4 p-4 text-end">
+        <div>
+            <button type="submit" class="btn btn-primary px-5 rounded-pill shadow-sm shadow-hover">
+                <i class="fas fa-save me-2"></i> Generate Gate Pass
+            </button>
+        </div>
+    </div>
+    
+</form>
+
+<template id="rowTemplate">
+    <tr class="item-row">
+        <td class="align-middle sl-no text-center fw-medium">1</td>
+        <td>
+            <select name="items[{idx}][buyer_id]" class="form-select form-select-sm row-select2">
+                <option value="">Select</option>
+                {% for b in buyers %}
+                <option value="{{ b.buyer_id }}">{{ b.buyer_name }}</option>
+                {% endfor %}
+            </select>
+        </td>
+        <td>
+            <select name="items[{idx}][style_id]" class="form-select form-select-sm row-select2">
+                <option value="">Select</option>
+                {% for s in styles %}
+                <option value="{{ s.style_id }}">{{ s.style_code }}</option>
+                {% endfor %}
+            </select>
+        </td>
+        <td>
+            <select name="items[{idx}][item_category_id]" class="form-select form-select-sm row-select2">
+                <option value="">Select</option>
+                {% for c in categories %}
+                <option value="{{ c.category_id }}">{{ c.category_name }}</option>
+                {% endfor %}
+            </select>
+        </td>
+        <td>
+            <input type="text" name="items[{idx}][description]" class="form-control form-control-sm" required placeholder="Item description">
+        </td>
+        <td>
+             <input type="text" name="items[{idx}][size]" class="form-control form-control-sm" placeholder="Size">
+        </td>
+        <td>
+            <input type="text" name="items[{idx}][unit]" class="form-control form-control-sm" placeholder="Pcs, Kg...">
+        </td>
+        <td>
+            <input type="number" name="items[{idx}][quantity]" class="form-control form-control-sm qty-input" value="0" min="0" step="0.01" required>
+        </td>
+        <td class="text-center align-middle">
+            <button type="button" class="btn btn-sm btn-outline-danger remove-row" title="Remove"><i class="fas fa-times"></i></button>
+        </td>
+    </tr>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Initialize Select2 for main form
+        $('.select2').select2({
+            theme: 'bootstrap-5'
+        });
+
+        // Toggle Return Date field
+        $('#returnableSwitch').change(function() {
+            if($(this).is(':checked')) {
+                $('#returnDateBlock').slideDown();
+                $('input[name="exp_return_date"]').attr('required', true);
+            } else {
+                $('#returnDateBlock').slideUp();
+                $('input[name="exp_return_date"]').attr('required', false).val('');
+            }
+        });
+
+        let rowIndex = 0;
+        
+        function addRow() {
+            let template = $('#rowTemplate').html();
+            template = template.replace(/\{idx\}/g, rowIndex);
+            $('#itemsContainer').append(template);
+            
+            // Re-initialize select2 for the new elements
+            $('#itemsContainer tr:last').find('.row-select2').select2({
+                theme: 'bootstrap-5',
+                width: '100%'
+            });
+            
+            updateSlNos();
+            rowIndex++;
+        }
+
+        function updateSlNos() {
+            $('.item-row').each(function(index) {
+                $(this).find('.sl-no').text(index + 1);
+            });
+        }
+
+        function calculateTotal() {
+            let total = 0;
+            $('.qty-input').each(function() {
+                let val = parseFloat($(this).val()) || 0;
+                total += val;
+            });
+            $('#totalQty').text(total.toFixed(2));
+        }
+
+        // Add Initial Row
+        addRow();
+
+        // Event delegation for dynamically added elements
+        $('#addRowBtn').click(addRow);
+        
+        $(document).on('click', '.remove-row', function() {
+            if ($('.item-row').length > 1) {
+                $(this).closest('tr').remove();
+                updateSlNos();
+                calculateTotal();
+            } else {
+                alert('You must have at least one line item.');
+            }
+        });
+
+        $(document).on('input', '.qty-input', calculateTotal);
+    });
+</script>
+{% endblock %}

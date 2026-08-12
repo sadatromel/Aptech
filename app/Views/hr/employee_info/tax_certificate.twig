@@ -1,0 +1,158 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Tax Certificate Information | HR Employee Information{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4 p-4 rounded-3 text-white shadow-sm" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%);">
+        <div>
+            <span class="badge bg-white text-amber mb-2 font-monospace" style="color: #b45309;"><i class="fas fa-receipt me-1"></i> INCOME TAX & TAX CLEARANCE COMPLIANCE</span>
+            <h2 class="mb-1 font-weight-bold">Tax Certificate Information</h2>
+            <p class="mb-0 opacity-75">Record Tax Identification Number (TIN), Zone/Circle, Assessment Year, and Tax Clearance Certificates.</p>
+        </div>
+        <div class="text-end d-none d-md-block">
+            <i class="fas fa-calculator fa-3x opacity-50"></i>
+        </div>
+    </div>
+
+    {% if flash_success %}
+    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+        <i class="fas fa-check-circle me-2"></i> {{ flash_success }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Form -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="mb-0 text-amber fw-bold" style="color: #b45309;"><i class="fas fa-plus-circle me-2"></i>Log Tax Certificate Submission</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form action="{{ BASE_URL }}/hr/employees/tax-certificate" method="POST">
+                        {{ csrf_field() | raw }}
+                        <div class="mb-3">
+                            <label for="employee_id" class="form-label fw-bold">Select Employee *</label>
+                            <select class="form-select fw-bold border-warning" id="employee_id" name="employee_id" required>
+                                <option value="">-- Choose Employee --</option>
+                                {% for emp in employees %}
+                                <option value="{{ emp.employee_id }}">{{ emp.employee_code }} - {{ emp.first_name }} {{ emp.last_name }} ({{ emp.department_name }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label for="tin_number" class="form-label fw-semibold">12-Digit TIN Number *</label>
+                                <input type="text" class="form-control font-monospace fw-bold" id="tin_number" name="tin_number" placeholder="e.g. 827361928371" required>
+                            </div>
+                            <div class="col-6">
+                                <label for="assessment_year" class="form-label fw-semibold">Assessment Year *</label>
+                                <select class="form-select" id="assessment_year" name="assessment_year" required>
+                                    <option value="2025-2026">2025-2026</option>
+                                    <option value="2024-2025">2024-2025</option>
+                                    <option value="2023-2024">2023-2024</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label for="tax_circle" class="form-label fw-semibold">Tax Circle</label>
+                                <input type="text" class="form-control" id="tax_circle" name="tax_circle" placeholder="e.g. Circle-14 (Dhaka)">
+                            </div>
+                            <div class="col-6">
+                                <label for="tax_zone" class="form-label fw-semibold">Tax Zone</label>
+                                <input type="text" class="form-control" id="tax_zone" name="tax_zone" placeholder="e.g. Zone-05">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label for="tax_amount" class="form-label fw-semibold">Tax Payable (৳)</label>
+                                <input type="number" step="0.01" class="form-control" id="tax_amount" name="tax_amount" placeholder="0.00">
+                            </div>
+                            <div class="col-6">
+                                <label for="tds_deducted" class="form-label fw-semibold">TDS Deducted (৳)</label>
+                                <input type="number" step="0.01" class="form-control text-success fw-bold" id="tds_deducted" name="tds_deducted" placeholder="0.00">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label for="submission_status" class="form-label fw-semibold">Return Status *</label>
+                                <select class="form-select" id="submission_status" name="submission_status" required>
+                                    <option value="Submitted">Submitted (Ack Received)</option>
+                                    <option value="Pending">Pending Return Filing</option>
+                                    <option value="Exempted">Below Taxable Limit</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label for="submission_date" class="form-label fw-semibold">Submission Date *</label>
+                                <input type="date" class="form-control" id="submission_date" name="submission_date" value="{{ "now"|date("Y-m-d") }}" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn text-white w-100 rounded-pill py-3 fw-bold shadow-sm" style="background-color: #b45309;"><i class="fas fa-save me-2"></i> Log Tax Certificate Record</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-dark fw-bold"><i class="fas fa-list me-2"></i>Tax Certificate Compliance Register</h5>
+                    <span class="badge bg-warning-subtle text-warning border">Total: {{ records|length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>TIN Number</th>
+                                    <th>Assessment</th>
+                                    <th>TDS Deducted</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if records is empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">No tax certificate records logged yet.</td>
+                                </tr>
+                                {% else %}
+                                {% for rec in records %}
+                                <tr>
+                                    <td class="fw-semibold">
+                                        <div class="fw-bold">{{ rec.employee_name }}</div>
+                                        <span class="font-monospace small text-muted">{{ rec.employee_code }}</span>
+                                    </td>
+                                    <td class="fw-bold font-monospace text-dark">{{ rec.tin_number }}</td>
+                                    <td><span class="badge bg-light text-dark border">{{ rec.assessment_year }}</span></td>
+                                    <td class="fw-bold text-success">৳ {{ rec.tds_deducted|number_format(2) }}</td>
+                                    <td>
+                                        {% if rec.submission_status == 'Submitted' %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="fas fa-check-circle me-1"></i>Submitted</span>
+                                        {% elseif rec.submission_status == 'Pending' %}
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Pending</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary-subtle text-secondary border">Exempted</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

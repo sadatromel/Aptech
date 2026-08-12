@@ -1,0 +1,1081 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Procurement Control Center{% endblock %}
+
+{% block content %}
+<style>
+    .glow-card {
+        transition: all 0.3s ease-in-out;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+    }
+    .glow-card:hover {
+        box-shadow: 0 14px 32px rgba(78, 115, 223, 0.12);
+    }
+    .nav-pills .nav-link {
+        border-radius: 10px;
+        padding: 7px 14px;
+        font-weight: 600;
+        font-size: .83rem;
+        color: #5a5c69;
+        transition: all 0.25s ease;
+    }
+    .nav-pills .nav-link.active {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: #fff !important;
+        box-shadow: 0 4px 14px rgba(78, 115, 223, 0.32);
+    }
+    .nav-pills .nav-link:hover:not(.active) {
+        background: #f0f3ff;
+        color: #3b5cbd;
+    }
+    .metric-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+    }
+    .bg-light-primary { background: rgba(78, 115, 223, 0.12); }
+    .bg-light-info { background: rgba(54, 185, 204, 0.12); }
+    .bg-light-success { background: rgba(28, 200, 138, 0.12); }
+    .bg-light-warning { background: rgba(246, 194, 62, 0.12); }
+    .bg-light-danger { background: rgba(231, 74, 59, 0.12); }
+
+    .text-gradient {
+        background: linear-gradient(135deg, #4e73df 0%, #36b9cc 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .bar-wrap { height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; transition: width .6s ease; }
+    
+    .report-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #4e73df;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 8px;
+        margin-bottom: 14px;
+    }
+    @media print {
+        .no-print { display: none !important; }
+        .glow-card { box-shadow: none; border: 1px solid #ddd; }
+    }
+</style>
+
+{# ── Flash alerts ── #}
+{% if app.session.flash('success_message') %}
+<div class="alert alert-success alert-dismissible fade show mx-2" role="alert">
+    <i class="fas fa-check-circle me-2"></i>{{ app.session.flash('success_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+{% if app.session.flash('error_message') %}
+<div class="alert alert-danger alert-dismissible fade show mx-2" role="alert">
+    <i class="fas fa-exclamation-circle me-2"></i>{{ app.session.flash('error_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Header -->
+    <div class="col-12 mb-3">
+        <div class="page-header d-flex justify-content-between align-items-center p-4 glow-card">
+            <div>
+                <h1 class="h3 fw-bold text-gradient mb-1">Procurement Control Center</h1>
+                <p class="text-muted mb-0 small">Sourcing · Requests for Quotation (RFQ) · Purchase Orders (PO) · Returns &amp; Debit Notes</p>
+            </div>
+            <div class="d-flex gap-2 no-print">
+                <span class="badge bg-primary text-white px-3 py-2"><i class="fas fa-file-invoice me-1"></i>{{ stats.total }} POs</span>
+                <span class="badge bg-info text-white px-3 py-2"><i class="fas fa-shopping-basket me-1"></i>{{ openPRs }} Requisitions</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="col-12 mb-3 no-print">
+        <div class="p-2 glow-card">
+            <ul class="nav nav-pills gap-1 flex-wrap">
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'dashboard' %}active{% endif %}" href="{{ BASE_URL }}/purchase_orders?tab=dashboard"><i class="fas fa-chart-pie me-1"></i>Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'po_list' %}active{% endif %}" href="{{ BASE_URL }}/purchase_orders?tab=po_list"><i class="fas fa-file-invoice-dollar me-1"></i>Purchase Orders</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'rfq' %}active{% endif %}" href="{{ BASE_URL }}/purchase_orders?tab=rfq"><i class="fas fa-comments-dollar me-1"></i>RFQ &amp; CS</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'returns' %}active{% endif %}" href="{{ BASE_URL }}/purchase_orders?tab=returns"><i class="fas fa-undo-alt me-1"></i>Debit Notes &amp; Returns</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'reports' %}active{% endif %}" href="{{ BASE_URL }}/purchase_orders?tab=reports"><i class="fas fa-file-invoice me-1"></i>Reports</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-12">
+        <div class="tab-content">
+
+            {# ═══════════════════════════════════════
+               1. DASHBOARD
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'dashboard' %}
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="card glow-card p-3 border-0">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-muted fw-bold text-uppercase small mb-1">POs Issued</h6>
+                                <h3 class="fw-bold mb-0">{{ stats.total }}</h3>
+                                <small class="text-primary">${{ stats.total_value|number_format(2) }} total</small>
+                            </div>
+                            <div class="metric-icon bg-light-primary text-primary"><i class="fas fa-file-invoice"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card glow-card p-3 border-0">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-muted fw-bold text-uppercase small mb-1">Active RFQs</h6>
+                                <h3 class="fw-bold mb-0">{{ activeRfqs }}</h3>
+                                <small class="text-info">floated to suppliers</small>
+                            </div>
+                            <div class="metric-icon bg-light-info text-info"><i class="fas fa-comments-dollar"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card glow-card p-3 border-0">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-muted fw-bold text-uppercase small mb-1">Total Returns</h6>
+                                <h3 class="fw-bold mb-0">${{ totalReturns|number_format(2) }}</h3>
+                                <small class="text-danger">debit note adjustments</small>
+                            </div>
+                            <div class="metric-icon bg-light-danger text-danger"><i class="fas fa-undo-alt"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card glow-card p-3 border-0">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-muted fw-bold text-uppercase small mb-1">Approved Requisitions</h6>
+                                <h3 class="fw-bold mb-0">{{ openPRs }}</h3>
+                                <small class="text-success">awaiting PO generation</small>
+                            </div>
+                            <div class="metric-icon bg-light-success text-success"><i class="fas fa-clipboard-check"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card glow-card border-0 p-4">
+                        <h6 class="fw-bold text-primary mb-3"><i class="fas fa-envelope-open-text me-2"></i>Pending approved Requisitions</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr><th>Item Needed</th><th>Requested Qty</th><th>Action</th></tr>
+                                </thead>
+                                <tbody>
+                                {% for pr in purchaseRequests %}
+                                <tr>
+                                    <td><strong>{{ pr.item_name }}</strong></td>
+                                    <td>{{ pr.quantity }} pcs</td>
+                                    <td>
+                                        <button class="btn btn-xs btn-sm btn-primary py-0" data-bs-toggle="modal" data-bs-target="#newRfqModal" onclick="document.getElementById('rfq_item_name').value='{{ pr.item_name }}'; document.getElementById('rfq_qty').value='{{ pr.quantity }}'; document.getElementById('rfq_pr_id').value='{{ pr.pr_id }}';">
+                                            Float RFQ
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="3" class="text-center text-muted py-3">No pending approved requisitions.</td></tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card glow-card border-0 p-4">
+                        <h6 class="fw-bold text-primary mb-3"><i class="fas fa-history me-2"></i>Recent Debit Notes &amp; Returns</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr><th>Return No.</th><th>PO Reference</th><th>Debit Amount</th><th>Status</th></tr>
+                                </thead>
+                                <tbody>
+                                {% for ret in returns|slice(0, 5) %}
+                                <tr>
+                                    <td><strong>{{ ret.return_no }}</strong></td>
+                                    <td>{{ ret.po_number }}</td>
+                                    <td class="fw-bold text-danger">${{ ret.debit_amount|number_format(2) }}</td>
+                                    <td>
+                                        <span class="badge {% if ret.status == 'approved' %}bg-success{% else %}bg-secondary{% endif %}">
+                                            {{ ret.status|upper }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="4" class="text-center text-muted py-3">No return logs recorded.</td></tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ═══════════════════════════════════════
+               2. PURCHASE ORDERS (PRESERVED FUNCTIONALITY)
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'po_list' %}
+            <div class="card glow-card border-0 p-4 mb-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-3">
+                    <div>
+                        <h5 class="fw-bold text-primary mb-1">Purchase Orders</h5>
+                        <small class="text-muted">Manage procurement workflow orders from a single place.</small>
+                    </div>
+                    <button class="btn btn-primary btn-sm no-print" data-bs-toggle="modal" data-bs-target="#poModal">
+                        <i class="fas fa-plus me-2"></i>New Purchase Order
+                    </button>
+                </div>
+
+                <form class="row g-3 mb-3 no-print" method="get" action="{{ BASE_URL }}/purchase_orders">
+                    <input type="hidden" name="tab" value="po_list">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Search</label>
+                        <input type="text" name="search" class="form-control form-control-sm" placeholder="PO number or vendor" value="{{ filters.search }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Status</label>
+                        <select name="status" class="form-select form-select-sm">
+                            <option value="">All</option>
+                            {% for status in dropdowns.statuses %}
+                                <option value="{{ status.value }}" {{ filters.status == status.value ? 'selected' }}>{{ status.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end gap-2">
+                        <button class="btn btn-primary btn-sm px-3" type="submit"><i class="fas fa-filter me-1"></i>Apply</button>
+                        <a href="{{ BASE_URL }}/purchase_orders?tab=po_list" class="btn btn-outline-secondary btn-sm px-3">Reset</a>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>PO Number</th>
+                                <th>Vendor</th>
+                                <th>Items</th>
+                                <th>Total Amount</th>
+                                <th>Order Date</th>
+                                <th>Required Date</th>
+                                <th>Status</th>
+                                <th class="text-end no-print">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for po in purchase_orders %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ po.po_number }}</strong>
+                                        <div class="text-muted small">Created {{ po.created_at|date('M j, Y') }}</div>
+                                    </td>
+                                    <td>
+                                        {{ po.vendor_name or 'Unknown' }}
+                                        <div class="text-muted small">{{ po.vendor_code }}</div>
+                                    </td>
+                                    <td>{{ po.item_count }} items</td>
+                                    <td class="fw-bold text-primary">${{ po.total_amount|number_format(2, '.', ',') }}</td>
+                                    <td>{{ po.po_date|date('M j, Y') }}</td>
+                                    <td>{{ po.required_date|date('M j, Y') }}</td>
+                                    <td><span class="badge status-{{ po.status }}">{{ po.status|replace({'_':' '})|title }}</span></td>
+                                    <td class="text-end no-print">
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" data-view-po data-po-id="{{ po.po_id }}"><i class="fas fa-eye"></i></button>
+                                            {% if po.status == 'draft' %}
+                                                <button class="btn btn-outline-success" data-update-status data-po-id="{{ po.po_id }}" data-next-status="submitted"><i class="fas fa-paper-plane"></i></button>
+                                            {% endif %}
+                                            <button class="btn btn-outline-danger" data-delete-po data-po-id="{{ po.po_id }}"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-5">No purchase orders found matching filters.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ═══════════════════════════════════════
+               3. RFQ & COMPARATIVE STATEMENT (CS)
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'rfq' %}
+            <div class="card glow-card border-0 p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="fw-bold text-primary mb-0">Requests for Quotation (RFQ)</h5>
+                        <small class="text-muted">Invite vendors for quotes and compare details side-by-side</small>
+                    </div>
+                    <button class="btn btn-primary btn-sm no-print" data-bs-toggle="modal" data-bs-target="#newRfqModal">
+                        <i class="fas fa-plus me-2"></i>New RFQ Sourcing
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>RFQ Number</th>
+                                <th>Item Requested</th>
+                                <th>Target Qty</th>
+                                <th>Deadline Date</th>
+                                <th>Status</th>
+                                <th>Sourcing Table</th>
+                                <th class="text-end no-print">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for r in rfqs %}
+                        <tr>
+                            <td><strong>{{ r.rfq_no }}</strong></td>
+                            <td>{{ r.item_name }}</td>
+                            <td class="fw-bold">{{ r.quantity }} pcs</td>
+                            <td class="text-muted">{{ r.deadline_date }}</td>
+                            <td>
+                                <span class="badge {% if r.status == 'open' %}bg-info text-white{% else %}bg-secondary{% endif %}">
+                                    {{ r.status|upper }}
+                                </span>
+                            </td>
+                            <td>
+                                {# Display quote list comparison inline #}
+                                <div class="d-flex flex-column gap-1">
+                                    {% for rv in rfqVendors %}
+                                        {% if rv.rfq_id == r.id %}
+                                            <div class="small">
+                                                <strong>{{ rv.vendor_name }}:</strong> 
+                                                {% if rv.quoted_price > 0 %}
+                                                    ${{ rv.quoted_price }} (L.T: {{ rv.delivery_lead_time }})
+                                                    {% if rv.status == 'selected' %}
+                                                        <span class="badge bg-success bg-opacity-10 text-success py-0 px-1">Selected</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="text-muted italic">Awaiting quote</span>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td class="text-end no-print">
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-warning" onclick="openLogQuoteModal({{ r.id }}, '{{ r.rfq_no }}')">
+                                        <i class="fas fa-edit me-1"></i>Quote
+                                    </button>
+                                    {% if r.status == 'open' %}
+                                    <button class="btn btn-outline-success" onclick="openFinalizeModal({{ r.id }})">
+                                        <i class="fas fa-check-circle me-1"></i>Select
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="7" class="text-center text-muted py-5">No floated RFQs recorded. Click "New RFQ Sourcing" to float.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- New RFQ Modal -->
+            <div class="modal fade" id="newRfqModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <form method="POST" action="{{ BASE_URL }}/purchase_orders?tab=rfq" class="modal-content">
+                        {{ csrf_field() | raw }}
+                        <input type="hidden" name="action" value="create_rfq">
+                        <input type="hidden" name="pr_id" id="rfq_pr_id" value="">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title"><i class="fas fa-bullhorn me-2"></i>Float RFQ Sourcing</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Item Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm" name="item_name" id="rfq_item_name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Target Quantity <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control form-control-sm" name="quantity" id="rfq_qty" min="1" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Deadline Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control form-control-sm" name="deadline_date" value="{{ "now"|date_modify("+7 days")|date("Y-m-d") }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Invite Vendors</label>
+                                <div style="max-height: 120px; overflow-y: auto; border: 1px solid #ddd; padding: 6px; border-radius: 4px;">
+                                    {% for v in vendors %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="vendor_ids[]" value="{{ v.vendor_id }}" id="chk_v_{{ v.vendor_id }}">
+                                        <label class="form-check-label small" for="chk_v_{{ v.vendor_id }}">{{ v.vendor_name }}</label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Remarks</label>
+                                <textarea class="form-control form-control-sm" name="remarks" rows="2"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Float RFQ</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Log Quote Modal -->
+            <div class="modal fade" id="logQuoteModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <form method="POST" action="{{ BASE_URL }}/purchase_orders?tab=rfq" class="modal-content">
+                        {{ csrf_field() | raw }}
+                        <input type="hidden" name="action" value="submit_quote">
+                        <input type="hidden" name="rfq_id" id="log_quote_rfq_id">
+                        <div class="modal-header bg-warning text-dark">
+                            <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Log Vendor Quote (<span id="log_quote_rfq_no"></span>)</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Select Quoting Vendor <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-sm" name="vendor_id" id="log_quote_vendor_id" required>
+                                    {# Dynamically populated via JS #}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Quoted Price ($) <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" class="form-control form-control-sm" name="quoted_price" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Delivery Lead Time</label>
+                                <input type="text" class="form-control form-control-sm" name="delivery_lead_time" placeholder="e.g. 5 days" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Payment Terms</label>
+                                <input type="text" class="form-control form-control-sm" name="payment_terms" placeholder="e.g. Net 30">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-warning text-dark">Save Quote</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Finalize/Select Vendor Modal -->
+            <div class="modal fade" id="finalizeRfqModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <form method="POST" action="{{ BASE_URL }}/purchase_orders?tab=rfq" class="modal-content">
+                        {{ csrf_field() | raw }}
+                        <input type="hidden" name="action" value="select_vendor">
+                        <input type="hidden" name="rfq_id" id="finalize_rfq_id">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title"><i class="fas fa-check-circle me-2"></i>Finalize Supplier Quote</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="small text-muted">Selecting this supplier quote will automatically decline all alternative supplier quotes floated for this RFQ.</p>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Select Approved Supplier Quote <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-sm" name="vendor_id" id="finalize_vendor_id" required>
+                                    {# Dynamically populated via JS #}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-success text-white">Approve Selection</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ═══════════════════════════════════════
+               4. RETURNS & DEBIT NOTES
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'returns' %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card glow-card border-0 p-4">
+                        <h5 class="fw-bold mb-1" style="color:#4e73df;"><i class="fas fa-undo-alt me-2"></i>Log Return &amp; Debit Note</h5>
+                        <p class="text-muted small mb-3">Register return items back to suppliers and issue debit notes.</p>
+                        <form method="POST" action="{{ BASE_URL }}/purchase_orders?tab=returns">
+                            {{ csrf_field() | raw }}
+                            <input type="hidden" name="action" value="create_return">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Reference PO <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-sm" name="po_id" required>
+                                    <option value="">— Select PO —</option>
+                                    {% for po in purchase_orders %}
+                                    <option value="{{ po.po_id }}">{{ po.po_number }} (${{ po.total_amount }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label fw-semibold small">Qty Returned</label>
+                                    <input type="number" class="form-control form-control-sm" name="qty_returned" min="1" placeholder="e.g. 50" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label fw-semibold small">Debit Value ($)</label>
+                                    <input type="number" step="0.01" class="form-control form-control-sm" name="debit_amount" placeholder="e.g. 450.00" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Return Date</label>
+                                <input type="date" class="form-control form-control-sm" name="return_date" value="{{ "now"|date("Y-m-d") }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Reason / Remarks</label>
+                                <textarea class="form-control form-control-sm" name="reason" rows="3" required placeholder="Color bleeding, dimensions out of spec, hole in fabric body..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100"><i class="fas fa-save me-1"></i>Create Return Ticket</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card glow-card border-0 p-4 h-100">
+                        <h5 class="fw-bold mb-3" style="color:#4e73df;"><i class="fas fa-clipboard-list me-2"></i>Return Registers</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Return Ref</th>
+                                        <th>PO Reference</th>
+                                        <th>Qty Returned</th>
+                                        <th>Debit Value</th>
+                                        <th>Status</th>
+                                        <th class="no-print">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for ret in returns %}
+                                <tr>
+                                    <td><strong>{{ ret.return_no }}</strong></td>
+                                    <td>{{ ret.po_number }}</td>
+                                    <td class="fw-bold">{{ ret.qty_returned }} pcs</td>
+                                    <td class="fw-bold text-danger">${{ ret.debit_amount|number_format(2) }}</td>
+                                    <td>
+                                        <span class="badge {% if ret.status == 'approved' %}bg-success{% else %}bg-secondary{% endif %}">
+                                            {{ ret.status|upper }}
+                                        </span>
+                                    </td>
+                                    <td class="no-print">
+                                        {% if ret.status == 'draft' %}
+                                        <form method="POST" action="{{ BASE_URL }}/purchase_orders?tab=returns" style="display:inline;">
+                                            {{ csrf_field() | raw }}
+                                            <input type="hidden" name="action" value="update_return_status">
+                                            <input type="hidden" name="return_id" value="{{ ret.id }}">
+                                            <input type="hidden" name="status" value="approved">
+                                            <button type="submit" class="btn btn-xs btn-sm btn-outline-success py-0">Approve Debit</button>
+                                        </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="6" class="text-center text-muted py-5">No purchase return tickets logged.</td></tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ═══════════════════════════════════════
+               5. REPORTS
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'reports' %}
+            <div class="card glow-card border-0 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+                    <div>
+                        <h5 class="fw-bold mb-0" style="color:#4e73df;"><i class="fas fa-file-invoice me-2"></i>Procurement Reports &amp; Ledger Digests</h5>
+                        <small class="text-muted">Generate summaries of active orders, cost adjustments, and comparative statements</small>
+                    </div>
+                    <button onclick="window.print()" class="btn btn-outline-primary btn-sm"><i class="fas fa-print me-1"></i>Print Report</button>
+                </div>
+
+                <div class="report-section-title"><i class="fas fa-chart-line me-2"></i>Monthly Purchase Performance Summary</div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="card border-0 p-3 text-center text-white" style="background: linear-gradient(135deg, #4e73df, #224abe); border-radius: 12px;">
+                            <div class="h3 fw-bold mb-0">{{ stats.total }}</div>
+                            <div class="small opacity-75">Purchase Orders Released</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 p-3 text-center text-white" style="background: linear-gradient(135deg, #36b9cc, #258391); border-radius: 12px;">
+                            <div class="h3 fw-bold mb-0">${{ stats.total_value|number_format(2) }}</div>
+                            <div class="small opacity-75">Total Purchase Value</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 p-3 text-center text-white" style="background: linear-gradient(135deg, #e74a3b, #be2617); border-radius: 12px;">
+                            <div class="h3 fw-bold mb-0">${{ totalReturns|number_format(2) }}</div>
+                            <div class="small opacity-75">Debit Adjustments (Returns)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section-title"><i class="fas fa-comments-dollar me-2"></i>RFQ &amp; Supplier Quote Summaries</div>
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>RFQ Reference</th>
+                                <th>Item Sourced</th>
+                                <th>Target Quantity</th>
+                                <th>Deadline</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for r in rfqs %}
+                        <tr>
+                            <td><strong>{{ r.rfq_no }}</strong></td>
+                            <td>{{ r.item_name }}</td>
+                            <td>{{ r.quantity }} pcs</td>
+                            <td>{{ r.deadline_date }}</td>
+                            <td><span class="badge bg-secondary">{{ r.status|upper }}</span></td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="report-section-title"><i class="fas fa-undo me-2"></i>Return Registers &amp; Debit Adjustments</div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Return Code</th>
+                                <th>PO Ref</th>
+                                <th>Quantity Returned</th>
+                                <th>Debit Value</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for ret in returns %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td><strong>{{ ret.return_no }}</strong></td>
+                            <td>{{ ret.po_number }}</td>
+                            <td>{{ ret.qty_returned }}</td>
+                            <td class="fw-bold text-danger">${{ ret.debit_amount|number_format(2) }}</td>
+                            <td class="small text-muted">{{ ret.reason }}</td>
+                            <td><span class="badge bg-success">{{ ret.status|upper }}</span></td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="p-3 rounded mt-4" style="background:#f8f9fa;">
+                    <div class="row">
+                        <div class="col-md-6 small text-muted">
+                            <strong>Report Date:</strong> {{ "now"|date("d M Y, H:i") }}<br>
+                            <strong>Author:</strong> Aptech Procurement Director
+                        </div>
+                        <div class="col-md-6 text-end small text-muted">
+                            <strong>ERP System:</strong> Aptech RMG ERP<br>
+                            <strong>Division:</strong> Purchasing &amp; Sourcing
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   PRESERVED ORIGINAL MODALS & SCRIPTS
+═══════════════════════════════════════ #}
+
+<!-- Create/Edit Modal -->
+<div class="modal fade" id="poModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="poForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">New Purchase Order</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="poAlert" class="alert d-none"></div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Vendor</label>
+                            <select class="form-select" name="vendor_id" required>
+                                <option value="">Select vendor</option>
+                                {% for vendor in dropdowns.vendors %}
+                                    <option value="{{ vendor.vendor_id }}">{{ vendor.vendor_name }} ({{ vendor.vendor_code }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" name="status">
+                                {% for status in dropdowns.statuses %}
+                                    <option value="{{ status.value }}" {{ status.value == 'draft' ? 'selected' }}>{{ status.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Order Date</label>
+                            <input type="date" name="po_date" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Required Date</label>
+                            <input type="date" name="required_date" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Payment Terms</label>
+                            <input type="text" name="payment_terms" class="form-control" placeholder="e.g. Net 30">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Delivery Terms</label>
+                            <input type="text" name="delivery_terms" class="form-control" placeholder="e.g. FOB">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" name="notes" rows="2"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
+                        <h5 class="mb-0">Line Items</h5>
+                        <button class="btn btn-sm btn-outline-primary" type="button" id="addItemBtn">
+                            <i class="fas fa-plus"></i> Add Item
+                        </button>
+                    </div>
+                    <div id="itemsContainer" class="stacked-items"></div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <span class="text-muted">Grand Total</span>
+                        <strong id="grandTotal">$0.00</strong>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Purchase Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Modal -->
+<div class="modal fade" id="poViewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="poViewTitle">Purchase Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="poViewContent" class="placeholder-glow">
+                    <div class="placeholder col-12 mb-2"></div>
+                    <div class="placeholder col-10"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ parent() }}
+<script>
+    // ── Helper lists populated from Controller variables ──
+    const rfqVendorsData = {{ rfqVendors|json_encode|raw }};
+    const activeVendorsList = {{ vendors|json_encode|raw }};
+
+    function openLogQuoteModal(rfqId, rfqNo) {
+        document.getElementById('log_quote_rfq_id').value = rfqId;
+        document.getElementById('log_quote_rfq_no').textContent = rfqNo;
+        
+        // Populate select list with invited vendors for this RFQ
+        const select = document.getElementById('log_quote_vendor_id');
+        select.innerHTML = '<option value="">— Select Quoting Vendor —</option>';
+        
+        const invited = rfqVendorsData.filter(rv => rv.rfq_id == rfqId);
+        invited.forEach(rv => {
+            select.innerHTML += `<option value="${rv.vendor_id}">${rv.vendor_name}</option>`;
+        });
+        
+        // Fallback: If no vendors are linked to this RFQ yet, allow all vendors
+        if (invited.length === 0) {
+            activeVendorsList.forEach(v => {
+                select.innerHTML += `<option value="${v.vendor_id}">${v.vendor_name}</option>`;
+            });
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('logQuoteModal'));
+        modal.show();
+    }
+
+    function openFinalizeModal(rfqId) {
+        document.getElementById('finalize_rfq_id').value = rfqId;
+        
+        const select = document.getElementById('finalize_vendor_id');
+        select.innerHTML = '<option value="">— Select Vendor Quote —</option>';
+        
+        // Show only vendors who submitted a quote
+        const quoted = rfqVendorsData.filter(rv => rv.rfq_id == rfqId && Number(rv.quoted_price) > 0);
+        quoted.forEach(rv => {
+            select.innerHTML += `<option value="${rv.vendor_id}">${rv.vendor_name} ($${rv.quoted_price})</option>`;
+        });
+        
+        if (quoted.length === 0) {
+            select.innerHTML = '<option value="">No vendor price quotes submitted yet</option>';
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('finalizeRfqModal'));
+        modal.show();
+    }
+
+    // ── PRESERVED ORIGINAL PO LOGIC ──
+    (function() {
+        const itemsData = {{ dropdowns.items|json_encode|raw }};
+        const itemsContainer = document.getElementById('itemsContainer');
+        const addItemBtn = document.getElementById('addItemBtn');
+        const poForm = document.getElementById('poForm');
+        const poModalEl = document.getElementById('poModal');
+        const poModal = poModalEl ? bootstrap.Modal.getOrCreateInstance(poModalEl) : null;
+        const poAlert = document.getElementById('poAlert');
+        let itemIndex = 0;
+
+        const currency = (value) => `$${Number(value || 0).toFixed(2)}`;
+
+        function renderItemRow(index) {
+            if (!itemsContainer) return;
+            const group = document.createElement('div');
+            group.className = 'item-row card card-body mb-2';
+            group.dataset.index = index;
+            group.innerHTML = `
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">Item</label>
+                        <select class="form-select" name="items[${index}][item_id]" required>
+                            <option value="">Select item</option>
+                            ${itemsData.map(item => `<option value="${item.item_id}" data-price="${item.unit_cost}" data-uom="${item.uom}">${item.item_name} (${item.uom})</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" step="0.01" min="0" class="form-control" name="items[${index}][quantity]" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Unit Price</label>
+                        <input type="number" step="0.01" min="0" class="form-control" name="items[${index}][unit_price]" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Line Total</label>
+                        <div class="line-total">$0.00</div>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-remove-item>
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            itemsContainer.appendChild(group);
+        }
+
+        function updateLineTotals() {
+            if (!itemsContainer) return;
+            let total = 0;
+            itemsContainer.querySelectorAll('.item-row').forEach(row => {
+                const qty = parseFloat(row.querySelector('input[name$="[quantity]"]').value) || 0;
+                const price = parseFloat(row.querySelector('input[name$="[unit_price]"]').value) || 0;
+                const lineTotal = qty * price;
+                row.querySelector('.line-total').textContent = currency(lineTotal);
+                total += lineTotal;
+            });
+            const grandTotalEl = document.getElementById('grandTotal');
+            if (grandTotalEl) grandTotalEl.textContent = currency(total);
+        }
+
+        addItemBtn?.addEventListener('click', () => {
+            renderItemRow(itemIndex++);
+        });
+
+        itemsContainer?.addEventListener('change', (event) => {
+            const select = event.target.closest('select[name^="items"]');
+            if (select) {
+                const option = select.options[select.selectedIndex];
+                const row = select.closest('.item-row');
+                const priceInput = row.querySelector('input[name$="[unit_price]"]');
+                if (option && option.dataset.price && priceInput) {
+                    priceInput.value = option.dataset.price;
+                }
+            }
+            updateLineTotals();
+        });
+
+        itemsContainer?.addEventListener('input', updateLineTotals);
+
+        itemsContainer?.addEventListener('click', (event) => {
+            if (event.target.closest('[data-remove-item]')) {
+                event.target.closest('.item-row')?.remove();
+                updateLineTotals();
+            }
+        });
+
+        poForm?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!poAlert) return;
+            poAlert.classList.add('d-none');
+            const formData = new FormData(poForm);
+            const payload = Object.fromEntries(formData.entries());
+            payload.lines = [];
+            itemsContainer.querySelectorAll('.item-row').forEach(row => {
+                const select = row.querySelector('select');
+                const qty = row.querySelector('input[name$="[quantity]"]').value;
+                const price = row.querySelector('input[name$="[unit_price]"]').value;
+                payload.lines.push({
+                    item_id: select.value,
+                    quantity: qty,
+                    unit_price: price
+                });
+            });
+
+            try {
+                const response = await fetch('/procurement/purchase-orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (!response.ok) throw data;
+                location.reload();
+            } catch (error) {
+                poAlert.className = 'alert alert-danger';
+                poAlert.textContent = error?.message || 'Failed to create purchase order.';
+                poAlert.classList.remove('d-none');
+            }
+        });
+
+        document.querySelectorAll('[data-view-po]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const poId = btn.dataset.poId;
+                const modalEl = document.getElementById('poViewModal');
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                const content = document.getElementById('poViewContent');
+                content.innerHTML = '<div class="text-center py-4 text-muted">Loading...</div>';
+                modal.show();
+                const response = await fetch(`/procurement/purchase-orders/${poId}`);
+                const data = await response.json();
+                if (data.data) {
+                    const po = data.data;
+                    document.getElementById('poViewTitle').textContent = `${po.po_number} \u2022 ${po.vendor_name}`;
+                    content.innerHTML = `
+                        <div class="mb-3">
+                            <div class="fw-bold">Vendor</div>
+                            <div>${po.vendor_name} (${po.vendor_code || 'N/A'})</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="fw-bold">Dates</div>
+                            <div>Order: ${po.po_date} • Required: ${po.required_date}</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="fw-bold">Line Items</div>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+                                    <tbody>
+                                        ${po.lines.map(line => `
+                                            <tr>
+                                                <td>${line.item_name}</td>
+                                                <td>${line.quantity_ordered} ${line.uom || ''}</td>
+                                                <td>${currency(line.unit_price)}</td>
+                                                <td>${currency(line.line_total)}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    content.innerHTML = '<div class="text-danger">Unable to load purchase order.</div>';
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-update-status]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const poId = btn.dataset.poId;
+                const status = btn.dataset.nextStatus;
+                if (!confirm(`Mark PO #${poId} as ${status}?`)) return;
+                const response = await fetch(`/procurement/purchase-orders/${poId}/status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Failed to update status');
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-delete-po]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const poId = btn.dataset.poId;
+                if (!confirm('Delete this purchase order?')) return;
+                const response = await fetch(`/procurement/purchase-orders/${poId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Failed to delete purchase order.');
+                }
+            });
+        });
+
+        // initialize with one row
+        renderItemRow(itemIndex++);
+    })();
+</script>
+{% endblock %}

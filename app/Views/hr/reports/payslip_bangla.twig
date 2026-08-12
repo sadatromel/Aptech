@@ -1,0 +1,148 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}পে-স্লিপ (বাংলা) | Pay Slip Bangla | HR Module{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mt-2 mb-4 p-4 rounded-3 text-white shadow-sm" style="background: linear-gradient(135deg, #15803d 0%, #16a34a 100%);">
+        <div>
+            <span class="badge bg-white mb-2 font-monospace fw-bold" style="color: #15803d;"><i class="fas fa-receipt me-1"></i> বাংলা পে-স্লিপ ভাউচার</span>
+            <h2 class="mb-1 font-weight-bold">Pay Slip Bangla (পে-স্লিপ)</h2>
+            <p class="mb-0 opacity-75">RMG standard bilingual / Bangla Salary Payslip Voucher formatting.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button onclick="window.print()" class="btn btn-light rounded-pill px-4 font-weight-bold shadow-sm" style="color: #15803d;"><i class="fas fa-print me-1"></i> Print Payslip</button>
+            <a href="{{ BASE_URL }}/hr/reports" class="btn btn-outline-light rounded-pill px-4 font-weight-bold shadow-sm"><i class="fas fa-arrow-left me-1"></i> Back to Reports</a>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 d-print-none">
+        <div class="card-body p-4">
+            <form method="GET" action="{{ BASE_URL }}/hr/reports/payslip-bangla" id="banglaPayslipForm">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-success">Year - Month</label>
+                        <input type="month" class="form-control" name="year_month" value="{{ filters.year_month }}" onchange="document.getElementById('banglaPayslipForm').submit()">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-success">Select Employee</label>
+                        <select class="form-select border-success-subtle fw-semibold" name="employee_id" onchange="document.getElementById('banglaPayslipForm').submit()">
+                            {% for emp in allEmployees %}
+                                <option value="{{ emp.employee_id }}" {{ filters.employee_id == emp.employee_id ? 'selected' : '' }}>
+                                    #{{ emp.employee_id }} - {{ emp.employee_code }} ({{ emp.first_name }} {{ emp.last_name }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-muted">Or Write Emp Code</label>
+                        <input type="text" class="form-control font-monospace" name="emp_code" value="{{ filters.emp_code }}" placeholder="EMP-XXXX" onchange="document.getElementById('banglaPayslipForm').submit()">
+                    </div>
+
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold w-100"><i class="fas fa-search me-1"></i> Generate</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if record %}
+    <!-- Official Payslip Bangla Card -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 mx-auto" style="max-width: 800px;">
+        <div class="card-body p-4">
+            <!-- Header -->
+            <div class="text-center mb-4 pb-3 border-bottom">
+                <h3 class="fw-bold mb-1 text-uppercase text-success">{{ companyName }}</h3>
+                <p class="mb-1 text-muted small">{{ companyAddress }}</p>
+                <div class="badge bg-success-subtle text-success border px-4 py-2 mt-2 fs-6 fw-bold">বেতন স্লিপ (SALARY PAYSLIP) — {{ filters.year_month }}</div>
+            </div>
+
+            <!-- Employee Meta Table -->
+            <table class="table table-sm table-bordered align-middle mb-4">
+                <tbody>
+                    <tr>
+                        <th class="bg-light" style="width: 25%;">কর্মকর্তা/কর্মচারীর নাম:</th>
+                        <td class="fw-bold text-success">{{ record.name }}</td>
+                        <th class="bg-light" style="width: 25%;">কার্ড/আইডি নম্বর:</th>
+                        <td class="font-monospace fw-bold">{{ record.employee_code }}</td>
+                    </tr>
+                    <tr>
+                        <th class="bg-light">বিভাগ (Dept):</th>
+                        <td>{{ record.department_name }}</td>
+                        <th class="bg-light">সেকশন / লাইন:</th>
+                        <td>{{ record.section_name }}</td>
+                    </tr>
+                    <tr>
+                        <th class="bg-light">পদবী (Designation):</th>
+                        <td>{{ record.position_name }}</td>
+                        <th class="bg-light">প্রদেয় কার্যদিবস:</th>
+                        <td class="fw-bold">{{ record.payable_days }} দিন</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Salary Details Table -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="card border-success-subtle h-100">
+                        <div class="card-header bg-success text-white fw-bold"><i class="fas fa-plus-circle me-1"></i> উপার্জন বিবরণী (Earnings)</div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm mb-0">
+                                <tbody>
+                                    <tr><td>মূল বেতন (Basic Salary):</td><td class="text-end fw-semibold">৳ {{ record.basic|number_format }}</td></tr>
+                                    <tr><td>বাড়ি ভাড়া (House Rent):</td><td class="text-end fw-semibold">৳ {{ record.house_rent|number_format }}</td></tr>
+                                    <tr><td>চিকিৎসা ভাতা (Medical Allowance):</td><td class="text-end fw-semibold">৳ {{ record.medical|number_format }}</td></tr>
+                                    <tr><td>যাতায়াত ভাতা (Conveyance):</td><td class="text-end fw-semibold">৳ {{ record.conveyance|number_format }}</td></tr>
+                                    <tr><td>খাদ্য ভাতা (Food Allowance):</td><td class="text-end fw-semibold">৳ {{ record.food|number_format }}</td></tr>
+                                    <tr class="table-light font-weight-bold"><td>মোট গ্রস বেতন (Gross Salary):</td><td class="text-end text-primary">৳ {{ record.gross|number_format }}</td></tr>
+                                    <tr><td>উপস্থিতি বোনাস (Att. Bonus):</td><td class="text-end text-success">+৳ {{ record.att_bonus }}</td></tr>
+                                    <tr><td>ওভারটাইম (OT Rate: ৳ {{ record.ot_rate }}/h x {{ record.regular_ot_hrs }}h):</td><td class="text-end text-warning">+৳ {{ record.regular_ot_amt|number_format }}</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card border-danger-subtle h-100">
+                        <div class="card-header bg-danger text-white fw-bold"><i class="fas fa-minus-circle me-1"></i> কর্তন ও সর্বমোট (Deductions & Net)</div>
+                        <div class="card-body p-0 d-flex flex-column justify-content-between">
+                            <table class="table table-sm mb-0">
+                                <tbody>
+                                    <tr><td>রেভিনিউ স্ট্যাম্প (Revenue Stamp):</td><td class="text-end text-danger">-৳ {{ record.stamp }}</td></tr>
+                                    <tr><td>অনুপস্থিতি কর্তন (Absence Deduction):</td><td class="text-end text-danger">৳ 0</td></tr>
+                                    <tr class="table-light font-weight-bold"><td>মোট কর্তন (Total Deduction):</td><td class="text-end text-danger">৳ {{ record.stamp }}</td></tr>
+                                </tbody>
+                            </table>
+
+                            <div class="p-3 bg-success-subtle border-top text-center mt-3">
+                                <span class="text-muted small fw-bold text-uppercase d-block mb-1">সর্বমোট নিট প্রদেয় বেতন (Net Payable)</span>
+                                <div class="h3 font-weight-bold text-success mb-0">৳ {{ record.net_salary|number_format }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Signatures -->
+            <div class="row pt-5 mt-4 text-center">
+                <div class="col-md-4">
+                    <div class="border-top pt-2"><small>প্রস্তুতকারীর স্বাক্ষর<br>(Prepared By)</small></div>
+                </div>
+                <div class="col-md-4">
+                    <div class="border-top pt-2"><small>এইচআর ম্যানেজার<br>(HR Manager)</small></div>
+                </div>
+                <div class="col-md-4">
+                    <div class="border-top pt-2"><small>গ্রহীতার স্বাক্ষর<br>(Employee Signature)</small></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Cash & Bank Book{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Cash & Bank Book</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/finance/accounts">Finance</a></li>
+        <li class="breadcrumb-item active">Cash Book</li>
+    </ol>
+
+    <div class="card mb-4 print-hide">
+        <div class="card-body">
+            <form method="GET" action="{{ BASE_URL }}/finance/general-ledger/cash-book" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Account</label>
+                    <select class="form-select" name="account_id">
+                        <option value="">All Cash/Bank Accounts</option>
+                        {% for acc in cash_bank_accounts %}
+                            <option value="{{ acc.account_id }}" {% if account_id == acc.account_id %}selected{% endif %}>
+                                {{ acc.account_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">From Date</label>
+                    <input type="date" class="form-control" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">To Date</label>
+                    <input type="date" class="form-control" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-filter me-1"></i> Generate</button>
+                    <button type="button" class="btn btn-secondary ms-2" onclick="window.print()"><i class="fas fa-print me-1"></i> Print</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header text-center bg-white border-bottom-0 pt-4">
+            <h3 class="mb-0">Cash & Bank Book</h3>
+            <p class="text-muted">For the period {{ date_from|date('F j, Y') }} to {{ date_to|date('F j, Y') }}</p>
+        </div>
+        <div class="card-body px-4 pb-4">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Account Name</th>
+                            <th>Particulars / Description</th>
+                            <th>Ref/Voucher No.</th>
+                            <th class="text-end">Receipts (Dr.)</th>
+                            <th class="text-end">Payments (Cr.)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set total_receipts = 0 %}
+                        {% set total_payments = 0 %}
+                        
+                        {% for row in data %}
+                            {% set total_receipts = total_receipts + row.debit_amount %}
+                            {% set total_payments = total_payments + row.credit_amount %}
+                            <tr>
+                                <td>{{ row.transaction_date|date('Y-m-d') }}</td>
+                                <td>{{ row.account_name }}</td>
+                                <td>{{ row.description }}</td>
+                                <td>{{ row.reference_type }} {{ row.reference_id ? '#' ~ row.reference_id : '' }}</td>
+                                <td class="text-end text-success">{{ row.debit_amount > 0 ? row.debit_amount|number_format(2) : '-' }}</td>
+                                <td class="text-end text-danger">{{ row.credit_amount > 0 ? row.credit_amount|number_format(2) : '-' }}</td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="6" class="text-center text-muted fst-italic">No cash/bank transactions found for this period.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="fw-bold">
+                            <td colspan="4" class="text-end">Total Period Flow</td>
+                            <td class="text-end text-success">{{ total_receipts|number_format(2) }}</td>
+                            <td class="text-end text-danger">{{ total_payments|number_format(2) }}</td>
+                        </tr>
+                        <tr class="fw-bold table-active">
+                            <td colspan="4" class="text-end">Net Cash Flow</td>
+                            <td colspan="2" class="text-center {{ (total_receipts - total_payments) >= 0 ? 'text-success' : 'text-danger' }}">
+                                {{ (total_receipts - total_payments)|number_format(2) }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .print-hide, .navbar, .sb-sidenav { display: none !important; }
+    #layoutSidenav_content { margin-left: 0 !important; top: 0 !important; }
+    .card { border: none !important; }
+}
+</style>
+{% endblock %}

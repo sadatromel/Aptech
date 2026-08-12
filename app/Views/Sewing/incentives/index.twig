@@ -1,0 +1,239 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Employee Incentives{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Page Header -->
+    <div class="col-12 mb-4">
+        <div class="page-header d-flex justify-content-between align-items-center p-4 bg-white rounded shadow-sm">
+            <div class="page-title">
+                <h1 class="h3 text-primary fw-bold mb-1">Employee Incentives</h1>
+                <p class="text-muted mb-0">Manage employee performance incentives and bonuses</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addIncentiveModal">
+                    <i class="fas fa-plus me-2"></i>Add Incentive
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="col-12 mb-4">
+        <div class="stats-grid">
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.total_records }}</h3>
+                <p class="text-muted mb-0">Total Records</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">${{ stats.total_amount|number_format(2) }}</h3>
+                <p class="text-muted mb-0">Total Incentives</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">${{ stats.avg_incentive|number_format(2) }}</h3>
+                <p class="text-muted mb-0">Avg Incentive</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.this_month }}</h3>
+                <p class="text-muted mb-0">This Month</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incentives Table -->
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fas fa-award me-2"></i>Incentive Records</span>
+                <input type="text" class="form-control form-control-sm w-auto" id="searchInput" placeholder="Search records...">
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="incentivesTable">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="p-3 border-0">Employee</th>
+                                <th class="p-3 border-0">Month</th>
+                                <th class="p-3 border-0">Type</th>
+                                <th class="p-3 border-0">Performance</th>
+                                <th class="p-3 border-0">Quality</th>
+                                <th class="p-3 border-0">Incentive</th>
+                                <th class="p-3 border-0">Total Earnings</th>
+                                <th class="p-3 border-0">Rating</th>
+                                <th class="p-3 border-0">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for incentive in incentives %}
+                            {% set production_achievement = incentive.production_target > 0 ? (incentive.actual_production / incentive.production_target) * 100 : 0 %}
+                            {% set progress_class = production_achievement >= 100 ? 'bg-success' : (production_achievement >= 90 ? 'bg-warning' : 'bg-danger') %}
+                            <tr>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ incentive.employee_name }}</div>
+                                    <small class="text-muted">{{ incentive.employee_code }} - {{ incentive.department_name }}</small>
+                                </td>
+                                <td class="p-3">{{ incentive.month|date('M Y') }}</td>
+                                <td class="p-3">
+                                    <span class="badge bg-secondary">{{ incentive.incentive_type }}</span>
+                                </td>
+                                <td class="p-3">
+                                    {{ incentive.actual_production|number_format }} / {{ incentive.production_target|number_format }}
+                                    <div class="progress mt-1" style="height: 6px;">
+                                        <div class="progress-bar {{ progress_class }}" style="width:{{ min(production_achievement, 100) }}%"></div>
+                                    </div>
+                                </td>
+                                <td class="p-3">
+                                    {{ incentive.quality_rate|number_format(1) }}%
+                                    <div class="small text-muted">{{ incentive.efficiency_rate|number_format(1) }}% Efficiency</div>
+                                </td>
+                                <td class="p-3">
+                                    ${{ incentive.incentive_amount|number_format(2) }}
+                                    <div class="small text-muted">{{ incentive.attendance_rate|number_format(1) }}% Attendance</div>
+                                </td>
+                                <td class="p-3">${{ incentive.total_earnings|number_format(2) }}</td>
+                                <td class="p-3">
+                                    <span class="status-badge status-{{ incentive.performance_rating == 'Excellent' or incentive.performance_rating == 'Target Met' ? 'completed' : (incentive.performance_rating == 'Good' ? 'approved-for-production' : 'cancelled') }}">
+                                        {{ incentive.performance_rating }}
+                                    </span>
+                                </td>
+                                <td class="p-3">
+                                    <button class="btn btn-sm btn-outline-info me-1" onclick="viewIncentive({{ incentive.incentive_id }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <form action="{{ BASE_URL }}/sewing/incentives/{{ incentive.incentive_id }}/delete" method="POST" onsubmit="return confirm('Delete this record?')" style="display:inline;">
+    {{ csrf_field() | raw }}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center p-4 text-muted">No incentive records found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal fade" id="addIncentiveModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form action="{{ BASE_URL }}/sewing/incentives" method="POST" class="modal-content">
+    {{ csrf_field() | raw }}
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Add Employee Incentive</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Employee</label>
+                        <select class="form-select" name="employee_id" required>
+                            <option value="">Select Employee</option>
+                            {% for employee in employees %}
+                            <option value="{{ employee.employee_id }}">{{ employee.name }} ({{ employee.employee_code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Month</label>
+                        <input type="month" class="form-control" name="month" value="{{ current_month }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Type</label>
+                        <select class="form-select" name="incentive_type" required>
+                            <option value="Production">Production</option>
+                            <option value="Quality">Quality</option>
+                            <option value="Attendance">Attendance</option>
+                            <option value="Efficiency">Efficiency</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-2">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Base Salary</label>
+                        <input type="number" class="form-control" name="base_salary" min="0" step="0.01" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Attendance %</label>
+                        <input type="number" class="form-control" name="attendance_rate" min="0" max="100" step="0.1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Target</label>
+                        <input type="number" class="form-control" name="production_target" min="0" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Actual</label>
+                        <input type="number" class="form-control" name="actual_production" min="0" required>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-2">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Quality %</label>
+                        <input type="number" class="form-control" name="quality_rate" min="0" max="100" step="0.1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Efficiency %</label>
+                        <input type="number" class="form-control" name="efficiency_rate" min="0" max="100" step="0.1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Incentive Amt</label>
+                        <input type="number" class="form-control" name="incentive_amount" min="0" step="0.01" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Total Earnings</label>
+                        <input type="number" class="form-control" name="total_earnings" min="0" step="0.01" readonly required>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <label class="form-label fw-bold">Remarks</label>
+                    <textarea class="form-control" name="remarks" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Add Incentive</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function(e) {
+    const term = e.target.value.toLowerCase();
+    document.querySelectorAll('#incentivesTable tbody tr').forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+    });
+});
+
+document.querySelector('input[name="incentive_amount"]').addEventListener('input', updateEarnings);
+document.querySelector('input[name="base_salary"]').addEventListener('input', updateEarnings);
+
+function updateEarnings() {
+    const base = parseFloat(document.querySelector('input[name="base_salary"]').value) || 0;
+    const incentive = parseFloat(document.querySelector('input[name="incentive_amount"]').value) || 0;
+    const total = base + incentive;
+    document.querySelector('input[name="total_earnings"]').value = total.toFixed(2);
+}
+
+function viewIncentive(id) {
+    fetch(`{{ BASE_URL }}/sewing/incentives/${id}/data`)
+        .then(r => r.json())
+        .then(data => {
+            alert(`Incentive Details:\n\nEmployee: ${data.employee_name}\nAmount: $${data.incentive_amount}\nQuality: ${data.quality_rate}%\nEfficiency: ${data.efficiency_rate}%`);
+            // In a real app, populate a view modal
+        });
+}
+</script>
+
+{% endblock %}

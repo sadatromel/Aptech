@@ -1,0 +1,140 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Gate Passes{% endblock %}
+
+{% block styles %}
+<style>
+    .premium-glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        border-radius: var(--border-radius);
+    }
+    [data-theme="dark"] .premium-glass-card {
+        background: rgba(30, 41, 59, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: var(--primary-light);
+        transition: background-color 0.2s ease;
+    }
+</style>
+<!-- DataTables CSS -->
+<link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 pt-3">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0 px-0 bg-transparent">
+            <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard" class="text-decoration-none"><i class="fas fa-home"></i></a></li>
+            <li class="breadcrumb-item"><a href="{{ BASE_URL }}/inventory" class="text-decoration-none">Store & Inventory</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Gate Passes</li>
+        </ol>
+    </nav>
+    <a href="{{ BASE_URL }}/inventory/gate-passes/create" class="btn btn-primary shadow-sm shadow-hover rounded-pill px-4">
+        <i class="fas fa-plus me-2"></i> Create Gate Pass
+    </a>
+</div>
+
+{% if session.success %}
+<div class="alert alert-success alert-dismissible fade show premium-glass-card" role="alert">
+    {{ session.success }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
+{% if session.error %}
+<div class="alert alert-danger alert-dismissible fade show premium-glass-card" role="alert">
+    {{ session.error }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
+<div class="card premium-glass-card border-0 mb-4 p-4">
+    <div class="table-responsive">
+        <table id="gatePassTable" class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Gate Pass No</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Prepared For</th>
+                    <th>Department</th>
+                    <th>Type</th>
+                    <th>Prepared By</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for gp in gatePasses %}
+                <tr>
+                    <td class="fw-medium text-primary">{{ gp.gate_pass_no }}</td>
+                    <td>{{ gp.date|date('d-M-Y') }}</td>
+                    <td>{{ gp.time }}</td>
+                    <td>{{ gp.prepared_for }}</td>
+                    <td>{{ gp.department_name|default('-') }}</td>
+                    <td>
+                        {% if gp.returnable %}
+                            <span class="badge bg-warning text-dark"><i class="fas fa-undo me-1"></i> Returnable</span>
+                        {% else %}
+                            <span class="badge bg-info text-dark"><i class="fas fa-arrow-right me-1"></i> Non-Returnable</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ gp.prepared_by_name|default('-') }}</td>
+                    <td class="text-end">
+                        <a href="{{ BASE_URL }}/inventory/gate-passes/show/{{ gp.id }}" class="btn btn-sm btn-outline-primary" title="View/Print">
+                            <i class="fas fa-print"></i>
+                        </a>
+                        <form action="{{ BASE_URL }}/inventory/gate-passes/delete/{{ gp.id }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this Gate Pass?');">
+    {{ csrf_field() | raw }}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">
+                        <i class="fas fa-clipboard-list fa-3x mb-3 text-light-muted"></i>
+                        <p class="mb-0">No Gate Passes found.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script>
+    $(document).ready(function() {
+        if ($('#gatePassTable tbody tr:not(.text-center)').length > 0) {
+            $('#gatePassTable').DataTable({
+                "pageLength": 10,
+                "ordering": false, /* Preserving server-side order initially */
+                "language": {
+                    "search": "",
+                    "searchPlaceholder": "Search passes..."
+                },
+                "dom": "<'row mb-3'<'col-md-6'l><'col-md-6 d-flex justify-content-end'f>>" +
+                       "<'row'<'col-md-12'tr>>" +
+                       "<'row mt-3'<'col-md-5'i><'col-md-7'p>>"
+            });
+            $('.dataTables_filter input').addClass('form-control shadow-sm rounded-pill');
+        }
+    });
+
+    // Handle clearing the session flashes logic from client side if needed/desired
+    setTimeout(() => { $('.alert').alert('close'); }, 5000);
+</script>
+{% endblock %}

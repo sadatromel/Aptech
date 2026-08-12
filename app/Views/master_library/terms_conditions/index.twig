@@ -1,0 +1,116 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Terms & Conditions | Master Library{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Terms &amp; Conditions</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item active">Terms &amp; Conditions</li>
+    </ol>
+
+    {% if session.flash_success %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>{{ session.flash_success }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+            <div class="h5 mb-0">
+                <i class="fas fa-file-contract me-2 text-primary"></i>Commercial Terms &amp; Conditions List
+            </div>
+            <a href="{{ BASE_URL }}/master_library/terms_conditions/create"
+               class="btn btn-primary px-4 rounded-pill">
+                <i class="fas fa-plus me-1"></i> Add New Term
+            </a>
+        </div>
+
+        <div class="card-body p-4">
+            <table id="datatablesSimple" class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Code</th>
+                        <th>Term Name</th>
+                        <th>Type</th>
+                        <th>Applies To</th>
+                        <th>Mandatory</th>
+                        <th>Effective From</th>
+                        <th>Effective To</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for term in terms %}
+                    <tr>
+                        <td class="text-muted small">{{ loop.index }}</td>
+                        <td><span class="badge bg-secondary rounded-pill font-monospace">{{ term.term_code }}</span></td>
+                        <td class="fw-semibold">{{ term.term_name }}</td>
+                        <td>
+                            {% set typeColors = {
+                                'Payment':  'primary',
+                                'Shipment': 'info',
+                                'Delivery': 'cyan',
+                                'Quality':  'success',
+                                'Warranty': 'warning',
+                                'Return':   'danger',
+                                'General':  'secondary',
+                                'Other':    'dark'
+                            } %}
+                            <span class="badge rounded-pill bg-{{ typeColors[term.term_type] ?? 'secondary' }}">
+                                {{ term.term_type }}
+                            </span>
+                        </td>
+                        <td>{{ term.applies_to }}</td>
+                        <td>
+                            {% if term.is_mandatory == 'Yes' %}
+                                <span class="badge bg-danger rounded-pill"><i class="fas fa-asterisk me-1"></i>Mandatory</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark rounded-pill border">Optional</span>
+                            {% endif %}
+                        </td>
+                        <td class="small text-muted">{{ term.effective_from ?? '—' }}</td>
+                        <td class="small text-muted">{{ term.effective_to ?? '—' }}</td>
+                        <td>
+                            <span class="badge rounded-pill bg-{{ term.status == 'Active' ? 'success' : 'secondary' }}">
+                                {{ term.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="{{ BASE_URL }}/master_library/terms_conditions/edit/{{ term.id }}"
+                                   class="btn btn-warning btn-sm rounded-circle" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form action="{{ BASE_URL }}/master_library/terms_conditions/delete"
+                                      method="POST" class="d-inline"
+                                      onsubmit="return confirm('Delete this term? This action cannot be undone.');">
+    {{ csrf_field() | raw }}
+                                    <input type="hidden" name="id" value="{{ term.id }}">
+                                    <button type="submit" class="btn btn-danger btn-sm rounded-circle" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="10" class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                            No terms &amp; conditions found.
+                            <a href="{{ BASE_URL }}/master_library/terms_conditions/create">Add the first one.</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

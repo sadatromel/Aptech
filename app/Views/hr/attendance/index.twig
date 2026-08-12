@@ -1,0 +1,196 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Attendance Management | HR Module{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4 p-4 rounded-3 text-white shadow-sm" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
+        <div>
+            <span class="badge bg-white text-success mb-2 font-monospace"><i class="fas fa-clock me-1"></i> TIME OFFICE & PUNCHES</span>
+            <h2 class="mb-1 font-weight-bold">Daily Attendance Management</h2>
+            <p class="mb-0 opacity-75">Track real-time factory floor attendance, daily check-in/out times, and late punch logs.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-light rounded-pill px-4 font-weight-bold text-success shadow-sm" data-bs-toggle="modal" data-bs-target="#markAttendanceModal"><i class="fas fa-plus me-1"></i> Mark Attendance</button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-4 border-success">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="small text-muted font-weight-bold text-uppercase">Present Today</div>
+                        <div class="h3 font-weight-bold text-success my-1">145</div>
+                        <div class="small text-success"><i class="fas fa-check-circle me-1"></i> 93.5% Rate</div>
+                    </div>
+                    <div class="p-3 bg-success-subtle text-success rounded-circle"><i class="fas fa-user-check fa-2x"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-4 border-info">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="small text-muted font-weight-bold text-uppercase">On Time</div>
+                        <div class="h3 font-weight-bold text-info my-1">132</div>
+                        <div class="small text-muted"><i class="fas fa-clock me-1"></i> Punctual Workers</div>
+                    </div>
+                    <div class="p-3 bg-info-subtle text-info rounded-circle"><i class="fas fa-calendar-check fa-2x"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-4 border-warning">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="small text-muted font-weight-bold text-uppercase">Late Arrival</div>
+                        <div class="h3 font-weight-bold text-warning my-1">13</div>
+                        <div class="small text-warning"><i class="fas fa-user-clock me-1"></i> Grace Time Exceeded</div>
+                    </div>
+                    <div class="p-3 bg-warning-subtle text-warning rounded-circle"><i class="fas fa-user-clock fa-2x"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-4 border-danger">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="small text-muted font-weight-bold text-uppercase">Absent / On Leave</div>
+                        <div class="h3 font-weight-bold text-danger my-1">5</div>
+                        <div class="small text-danger"><i class="fas fa-user-times me-1"></i> Unexcused / Leave</div>
+                    </div>
+                    <div class="p-3 bg-danger-subtle text-danger rounded-circle"><i class="fas fa-user-times fa-2x"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Table Card -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-success fw-bold"><i class="fas fa-clipboard-check me-2"></i>Attendance Logs - {{ selectedDate|date("F j, Y") }}</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Employee</th>
+                            <th>Department</th>
+                            <th>Check In</th>
+                            <th>Check Out</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in attendance %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle me-3 bg-success-subtle text-success fw-bold rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                                        {{ record.first_name|first }}{{ record.last_name|first }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark">{{ record.first_name }} {{ record.last_name }}</div>
+                                        <div class="small text-muted font-monospace">{{ record.employee_code }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="fw-semibold text-dark">{{ record.department_name }}</span></td>
+                            <td><span class="badge bg-light text-dark border font-monospace"><i class="fas fa-sign-in-alt text-success me-1"></i> {{ record.check_in|date("h:i A") }}</span></td>
+                            <td>
+                                {% if record.check_out %}
+                                    <span class="badge bg-light text-dark border font-monospace"><i class="fas fa-sign-out-alt text-danger me-1"></i> {{ record.check_out|date("h:i A") }}</span>
+                                {% else %}
+                                    <span class="text-muted">--:--</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% set statusClass = {
+                                    'Present': 'bg-success text-white',
+                                    'Absent': 'bg-danger text-white',
+                                    'Late': 'bg-warning text-dark',
+                                    'Leave': 'bg-info text-white'
+                                } %}
+                                <span class="badge {{ statusClass[record.status] }} rounded-pill px-3">
+                                    {{ record.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-success rounded-circle" title="Edit Record">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="fas fa-clock fa-2x mb-2 text-success opacity-50"></i><br>
+                                No attendance records logged for this date.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Attendance Modal -->
+<div class="modal fade" id="markAttendanceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content rounded-3 border-0 shadow-lg">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-clock me-1"></i> Mark Attendance Record</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="markAttendanceForm" action="{{ BASE_URL }}/hr/attendance" method="POST">
+                    {{ csrf_field() | raw }}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Employee *</label>
+                        <select class="form-select border-success" name="employee_id" required>
+                            <option value="">Select Employee</option>
+                            {% for employee in employees %}
+                                <option value="{{ employee.employee_id }}">{{ employee.first_name }} {{ employee.last_name }} ({{ employee.employee_code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Date *</label>
+                        <input type="date" class="form-control" name="date" value="{{ 'now'|date('Y-m-d') }}" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Check In Time *</label>
+                            <input type="time" class="form-control" name="check_in" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Check Out Time</label>
+                            <input type="time" class="form-control" name="check_out">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Status *</label>
+                        <select class="form-select border-success fw-bold" name="status" required>
+                            <option value="Present">Present</option>
+                            <option value="Late">Late</option>
+                            <option value="Absent">Absent</option>
+                            <option value="Leave">Leave</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top py-3">
+                <button type="button" class="btn btn-light rounded-pill border" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="markAttendanceForm" class="btn btn-success rounded-pill px-4 fw-bold"><i class="fas fa-save me-1"></i> Save Attendance</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

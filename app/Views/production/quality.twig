@@ -1,0 +1,735 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Quality Assurance Hub{% endblock %}
+
+{% block content %}
+<style>
+    .glow-card {
+        transition: all 0.3s ease-in-out;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+    }
+    .glow-card:hover {
+        box-shadow: 0 14px 32px rgba(246, 194, 62, 0.12);
+    }
+    .nav-pills .nav-link {
+        border-radius: 10px;
+        padding: 7px 14px;
+        font-weight: 600;
+        font-size: .83rem;
+        color: #5a5c69;
+        transition: all 0.25s ease;
+    }
+    .nav-pills .nav-link.active {
+        background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);
+        color: #fff !important;
+        box-shadow: 0 4px 14px rgba(246, 194, 62, 0.32);
+    }
+    .nav-pills .nav-link:hover:not(.active) {
+        background: #fffcf0;
+        color: #bfa100;
+    }
+    .metric-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+    }
+    .bg-light-warning { background: rgba(246, 194, 62, 0.12); }
+    .bg-light-danger { background: rgba(231, 74, 59, 0.12); }
+    .bg-light-success { background: rgba(28, 200, 138, 0.12); }
+    .bg-light-primary { background: rgba(78, 115, 223, 0.12); }
+    .bg-light-info { background: rgba(54, 185, 204, 0.12); }
+
+    .text-gradient {
+        background: linear-gradient(135deg, #f6c23e 0%, #e74a3b 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .bar-wrap { height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; transition: width .6s ease; }
+    
+    .tl-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+    .tl-green { background: #1cc88a; }
+    .tl-yellow { background: #f6c23e; }
+    .tl-red { background: #e74a3b; }
+    
+    .capa-card { border-left: 4px solid #dda20a; }
+    .capa-card.open { border-left-color: #e74a3b; }
+    .capa-card.in_progress { border-left-color: #f6c23e; }
+    .capa-card.closed { border-left-color: #1cc88a; }
+
+    .report-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #dda20a;
+        border-bottom: 2px solid #fff9e0;
+        padding-bottom: 8px;
+        margin-bottom: 14px;
+    }
+    @media print {
+        .no-print { display: none !important; }
+        .glow-card { box-shadow: none; border: 1px solid #ddd; }
+    }
+</style>
+
+{# ── Alert messages ── #}
+{% if app.session.flash('success_message') %}
+<div class="alert alert-success alert-dismissible fade show mx-2" role="alert">
+    <i class="fas fa-check-circle me-2"></i>{{ app.session.flash('success_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+{% if app.session.flash('error_message') %}
+<div class="alert alert-danger alert-dismissible fade show mx-2" role="alert">
+    <i class="fas fa-exclamation-circle me-2"></i>{{ app.session.flash('error_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Header -->
+    <div class="col-12 mb-3">
+        <div class="page-header d-flex justify-content-between align-items-center p-4 glow-card">
+            <div>
+                <h1 class="h3 fw-bold text-gradient mb-1">Quality Assurance Hub</h1>
+                <p class="text-muted mb-0 small">AQL Final Audits · Inline Checks · CAPA Remediation Plans · Defect Database</p>
+            </div>
+            <div class="d-flex gap-2 no-print">
+                <span class="badge bg-warning text-dark px-3 py-2"><i class="fas fa-percent me-1"></i>{{ passRate }}% Pass Rate</span>
+                <span class="badge bg-danger text-white px-3 py-2"><i class="fas fa-exclamation-triangle me-1"></i>{{ openCapa }} Open CAPA</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="col-12 mb-3 no-print">
+        <div class="p-2 glow-card">
+            <ul class="nav nav-pills gap-1 flex-wrap">
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'dashboard' %}active{% endif %}" href="{{ BASE_URL }}/quality/dashboard"><i class="fas fa-chart-pie me-1"></i>Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'inline' %}active{% endif %}" href="{{ BASE_URL }}/quality/inline"><i class="fas fa-search me-1"></i>Inline QC</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'audit' %}active{% endif %}" href="{{ BASE_URL }}/quality/audit"><i class="fas fa-check-double me-1"></i>Final Audit (AQL)</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'library' %}active{% endif %}" href="{{ BASE_URL }}/quality/library"><i class="fas fa-book me-1"></i>Defect Library</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'capa' %}active{% endif %}" href="{{ BASE_URL }}/quality/capa"><i class="fas fa-exclamation-circle me-1"></i>CAPA Logs</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'reports' %}active{% endif %}" href="{{ BASE_URL }}/quality/reports"><i class="fas fa-file-invoice me-1"></i>Reports</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="col-12">
+        <div class="tab-content">
+
+            {# ═══════════════════════════════════════
+               1. DASHBOARD
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'dashboard' %}
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card glow-card p-3 border-0">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-muted fw-bold text-uppercase small mb-1">Final Audit Pass Rate</h6>
+                                <h3 class="fw-bold mb-0">{{ passRate }}%</h3>
+                                <small class="text-success"><i class="fas fa-shield-alt"></i> Target &gt;97%</small>
+                            </div>
+                            <div class="metric-icon bg-light-success text-success"><i class="fas fa-award"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card glow-card p-3 border-0">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-muted fw-bold text-uppercase small mb-1">Active CAPA Cases</h6>
+                                <h3 class="fw-bold mb-0">{{ openCapa }}</h3>
+                                <small class="text-danger">requires resolution</small>
+                            </div>
+                            <div class="metric-icon bg-light-danger text-danger"><i class="fas fa-exclamation-triangle"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card glow-card p-3 border-0">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-muted fw-bold text-uppercase small mb-1">Inline Qty Checked</h6>
+                                <h3 class="fw-bold mb-0">{{ totalInspected|number_format }} pcs</h3>
+                                <small class="text-info">{{ totalDefective }} defective logged</small>
+                            </div>
+                            <div class="metric-icon bg-light-primary text-primary"><i class="fas fa-tasks"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <div class="card glow-card border-0 p-4">
+                        <h6 class="fw-bold text-warning mb-3"><i class="fas fa-check-double me-2"></i>Recent Final Buyer AQL Audits</h6>
+                        {% if auditRecords|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>PO Number</th>
+                                        <th>Style</th>
+                                        <th>Ordered</th>
+                                        <th>Inspected</th>
+                                        <th>Defectives</th>
+                                        <th>Result</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for a in auditRecords|slice(0, 5) %}
+                                <tr>
+                                    <td><strong>{{ a.po_number }}</strong></td>
+                                    <td><span class="badge bg-light text-dark border">{{ a.style_code }}</span></td>
+                                    <td>{{ a.qty_ordered|number_format }}</td>
+                                    <td>{{ a.qty_inspected }}</td>
+                                    <td class="fw-bold {% if a.qty_defective > 0 %}text-danger{% endif %}">{{ a.qty_defective }}</td>
+                                    <td>
+                                        {% if a.audit_status == 'pass' %}
+                                        <span class="badge bg-success"><span class="tl-dot tl-green"></span>PASS</span>
+                                        {% else %}
+                                        <span class="badge bg-danger"><span class="tl-dot tl-red"></span>FAIL</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-clipboard-list fa-3x mb-3 opacity-25 d-block"></i>
+                            No final AQL audits recorded today. Go to <a href="{{ BASE_URL }}/quality/audit">Final Audit</a> to log.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card glow-card border-0 p-4 h-100">
+                        <h6 class="fw-bold text-warning mb-3"><i class="fas fa-exclamation-circle me-2"></i>Inline DHU Indicator</h6>
+                        {% set dhu = totalInspected > 0 ? (totalDefective / totalInspected * 100)|round(2) : 1.8 %}
+                        <div class="text-center py-3">
+                            <div class="display-4 fw-bold {% if dhu > 3.0 %}text-danger{% elseif dhu > 2.0 %}text-warning{% else %}text-success{% endif %}">{{ dhu }}%</div>
+                            <div class="small text-muted fw-bold">Overall Floor DHU</div>
+                            <div class="bar-wrap mt-3 mb-2">
+                                <div class="bar-fill {% if dhu > 3.0 %}bg-danger{% elseif dhu > 2.0 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ (dhu * 20 > 100 ? 100 : dhu * 20) }}%"></div>
+                            </div>
+                            <small class="text-muted">Total Inspected: {{ totalInspected }} | Defectives: {{ totalDefective }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ═══════════════════════════════════════
+               2. INLINE QC
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'inline' %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card glow-card border-0 p-4">
+                        <h5 class="fw-bold mb-1" style="color:#dda20a;"><i class="fas fa-search me-2"></i>Log Inline QC Audit</h5>
+                        <p class="text-muted small mb-3">Record spot inspection results on sewing lines.</p>
+                        <form method="POST" action="{{ BASE_URL }}/quality/inline">
+                            {{ csrf_field() | raw }}
+                            <input type="hidden" name="action" value="log_inline_qc">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Sewing Line <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-sm" name="line_name" required>
+                                    <option value="">— Select Line —</option>
+                                    {% for l in lines %}<option value="{{ l.line_name }}">{{ l.line_name }}</option>{% endfor %}
+                                    <option value="Line 01">Line 01</option>
+                                    <option value="Line 02">Line 02</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Style Code</label>
+                                <select class="form-select form-select-sm" name="style_code">
+                                    <option value="">— Select Style —</option>
+                                    {% for s in styles %}<option value="{{ s.style_code }}">{{ s.style_code }} – {{ s.style_name }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label fw-semibold small">Qty Inspected</label>
+                                    <input type="number" class="form-control form-control-sm" name="qty_inspected" min="1" placeholder="100" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label fw-semibold small">Qty Defective</label>
+                                    <input type="number" class="form-control form-control-sm" name="qty_defective" min="0" value="0" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Defect Category / Code</label>
+                                <select class="form-select form-select-sm" name="defect_type">
+                                    <option value="">— Select —</option>
+                                    {% for d in defectLibrary %}<option value="{{ d.defect_name }}">{{ d.defect_code }} – {{ d.defect_name }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Audit Point</label>
+                                <select class="form-select form-select-sm" name="check_point">
+                                    <option value="inline">Inline (In-process)</option>
+                                    <option value="endline">Endline (Table audit)</option>
+                                    <option value="ironing">Ironing checkpoint</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Inspector Name</label>
+                                <input type="text" class="form-control form-control-sm" name="inspector_name" value="QC Auditor">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Audit Date</label>
+                                <input type="date" class="form-control form-control-sm" name="inspection_date" value="{{ "now"|date("Y-m-d") }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Notes</label>
+                                <textarea class="form-control form-control-sm" name="remarks" rows="2"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-warning text-dark fw-bold w-100"><i class="fas fa-save me-1"></i>Save Audit Record</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card glow-card border-0 p-4 h-100">
+                        <h5 class="fw-bold mb-3" style="color:#dda20a;"><i class="fas fa-search me-2"></i>Inline Audit Logs</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Line</th>
+                                        <th>Style</th>
+                                        <th>Inspected</th>
+                                        <th>Defective</th>
+                                        <th>Defect</th>
+                                        <th>DHU</th>
+                                        <th>Inspector</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for r in inlineRecords %}
+                                {% set dhuVal = r.qty_inspected > 0 ? ((r.qty_defective / r.qty_inspected) * 100)|round(1) : 0 %}
+                                <tr>
+                                    <td><strong>{{ r.line_name }}</strong></td>
+                                    <td><span class="badge bg-light text-dark border">{{ r.style_code }}</span></td>
+                                    <td>{{ r.qty_inspected }}</td>
+                                    <td class="fw-bold {% if r.qty_defective > 0 %}text-danger{% endif %}">{{ r.qty_defective }}</td>
+                                    <td class="small text-muted">{{ r.defect_type ?? 'None' }}</td>
+                                    <td><span class="fw-bold {% if dhuVal > 3.0 %}text-danger{% else %}text-success{% endif %}">{{ dhuVal }}%</span></td>
+                                    <td class="small text-muted">{{ r.inspector_name }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-5">No inline audit logs recorded yet. Log one on the left.</td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ═══════════════════════════════════════
+               3. AUDIT
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'audit' %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card glow-card border-0 p-4">
+                        <h5 class="fw-bold mb-1" style="color:#dda20a;"><i class="fas fa-check-double me-2"></i>Log Final Buyer Audit</h5>
+                        <p class="text-muted small mb-3">Record AQL standard lot inspection results.</p>
+                        <form method="POST" action="{{ BASE_URL }}/quality/audit">
+                            {{ csrf_field() | raw }}
+                            <input type="hidden" name="action" value="log_final_audit">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Order PO Number <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-sm" name="po_number" required>
+                                    <option value="">— Select PO —</option>
+                                    {% for o in orders %}<option value="{{ o.po_number }}">{{ o.po_number }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Style Code</label>
+                                <select class="form-select form-select-sm" name="style_code">
+                                    <option value="">— Select Style —</option>
+                                    {% for s in styles %}<option value="{{ s.style_code }}">{{ s.style_code }} – {{ s.style_name }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Lot Quantity Ordered</label>
+                                <input type="number" class="form-control form-control-sm" name="qty_ordered" min="1" placeholder="e.g. 5000" required>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label fw-semibold small">Qty Sample Inspected</label>
+                                    <input type="number" class="form-control form-control-sm" name="qty_inspected" min="1" placeholder="80" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label fw-semibold small">Qty Defective Found</label>
+                                    <input type="number" class="form-control form-control-sm" name="qty_defective" min="0" value="0" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">AQL Inspection Standard Level</label>
+                                <select class="form-select form-select-sm" name="aql_level">
+                                    <option value="1.5">AQL 1.5</option>
+                                    <option value="2.5" selected>AQL 2.5 (Standard)</option>
+                                    <option value="4.0">AQL 4.0</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">QA Auditor Name</label>
+                                <input type="text" class="form-control form-control-sm" name="auditor_name" value="Quality Auditor">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Audit Date</label>
+                                <input type="date" class="form-control form-control-sm" name="audit_date" value="{{ "now"|date("Y-m-d") }}">
+                            </div>
+                            <button type="submit" class="btn btn-warning text-dark fw-bold w-100"><i class="fas fa-save me-1"></i>Save AQL Audit</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card glow-card border-0 p-4 h-100">
+                        <h5 class="fw-bold mb-3" style="color:#dda20a;"><i class="fas fa-check-double me-2"></i>Final AQL Audit Logs</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>PO Number</th>
+                                        <th>Style</th>
+                                        <th>Lot Size</th>
+                                        <th>Sample size</th>
+                                        <th>Defectives</th>
+                                        <th>AQL</th>
+                                        <th>Result</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for a in auditRecords %}
+                                <tr>
+                                    <td><strong>{{ a.po_number }}</strong></td>
+                                    <td><span class="badge bg-light text-dark border">{{ a.style_code }}</span></td>
+                                    <td>{{ a.qty_ordered|number_format }}</td>
+                                    <td>{{ a.qty_inspected }}</td>
+                                    <td class="fw-bold {% if a.qty_defective > 0 %}text-danger{% endif %}">{{ a.qty_defective }}</td>
+                                    <td><code>{{ a.aql_level }}</code></td>
+                                    <td>
+                                        {% if a.audit_status == 'pass' %}
+                                        <span class="badge bg-success">PASSED</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">REJECTED</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small text-muted">{{ a.audit_date }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-5">No buyer audits performed yet.</td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ═══════════════════════════════════════
+               4. DEFECT LIBRARY
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'library' %}
+            <div class="card glow-card border-0 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="fw-bold mb-0" style="color:#dda20a;"><i class="fas fa-book me-2"></i>Garment Defect Standards Library</h5>
+                        <small class="text-muted">Database of major sewing, cutting and fabric defects with severity definitions</small>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Code</th>
+                                <th>Defect Name</th>
+                                <th>Category</th>
+                                <th>Severity</th>
+                                <th>Description / Cause</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for d in defectLibrary %}
+                        <tr>
+                            <td><code>{{ d.defect_code }}</code></td>
+                            <td class="fw-bold">{{ d.defect_name }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ d.defect_category }}</span></td>
+                            <td>
+                                <span class="badge {% if d.severity == 'critical' %}bg-danger{% elseif d.severity == 'major' %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                                    {{ d.severity|upper }}
+                                </span>
+                            </td>
+                            <td class="small text-muted">{{ d.description }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ═══════════════════════════════════════
+               5. CAPA TRACKING
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'capa' %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card glow-card border-0 p-4">
+                        <h5 class="fw-bold mb-1" style="color:#dda20a;"><i class="fas fa-exclamation-triangle me-2"></i>Open CAPA Case</h5>
+                        <p class="text-muted small mb-3">Create Corrective Action &amp; Preventive Action reports for recurring quality issues.</p>
+                        <form method="POST" action="{{ BASE_URL }}/quality/capa">
+                            {{ csrf_field() | raw }}
+                            <input type="hidden" name="action" value="create_capa">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Defect Category <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-sm" name="defect_type" required>
+                                    <option value="">— Select Defect —</option>
+                                    {% for d in defectLibrary %}<option value="{{ d.defect_name }}">{{ d.defect_name }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Root Cause Analysis</label>
+                                <textarea class="form-control form-control-sm" name="root_cause" rows="2" placeholder="Describe 5-Why analysis..."></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Corrective Action (Immediate)</label>
+                                <textarea class="form-control form-control-sm" name="corrective_action" rows="2" placeholder="Action taken immediately..."></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Preventive Action (Long term)</label>
+                                <textarea class="form-control form-control-sm" name="preventive_action" rows="2" placeholder="Steps to prevent recurrence..."></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Assignee Person</label>
+                                <input type="text" class="form-control form-control-sm" name="assigned_to" placeholder="e.g. Line Supervisor / Technician">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Target Resolution Date</label>
+                                <input type="date" class="form-control form-control-sm" name="target_date" value="{{ "now"|date("Y-m-d") }}">
+                            </div>
+                            <button type="submit" class="btn btn-warning text-dark fw-bold w-100"><i class="fas fa-save me-1"></i>Issue CAPA Case</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card glow-card border-0 p-4 h-100">
+                        <h5 class="fw-bold mb-3" style="color:#dda20a;"><i class="fas fa-clipboard-list me-2"></i>CAPA Tracker Board</h5>
+                        <div class="d-flex flex-column gap-3">
+                            {% for c in capaRecords %}
+                            <div class="card p-3 capa-card {{ c.status }} rounded border-0" style="background:#fafafa; box-shadow: 0 4px 12px rgba(0,0,0,0.02); border: 1px solid #eee;">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <span class="badge {% if c.status == 'open' %}bg-danger{% elseif c.status == 'in_progress' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                            {{ c.status|upper }}
+                                        </span>
+                                        <strong class="ms-2">{{ c.defect_type }}</strong>
+                                    </div>
+                                    <small class="text-muted">Target: {{ c.target_date }}</small>
+                                </div>
+                                <div class="small text-muted mb-2">
+                                    <strong>Root Cause:</strong> {{ c.root_cause }}<br>
+                                    <strong>Corrective Action:</strong> {{ c.corrective_action }}<br>
+                                    <strong>Preventive:</strong> {{ c.preventive_action }}
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                                    <span class="small text-muted">Assigned: <strong>{{ c.assigned_to }}</strong></span>
+                                    <div class="d-flex gap-1 no-print">
+                                        {% if c.status == 'open' %}
+                                        <form method="POST" action="{{ BASE_URL }}/quality/capa">
+                                            {{ csrf_field() | raw }}
+                                            <input type="hidden" name="action" value="update_capa_status">
+                                            <input type="hidden" name="capa_id" value="{{ c.id }}">
+                                            <input type="hidden" name="status" value="in_progress">
+                                            <button type="submit" class="btn btn-xs btn-sm btn-outline-warning">Start Plan</button>
+                                        </form>
+                                        {% elseif c.status == 'in_progress' %}
+                                        <form method="POST" action="{{ BASE_URL }}/quality/capa">
+                                            {{ csrf_field() | raw }}
+                                            <input type="hidden" name="action" value="update_capa_status">
+                                            <input type="hidden" name="capa_id" value="{{ c.id }}">
+                                            <input type="hidden" name="status" value="closed">
+                                            <button type="submit" class="btn btn-xs btn-sm btn-outline-success">Close Case</button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5 text-muted">
+                                <i class="fas fa-shield-alt fa-3x mb-3 d-block opacity-25"></i>No active Corrective and Preventive Action logs.
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ═══════════════════════════════════════
+               6. REPORTS
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'reports' %}
+            <div class="card glow-card border-0 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+                    <div>
+                        <h5 class="fw-bold mb-0" style="color:#dda20a;"><i class="fas fa-file-invoice me-2"></i>Quality Audit Performance Reports</h5>
+                        <small class="text-muted">Printable defect summaries, DHU Pareto charts, and CAPA logs</small>
+                    </div>
+                    <button onclick="window.print()" class="btn btn-outline-warning btn-sm text-dark fw-bold"><i class="fas fa-print me-1"></i>Print Report</button>
+                </div>
+
+                <div class="report-section-title"><i class="fas fa-chart-line me-2"></i>Performance Summary Metrics</div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="card border-0 p-3 text-center text-white" style="background: linear-gradient(135deg, #f6c23e, #dda20a); border-radius: 12px;">
+                            <div class="h3 fw-bold mb-0">{{ passRate }}%</div>
+                            <div class="small opacity-75">Final Lot Pass Rate</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 p-3 text-center text-white" style="background: linear-gradient(135deg, #e74a3b, #be2617); border-radius: 12px;">
+                            <div class="h3 fw-bold mb-0">{{ openCapa }}</div>
+                            <div class="small opacity-75">Open CAPA Incidents</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 p-3 text-center text-white" style="background: linear-gradient(135deg, #258391, #36b9cc); border-radius: 12px;">
+                            <div class="h3 fw-bold mb-0">{{ totalInspected|number_format }}</div>
+                            <div class="small opacity-75">Total Inspected Pcs</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 p-3 text-center text-white" style="background: linear-gradient(135deg, #13855c, #1cc88a); border-radius: 12px;">
+                            {% set dhu = totalInspected > 0 ? ((totalDefective / totalInspected) * 100)|round(2) : 1.8 %}
+                            <div class="h3 fw-bold mb-0">{{ dhu }}%</div>
+                            <div class="small opacity-75">Avg Quality DHU</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section-title"><i class="fas fa-check-double me-2"></i>Final AQL Buyer Audit Summary</div>
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-warning">
+                            <tr>
+                                <th>PO Number</th>
+                                <th>Style</th>
+                                <th>Lot Size</th>
+                                <th>Inspected Size</th>
+                                <th>Defectives</th>
+                                <th>Result</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for a in auditRecords %}
+                        <tr>
+                            <td><strong>{{ a.po_number }}</strong></td>
+                            <td>{{ a.style_code }}</td>
+                            <td>{{ a.qty_ordered|number_format }}</td>
+                            <td>{{ a.qty_inspected }}</td>
+                            <td class="fw-bold">{{ a.qty_defective }}</td>
+                            <td>
+                                {% if a.audit_status == 'pass' %}
+                                <span class="badge bg-success">PASS</span>
+                                {% else %}
+                                <span class="badge bg-danger">FAIL</span>
+                                {% endif %}
+                            </td>
+                            <td class="small text-muted">{{ a.audit_date }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-2 text-muted">No final AQL audits recorded.</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="report-section-title"><i class="fas fa-exclamation-triangle me-2"></i>CAPA Rectification Logs</div>
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Defect Category</th>
+                                <th>Root Cause</th>
+                                <th>Corrective Measure</th>
+                                <th>Assigned To</th>
+                                <th>Target Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for c in capaRecords %}
+                        <tr>
+                            <td><strong>{{ c.defect_type }}</strong></td>
+                            <td class="small">{{ c.root_cause }}</td>
+                            <td class="small text-muted">{{ c.corrective_action }}</td>
+                            <td class="small">{{ c.assigned_to }}</td>
+                            <td class="small text-muted">{{ c.target_date }}</td>
+                            <td><span class="badge {% if c.status == 'open' %}bg-danger{% else %}bg-secondary{% endif %}">{{ c.status|upper }}</span></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-2 text-muted">No CAPA logs available.</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="p-3 rounded mt-4" style="background:#f8f9fa;">
+                    <div class="row">
+                        <div class="col-md-6 small text-muted">
+                            <strong>Report Date:</strong> {{ "now"|date("d M Y, H:i") }}<br>
+                            <strong>Author:</strong> Aptech Quality Assurance Director
+                        </div>
+                        <div class="col-md-6 text-end small text-muted">
+                            <strong>ERP System:</strong> Aptech RMG ERP<br>
+                            <strong>Division:</strong> Quality Assurance Department
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,724 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Packing &amp; Shipment Control Center{% endblock %}
+
+{% block content %}
+<style>
+    .glow-card {
+        transition: all 0.3s ease-in-out;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+    }
+    .glow-card:hover {
+        box-shadow: 0 14px 32px rgba(78, 115, 223, 0.12);
+    }
+    .nav-pills .nav-link {
+        border-radius: 10px;
+        padding: 7px 14px;
+        font-weight: 600;
+        font-size: .83rem;
+        color: #5a5c69;
+        transition: all 0.25s ease;
+    }
+    .nav-pills .nav-link.active {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: #fff !important;
+        box-shadow: 0 4px 14px rgba(78, 115, 223, 0.32);
+    }
+    .nav-pills .nav-link:hover:not(.active) {
+        background: #f0f3ff;
+        color: #3b5cbd;
+    }
+    .metric-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+    }
+    .bg-light-primary { background: rgba(78, 115, 223, 0.12); }
+    .bg-light-info { background: rgba(54, 185, 204, 0.12); }
+    .bg-light-success { background: rgba(28, 200, 138, 0.12); }
+    .bg-light-warning { background: rgba(246, 194, 62, 0.12); }
+    .bg-light-danger { background: rgba(231, 74, 59, 0.12); }
+    
+    .text-gradient {
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .bar-wrap { height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; transition: width .6s ease; }
+    
+    .tl-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+    .tl-green { background: #1cc88a; }
+    .tl-yellow { background: #f6c23e; }
+    .tl-red { background: #e74a3b; }
+    
+    .report-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #4e73df;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 8px;
+        margin-bottom: 14px;
+    }
+    @media print {
+        .no-print { display: none !important; }
+        .glow-card { box-shadow: none; border: 1px solid #ddd; }
+    }
+</style>
+
+{# ── Flash messages ── #}
+{% if app.session.flash('success_message') %}
+<div class="alert alert-success alert-dismissible fade show mx-2" role="alert">
+    <i class="fas fa-check-circle me-2"></i>{{ app.session.flash('success_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+{% if app.session.flash('error_message') %}
+<div class="alert alert-danger alert-dismissible fade show mx-2" role="alert">
+    <i class="fas fa-exclamation-circle me-2"></i>{{ app.session.flash('error_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Header -->
+    <div class="col-12 mb-3">
+        <div class="page-header d-flex justify-content-between align-items-center p-4 glow-card">
+            <div>
+                <h1 class="h3 fw-bold text-gradient mb-1">Packing &amp; Shipment Center</h1>
+                <p class="text-muted mb-0 small">Export Assortment Planning · Weight Verification · Scanning Logs · Ship Dispatches</p>
+            </div>
+            <div class="d-flex gap-2 no-print">
+                <span class="badge bg-primary text-white px-3 py-2"><i class="fas fa-box me-1"></i>{{ totalCartons }} Cartons Packed</span>
+                <span class="badge bg-success text-white px-3 py-2"><i class="fas fa-calendar me-1"></i>{{ "now"|date("d M Y") }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="col-12 mb-3 no-print">
+        <div class="p-2 glow-card">
+            <ul class="nav nav-pills gap-1 flex-wrap">
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'dashboard' %}active{% endif %}" href="{{ BASE_URL }}/packing/dashboard"><i class="fas fa-chart-pie me-1"></i>Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'list' %}active{% endif %}" href="{{ BASE_URL }}/packing/list"><i class="fas fa-list-ul me-1"></i>Packing Plan</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'cartons' %}active{% endif %}" href="{{ BASE_URL }}/packing/cartons"><i class="fas fa-box me-1"></i>Carton Register</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'scan' %}active{% endif %}" href="{{ BASE_URL }}/packing/scan"><i class="fas fa-barcode me-1"></i>Weight Verification</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'shipment' %}active{% endif %}" href="{{ BASE_URL }}/packing/shipment"><i class="fas fa-truck-loading me-1"></i>Shipment Dispatch</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'reports' %}active{% endif %}" href="{{ BASE_URL }}/packing/reports"><i class="fas fa-file-invoice me-1"></i>Reports</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="col-12">
+        <div class="tab-content">
+
+            {# ═══════════════════════════════════════
+               1. DASHBOARD
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'dashboard' %}
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="card glow-card p-3 border-0">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-muted fw-bold text-uppercase small mb-1">Total Cartons</h6>
+                                <h3 class="fw-bold mb-0">{{ totalCartons }}</h3>
+                                <small class="text-info">{{ totalPcsReady|number_format }} pcs ready</small>
+                            </div>
+                            <div class="metric-icon bg-light-primary text-primary"><i class="fas fa-boxes"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card glow-card p-3 border-0">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-muted fw-bold text-uppercase small mb-1">Packing Schedules</h6>
+                                <h3 class="fw-bold mb-0">{{ totalPlans }}</h3>
+                                <small class="text-success">schedules logged</small>
+                            </div>
+                            <div class="metric-icon bg-light-info text-info"><i class="fas fa-calendar-check"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card glow-card p-3 border-0">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-muted fw-bold text-uppercase small mb-1">Shipped Cartons</h6>
+                                <h3 class="fw-bold mb-0">{{ totalShippedCartons }}</h3>
+                                <small class="text-success"><i class="fas fa-check"></i> Loaded on Container</small>
+                            </div>
+                            <div class="metric-icon bg-light-success text-success"><i class="fas fa-truck-moving"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card glow-card p-3 border-0">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-muted fw-bold text-uppercase small mb-1">Verified scans</h6>
+                                <h3 class="fw-bold mb-0">{{ scans|length }}</h3>
+                                <small class="text-warning">barcode verification</small>
+                            </div>
+                            <div class="metric-icon bg-light-warning text-warning"><i class="fas fa-barcode"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <div class="card glow-card border-0 p-4">
+                        <h6 class="fw-bold text-primary mb-3"><i class="fas fa-list-ul me-2"></i>Recent Packing Schedules</h6>
+                        {% if packingPlans|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Plan Number</th>
+                                        <th>Planned Date</th>
+                                        <th>Target Cartons</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for p in packingPlans|slice(0, 6) %}
+                                <tr>
+                                    <td><strong>{{ p.plan_number }}</strong></td>
+                                    <td>{{ p.planned_date }}</td>
+                                    <td>{{ p.total_cartons }}</td>
+                                    <td>
+                                        <span class="badge {% if p.status == 'shipped' %}bg-success{% elseif p.status == 'packing' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                            {{ p.status|upper }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-box fa-3x mb-3 opacity-25 d-block"></i>
+                            No packing plans created yet. Go to <a href="{{ BASE_URL }}/packing/list">Packing Plan</a>.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card glow-card border-0 p-4 h-100">
+                        <h6 class="fw-bold text-primary mb-3"><i class="fas fa-truck-loading me-2"></i>Loaded Shipments</h6>
+                        {% if shipments|length > 0 %}
+                        <div class="d-flex flex-column gap-2">
+                            {% for s in shipments|slice(0, 4) %}
+                            <div class="p-2 rounded border-0" style="background:#f8f9fa;">
+                                <div class="d-flex justify-content-between small fw-bold">
+                                    <span class="text-dark">{{ s.shipment_no }}</span>
+                                    <span class="badge bg-success bg-opacity-10 text-success">Shipped</span>
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    Dest: <strong>{{ s.destination }}</strong> | Qty: <strong>{{ s.qty_cartons }} ctn</strong>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5 text-muted small">No container dispatches loaded yet.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ═══════════════════════════════════════
+               2. PACKING LIST & ASSORTMENT
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'list' %}
+            <div class="card glow-card border-0 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="fw-bold text-primary mb-0">Assortment &amp; Packing Plan</h5>
+                        <small class="text-muted">Generate assortment sheets for packed sizes per carton</small>
+                    </div>
+                    <button class="btn btn-primary btn-sm no-print" data-bs-toggle="modal" data-bs-target="#createPlanModal">
+                        <i class="fas fa-plus me-1"></i>New Packing Plan
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Plan No</th>
+                                <th>Style Reference</th>
+                                <th>Order PO</th>
+                                <th>Target Quantity (ctn)</th>
+                                <th>Planned Date</th>
+                                <th>Status</th>
+                                <th class="no-print">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for p in packingPlans %}
+                        <tr>
+                            <td><strong>{{ p.plan_number }}</strong></td>
+                            <td><span class="badge bg-light text-dark border">Style ID: {{ p.style_id }}</span></td>
+                            <td>PO ID: {{ p.order_id }}</td>
+                            <td class="fw-bold">{{ p.total_cartons|number_format }}</td>
+                            <td class="small text-muted">{{ p.planned_date }}</td>
+                            <td>
+                                <span class="badge {% if p.status == 'shipped' %}bg-success{% elseif p.status == 'packing' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                    {{ p.status|upper }}
+                                </span>
+                            </td>
+                            <td class="no-print">
+                                {% if p.status == 'planned' %}
+                                <form method="POST" action="{{ BASE_URL }}/packing/list" style="display:inline;">
+                                    {{ csrf_field() | raw }}
+                                    <input type="hidden" name="action" value="update_plan_status">
+                                    <input type="hidden" name="plan_id" value="{{ p.plan_id }}">
+                                    <input type="hidden" name="status" value="packing">
+                                    <button type="submit" class="btn btn-sm btn-outline-warning">Start Packing</button>
+                                </form>
+                                {% elseif p.status == 'packing' %}
+                                <form method="POST" action="{{ BASE_URL }}/packing/list" style="display:inline;">
+                                    {{ csrf_field() | raw }}
+                                    <input type="hidden" name="action" value="update_plan_status">
+                                    <input type="hidden" name="plan_id" value="{{ p.plan_id }}">
+                                    <input type="hidden" name="status" value="ready">
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Set Ready</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-5">No packing plans defined. Click "New Packing Plan" to add.</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Create Plan Modal -->
+            <div class="modal fade" id="createPlanModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <form method="POST" action="{{ BASE_URL }}/packing/list" class="modal-content">
+                        {{ csrf_field() | raw }}
+                        <input type="hidden" name="action" value="create_packing_plan">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Create Packing Plan</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Production Order Reference</label>
+                                <select class="form-select form-select-sm" name="order_id" required>
+                                    <option value="">— Select Order —</option>
+                                    {% for o in orders %}<option value="{{ o.id }}">{{ o.po_number }} (Qty: {{ o.order_quantity }})</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Style Selection</label>
+                                <select class="form-select form-select-sm" name="style_id">
+                                    <option value="">— Select Style —</option>
+                                    {% for s in styles %}<option value="{{ s.style_id }}">{{ s.style_code }} – {{ s.style_name }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Planned Date</label>
+                                <input type="date" class="form-control form-control-sm" name="planned_date" value="{{ "now"|date("Y-m-d") }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Total Planned Cartons</label>
+                                <input type="number" class="form-control form-control-sm" name="total_cartons" min="1" placeholder="e.g. 100" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Create Schedule</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ═══════════════════════════════════════
+               3. CARTON REGISTER
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'cartons' %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card glow-card border-0 p-4">
+                        <h5 class="fw-bold mb-1" style="color:#4e73df;"><i class="fas fa-box me-2"></i>Register Carton</h5>
+                        <p class="text-muted small mb-3">Add carton dimensions and gross weights for verification check logs.</p>
+                        <form method="POST" action="{{ BASE_URL }}/packing/cartons">
+                            {{ csrf_field() | raw }}
+                            <input type="hidden" name="action" value="log_carton">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Carton Barcode / Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm" name="carton_number" placeholder="e.g. CTN-2026-0001" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">PO / Order Number</label>
+                                <input type="text" class="form-control form-control-sm" name="order_no" placeholder="e.g. PO-7492">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Style Code</label>
+                                <input type="text" class="form-control form-control-sm" name="style_code" placeholder="e.g. POLO-M-01">
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label fw-semibold small">Gross Weight (Kg)</label>
+                                    <input type="number" class="form-control form-control-sm" name="gross_weight" step="0.01" value="15.00">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label fw-semibold small">Dimensions (CBM)</label>
+                                    <input type="text" class="form-control form-control-sm" name="cbm" value="0.12" placeholder="e.g. 0.12">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Verification Status</label>
+                                <select class="form-select form-select-sm" name="verification_status">
+                                    <option value="passed">Passed weight verification</option>
+                                    <option value="failed">Failed check (requires repacking)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Verification Date</label>
+                                <input type="date" class="form-control form-control-sm" name="scanned_date" value="{{ "now"|date("Y-m-d") }}">
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100"><i class="fas fa-save me-1"></i>Save Carton Record</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card glow-card border-0 p-4 h-100">
+                        <h5 class="fw-bold mb-3" style="color:#4e73df;"><i class="fas fa-list me-2"></i>Carton Management List</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Carton Barcode</th>
+                                        <th>PO / Style</th>
+                                        <th>Dimensions</th>
+                                        <th>Gross Weight</th>
+                                        <th>Status</th>
+                                        <th>Verified Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for c in cartons %}
+                                <tr>
+                                    <td><strong>{{ c.carton_number }}</strong></td>
+                                    <td>
+                                        <div class="fw-bold text-dark">{{ c.order_no ?? '—' }}</div>
+                                        <small class="text-muted">{{ c.style_code ?? '—' }}</small>
+                                    </td>
+                                    <td><code>{{ c.cbm }} CBM</code></td>
+                                    <td class="fw-bold">{{ c.gross_weight }} kg</td>
+                                    <td>
+                                        {% if c.verification_status == 'passed' %}
+                                        <span class="badge bg-success">Passed weight check</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Out of tolerance</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small text-muted">{{ c.scanned_date }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-5">No cartons logged in the register.</td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ═══════════════════════════════════════
+               4. BARCODE SCANNING / WEIGHT CHECK
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'scan' %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card glow-card border-0 p-4">
+                        <h5 class="fw-bold mb-1" style="color:#4e73df;"><i class="fas fa-barcode me-2"></i>Handheld Weight Scan</h5>
+                        <p class="text-muted small mb-3">Simulate barcode scanner weigh-in check. Standard weight: 15.00kg (±0.5kg tolerance).</p>
+                        <form method="POST" action="{{ BASE_URL }}/packing/scan">
+                            {{ csrf_field() | raw }}
+                            <input type="hidden" name="action" value="log_scan">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Scan Carton Barcode <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm" name="carton_number" placeholder="CTN-2026-XXXX" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Weight Measure (Kg) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control form-control-sm" name="gross_weight" step="0.01" value="15.00" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100"><i class="fas fa-barcode me-1"></i>Simulate Scan &amp; Weigh</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card glow-card border-0 p-4 h-100">
+                        <h5 class="fw-bold mb-3" style="color:#4e73df;"><i class="fas fa-history me-2"></i>Live Scan Verification Log</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Carton Barcode</th>
+                                        <th>Weighed</th>
+                                        <th>Deviation</th>
+                                        <th>Scan Date/Time</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for sc in scans %}
+                                <tr>
+                                    <td><strong>{{ sc.carton_number }}</strong></td>
+                                    <td class="fw-bold">{{ sc.gross_weight }} kg</td>
+                                    <td class="{% if sc.deviation|abs > 0.5 %}text-danger{% else %}text-success{% endif %}">
+                                        {{ sc.deviation >= 0 ? '+' : '' }}{{ sc.deviation }} kg
+                                    </td>
+                                    <td class="small text-muted">{{ sc.scan_time }}</td>
+                                    <td>
+                                        {% if sc.status == 'verified' %}
+                                        <span class="badge bg-success"><i class="fas fa-check-circle"></i> VERIFIED</span>
+                                        {% else %}
+                                        <span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> DIVERTED</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-5">No weight check scans logged. Enter values on the left.</td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ═══════════════════════════════════════
+               5. SHIPMENT DISPATCH
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'shipment' %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card glow-card border-0 p-4">
+                        <h5 class="fw-bold mb-1" style="color:#4e73df;"><i class="fas fa-truck-loading me-2"></i>Shipment Dispatch</h5>
+                        <p class="text-muted small mb-3">Load carton sets onto shipping containers.</p>
+                        <form method="POST" action="{{ BASE_URL }}/packing/shipment">
+                            {{ csrf_field() | raw }}
+                            <input type="hidden" name="action" value="log_shipment">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Container Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm" name="container_no" placeholder="e.g. MSKU-749204-1" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Invoice Number</label>
+                                <input type="text" class="form-control form-control-sm" name="invoice_no" placeholder="e.g. AP/EXP/2026/04">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Total Cartons Loaded <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control form-control-sm" name="qty_cartons" min="1" placeholder="e.g. 50" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Destination Port / Hub</label>
+                                <input type="text" class="form-control form-control-sm" name="destination" placeholder="e.g. Hamburg, Germany">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Shipment Date</label>
+                                <input type="date" class="form-control form-control-sm" name="ship_date" value="{{ "now"|date("Y-m-d") }}">
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100"><i class="fas fa-truck me-1"></i>Dispatch Container</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card glow-card border-0 p-4 h-100">
+                        <h5 class="fw-bold mb-3" style="color:#4e73df;"><i class="fas fa-list me-2"></i>Shipment Dispatch History</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Shipment No.</th>
+                                        <th>Container No.</th>
+                                        <th>Invoice No.</th>
+                                        <th>Cartons</th>
+                                        <th>Destination</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for sh in shipments %}
+                                <tr>
+                                    <td><strong>{{ sh.shipment_no }}</strong></td>
+                                    <td><code>{{ sh.container_no }}</code></td>
+                                    <td>{{ sh.invoice_no }}</td>
+                                    <td class="fw-bold">{{ sh.qty_cartons }} ctn</td>
+                                    <td class="small">{{ sh.destination }}</td>
+                                    <td class="small text-muted">{{ sh.ship_date }}</td>
+                                    <td><span class="badge bg-success">{{ sh.status|upper }}</span></td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-5">No shipment dispatches logged.</td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ═══════════════════════════════════════
+               6. REPORTS
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'reports' %}
+            <div class="card glow-card border-0 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+                    <div>
+                        <h5 class="fw-bold mb-0" style="color:#4e73df;"><i class="fas fa-file-invoice me-2"></i>Packing &amp; Shipment Reports</h5>
+                        <small class="text-muted">Export Carton Assortments and loading sheets</small>
+                    </div>
+                    <button onclick="window.print()" class="btn btn-outline-primary btn-sm"><i class="fas fa-print me-1"></i>Print Report</button>
+                </div>
+
+                <div class="report-section-title"><i class="fas fa-chart-line me-2"></i>Performance Summary Metrics</div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="card border-0 p-3 text-center text-white" style="background: linear-gradient(135deg, #4e73df, #224abe); border-radius: 12px;">
+                            <div class="h3 fw-bold mb-0">{{ totalCartons }}</div>
+                            <div class="small opacity-75">Cartons Verified</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 p-3 text-center text-white" style="background: linear-gradient(135deg, #36b9cc, #258391); border-radius: 12px;">
+                            <div class="h3 fw-bold mb-0">{{ totalShippedCartons }}</div>
+                            <div class="small opacity-75">Cartons Dispatched</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 p-3 text-center text-white" style="background: linear-gradient(135deg, #1cc88a, #13855c); border-radius: 12px;">
+                            <div class="h3 fw-bold mb-0">{{ totalPcsReady|number_format }}</div>
+                            <div class="small opacity-75">Total Quantities (pcs)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section-title"><i class="fas fa-box me-2"></i>Carton Management List Log</div>
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>Carton Barcode</th>
+                                <th>PO Number</th>
+                                <th>Style Reference</th>
+                                <th>Weight (kg)</th>
+                                <th>Status</th>
+                                <th>Verified Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for c in cartons %}
+                        <tr>
+                            <td><strong>{{ c.carton_number }}</strong></td>
+                            <td>{{ c.order_no ?? '—' }}</td>
+                            <td>{{ c.style_code ?? '—' }}</td>
+                            <td class="fw-bold">{{ c.gross_weight }} kg</td>
+                            <td><span class="badge {% if c.verification_status == 'passed' %}bg-success{% else %}bg-danger{% endif %}">{{ c.verification_status|upper }}</span></td>
+                            <td class="small text-muted">{{ c.scanned_date }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-2 text-muted">No cartons logged in reports.</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="report-section-title"><i class="fas fa-truck-loading me-2"></i>Shipment Cargo Loadings</div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Shipment No.</th>
+                                <th>Container No.</th>
+                                <th>Invoice No.</th>
+                                <th>Quantity Loaded</th>
+                                <th>Destination</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for sh in shipments %}
+                        <tr>
+                            <td class="text-muted small">{{ loop.index }}</td>
+                            <td><strong>{{ sh.shipment_no }}</strong></td>
+                            <td><code>{{ sh.container_no }}</code></td>
+                            <td>{{ sh.invoice_no }}</td>
+                            <td class="fw-bold text-primary">{{ sh.qty_cartons }} cartons</td>
+                            <td>{{ sh.destination }}</td>
+                            <td><span class="badge bg-success">{{ sh.status|upper }}</span></td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="p-3 rounded mt-4" style="background:#f8f9fa;">
+                    <div class="row">
+                        <div class="col-md-6 small text-muted">
+                            <strong>Report Date:</strong> {{ "now"|date("d M Y, H:i") }}<br>
+                            <strong>Author:</strong> Aptech Packing Director
+                        </div>
+                        <div class="col-md-6 text-end small text-muted">
+                            <strong>ERP System:</strong> Aptech RMG ERP<br>
+                            <strong>Division:</strong> Packing &amp; Logistical Operations
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

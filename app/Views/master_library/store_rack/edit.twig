@@ -1,0 +1,245 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Edit Rack | Master Library{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Edit Rack</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library/store_racks">Racks</a></li>
+        <li class="breadcrumb-item active">Edit Rack</li>
+    </ol>
+
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <h5 class="mb-0 text-primary"><i class="fas fa-edit me-1"></i> Edit Rack Details</h5>
+        </div>
+        <div class="card-body p-4">
+            <form action="{{ BASE_URL }}/master_library/store_racks/edit/{{ rack.rack_id }}" method="POST">
+                {{ csrf_field() | raw }}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                         <div class="form-floating mb-3 mb-md-0">
+                            <input class="form-control" id="rack_code" name="rack_code" type="text" placeholder="Enter rack code" required value="{{ rack.rack_code }}" />
+                            <label for="rack_code">Rack Code</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3 mb-md-0">
+                            <input class="form-control" id="rack_name" name="rack_name" type="text" placeholder="Enter rack name" required value="{{ rack.rack_name }}" />
+                            <label for="rack_name">Rack Name</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                         <div class="form-floating mb-3 mb-md-0">
+                              <select class="form-select" id="factory_id" name="factory_id" required>
+                                <option value="">Select Factory</option>
+                                {% for factory in factories %}
+                                <option value="{{ factory.factory_id }}" {{ current_room.factory_id == factory.factory_id or (current_floor and current_floor.factory_id == factory.factory_id) ? 'selected' : '' }}>{{ factory.factory_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="factory_id">Factory</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                         <div class="form-floating mb-3 mb-md-0">
+                              <select class="form-select" id="store_id" name="store_id" required>
+                                <option value="">Select Store</option>
+                                {% for store in stores %}
+                                    {% if store.factory_id == current_floor.factory_id %}
+                                    <option value="{{ store.location_id }}" {{ current_store.location_id == store.location_id ? 'selected' : '' }}>{{ store.location_name }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            <label for="store_id">Store</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                         <div class="form-floating mb-3 mb-md-0">
+                              <select class="form-select" id="rack_location_id" name="rack_location_id" required>
+                                <option value="">Select Store Location</option>
+                                {% for loc in locations %}
+                                    {% if loc.warehouse_id == current_store.location_id %}
+                                    <option value="{{ loc.rack_id }}" {{ current_location.rack_id == loc.rack_id ? 'selected' : '' }}>{{ loc.rack_name }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            <label for="rack_location_id">Store Location</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                         <div class="form-floating mb-3 mb-md-0">
+                              <select class="form-select" id="floor_id" name="floor_id" required>
+                                <option value="">Select Floor Name</option>
+                                {% for fl in floors %}
+                                    {% if fl.rack_id == current_location.rack_id %}
+                                    <option value="{{ fl.floor_id }}" {{ current_room.floor_id == fl.floor_id ? 'selected' : '' }}>{{ fl.floor_name }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            <label for="floor_id">Floor Name</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                         <div class="form-floating mb-3 mb-md-0">
+                              <select class="form-select" id="room_id" name="room_id" required>
+                                <option value="">Select Room Name</option>
+                                {% for rm in rooms %}
+                                    {% if rm.floor_id == current_floor.floor_id %}
+                                    <option value="{{ rm.room_id }}" {{ rack.room_id == rm.room_id ? 'selected' : '' }}>{{ rm.room_name }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            <label for="room_id">Room Name</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <select class="form-select" id="status" name="status">
+                                <option value="active" {{ rack.status == 'active' ? 'selected' : '' }}>Active</option>
+                                <option value="inactive" {{ rack.status == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                            </select>
+                            <label for="status">Status</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="form-floating mb-3">
+                            <textarea class="form-control" id="description" name="description" placeholder="Enter description" style="height: 100px;">{{ rack.description }}</textarea>
+                            <label for="description">Description</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 mb-0">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ BASE_URL }}/master_library/store_racks" class="btn btn-light me-md-2 px-4 rounded-pill border">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 rounded-pill">Update Rack</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const factorySelect = document.getElementById('factory_id');
+    const storeSelect = document.getElementById('store_id');
+    const locationSelect = document.getElementById('rack_location_id');
+    const floorSelect = document.getElementById('floor_id');
+    const roomSelect = document.getElementById('room_id');
+
+    factorySelect.addEventListener('change', function() {
+        const factoryId = this.value;
+        storeSelect.innerHTML = '<option value="">Select Store</option>';
+        storeSelect.disabled = true;
+        locationSelect.innerHTML = '<option value="">Select Store Location</option>';
+        locationSelect.disabled = true;
+        floorSelect.innerHTML = '<option value="">Select Floor Name</option>';
+        floorSelect.disabled = true;
+        roomSelect.innerHTML = '<option value="">Select Room Name</option>';
+        roomSelect.disabled = true;
+
+        if (factoryId) {
+            fetch(`{{ BASE_URL }}/master_library/store_locations/get-stores?factory_id=${factoryId}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(store => {
+                        const option = document.createElement('option');
+                        option.value = store.location_id;
+                        option.textContent = store.location_name;
+                        storeSelect.appendChild(option);
+                    });
+                    storeSelect.disabled = false;
+                })
+                .catch(err => console.error('Error fetching stores:', err));
+        }
+    });
+
+    storeSelect.addEventListener('change', function() {
+        const storeId = this.value;
+        locationSelect.innerHTML = '<option value="">Select Store Location</option>';
+        locationSelect.disabled = true;
+        floorSelect.innerHTML = '<option value="">Select Floor Name</option>';
+        floorSelect.disabled = true;
+        roomSelect.innerHTML = '<option value="">Select Room Name</option>';
+        roomSelect.disabled = true;
+
+        if (storeId) {
+            fetch(`{{ BASE_URL }}/master_library/store_locations/get-locations?store_id=${storeId}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(loc => {
+                        const option = document.createElement('option');
+                        option.value = loc.rack_id;
+                        option.textContent = loc.rack_name;
+                        locationSelect.appendChild(option);
+                    });
+                    locationSelect.disabled = false;
+                })
+                .catch(err => console.error('Error fetching locations:', err));
+        }
+    });
+
+    locationSelect.addEventListener('change', function() {
+        const rackId = this.value;
+        floorSelect.innerHTML = '<option value="">Select Floor Name</option>';
+        floorSelect.disabled = true;
+        roomSelect.innerHTML = '<option value="">Select Room Name</option>';
+        roomSelect.disabled = true;
+
+        if (rackId) {
+            fetch(`{{ BASE_URL }}/master_library/production_floors/get-floors?rack_id=${rackId}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(floor => {
+                        const option = document.createElement('option');
+                        option.value = floor.floor_id;
+                        option.textContent = floor.floor_name;
+                        floorSelect.appendChild(option);
+                    });
+                    floorSelect.disabled = false;
+                })
+                .catch(err => console.error('Error fetching floors:', err));
+        }
+    });
+
+    floorSelect.addEventListener('change', function() {
+        const floorId = this.value;
+        roomSelect.innerHTML = '<option value="">Select Room Name</option>';
+        roomSelect.disabled = true;
+
+        if (floorId) {
+            fetch(`{{ BASE_URL }}/master_library/store_rooms/get-rooms?floor_id=${floorId}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(room => {
+                        const option = document.createElement('option');
+                        option.value = room.room_id;
+                        option.textContent = room.room_name;
+                        roomSelect.appendChild(option);
+                    });
+                    roomSelect.disabled = false;
+                })
+                .catch(err => console.error('Error fetching rooms:', err));
+        }
+    });
+});
+</script>
+{% endblock %}

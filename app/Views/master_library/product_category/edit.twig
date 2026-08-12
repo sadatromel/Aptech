@@ -1,0 +1,90 @@
+{% extends "layouts/app.twig" %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Edit Product Category</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item"><a href="{{ parse_url(BASE_URL).path }}/master_library/product_categories">Product Categories</a></li>
+        <li class="breadcrumb-item active">{{ category.category_name }}</li>
+    </ol>
+
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+             <div class="h5 mb-0 text-primary"><i class="fas fa-edit me-2"></i>Edit Category: {{ category.category_name }}</div>
+        </div>
+        <div class="card-body p-4">
+            <form action="{{ parse_url(BASE_URL).path }}/master_library/product_categories/update/{{ category.category_id }}" method="POST">
+                {{ csrf_field() | raw }}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="category_code" name="category_code" value="{{ category.category_code }}" placeholder="Enter category code" required maxlength="50">
+                            <label for="category_code">Category Code <span class="text-danger">*</span></label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="category_name" name="category_name" value="{{ category.category_name }}" placeholder="Enter category name" required maxlength="100">
+                            <label for="category_name">Category Name <span class="text-danger">*</span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="form-floating">
+                            <textarea class="form-control" id="description" name="description" placeholder="Enter description" style="height: 100px;">{{ category.description }}</textarea>
+                            <label for="description">Description</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <select class="form-select" id="status" name="status">
+                                <option value="active" {{ category.status == 'active' ? 'selected' : '' }}>Active</option>
+                                <option value="inactive" {{ category.status == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                            </select>
+                            <label for="status">Status</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4 border border-light-subtle rounded-3">
+                    <div class="card-header bg-light py-3">
+                        <h6 class="mb-0 text-secondary"><i class="fas fa-leaf me-2"></i>Associate Product Natures</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row">
+                            {% for nature in natures %}
+                            <div class="col-md-4 col-sm-6 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="nature_ids[]" id="nat_{{ nature.nature_id }}" value="{{ nature.nature_id }}" {{ nature.nature_id in selectedNatureIds ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="nat_{{ nature.nature_id }}">
+                                        <strong>{{ nature.nature_code }}</strong> - {{ nature.nature_name }}
+                                    </label>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="col-12 text-muted">
+                                No product natures available. Please create natures first.
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 mb-0">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ parse_url(BASE_URL).path }}/master_library/product_categories" class="btn btn-light me-md-2 px-4 rounded-pill border">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 rounded-pill"><i class="fas fa-save me-1"></i> Update Category</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

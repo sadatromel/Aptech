@@ -1,0 +1,568 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Transfer Quantities - RMG ERP{% endblock %}
+
+{% block css %}
+<style>
+    /* Premium UI Specifics that don't override standard bootstrap variables */
+    .transfer-container {
+        background: transparent;
+    }
+
+    .transfer-header {
+        background: transparent;
+        color: inherit;
+        padding: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .transfer-body {
+        padding: 0;
+    }
+
+    .po-selector {
+        background: var(--bs-light);
+        border-radius: var(--bs-border-radius-lg);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--bs-border-color);
+    }
+
+
+
+    .split-view {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .po-panel {
+        border: 1px solid var(--bs-border-color);
+        border-radius: var(--bs-border-radius-lg);
+        overflow: hidden;
+        background: #fff;
+    }
+
+    .po-panel-header {
+        padding: 1rem;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .source-panel .po-panel-header {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .target-panel .po-panel-header {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .po-panel-body {
+        padding: 1rem;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .sku-grid {
+        font-size: 0.9em;
+    }
+
+    .sku-grid th {
+        background: var(--bs-light);
+        color: inherit;
+        font-weight: 600;
+        padding: 0.5rem;
+        text-align: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+
+    .sku-grid td {
+        padding: 0.5rem;
+        text-align: center;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .transfer-input {
+        width: 80px;
+        text-align: center;
+    }
+
+    .transfer-arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: var(--bs-primary);
+    }
+
+    .summary-card {
+        background: var(--bs-light);
+        border-radius: var(--bs-border-radius-lg);
+        padding: 1.5rem;
+        margin-top: 2rem;
+        border: 1px solid var(--bs-border-color);
+    }
+
+
+
+    .quantity-info {
+        font-size: 0.85em;
+        color: #6c757d;
+    }
+
+    @media (max-width: 992px) {
+        .split-view {
+            grid-template-columns: 1fr;
+        }
+        
+        .transfer-arrow {
+            margin: 1rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="transfer-container mt-4">
+        
+        <h1 class="h3 mb-2">Transfer Quantities</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ BASE_URL }}/merchandising">Merchandising</a></li>
+            <li class="breadcrumb-item"><a href="{{ BASE_URL }}/merchandising/production-orders">Production Orders</a></li>
+            <li class="breadcrumb-item active">Transfers</li>
+        </ol>
+
+        <div class="transfer-header mb-4 d-flex justify-content-between align-items-center">
+            <p class="text-muted mb-0">Move quantities between Production Orders to fulfill demand.</p>
+            <div>
+                <a href="{{ BASE_URL }}/merchandising/transfer/history" class="btn btn-light border rounded-pill me-2">
+                    <i class="fas fa-history me-1"></i> History
+                </a>
+                <a href="{{ BASE_URL }}/merchandising/production-orders" class="btn btn-light border rounded-pill">
+                    <i class="fas fa-arrow-left me-1"></i> POs
+                </a>
+            </div>
+        </div>
+
+        <div class="transfer-body">
+            {% include 'partials/alerts.twig' %}
+
+            <!-- Stats Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white h-100 shadow-sm border-0 rounded-3">
+                        <div class="card-body text-center d-flex flex-column justify-content-center">
+                            <h2 class="mb-0">{{ stats|length > 0 ? stats|reduce((sum, stat) => sum + stat.total_transfers, 0) : 0 }}</h2>
+                            <p class="text-white-50 mb-0 small text-uppercase">Transfers (30d)</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white h-100 shadow-sm border-0 rounded-3">
+                        <div class="card-body text-center d-flex flex-column justify-content-center">
+                            <h2 class="mb-0">{{ stats|length > 0 ? stats|reduce((sum, stat) => sum + stat.total_quantity_transferred, 0) : 0 }}</h2>
+                            <p class="text-white-50 mb-0 small text-uppercase">Items Moved</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white h-100 shadow-sm border-0 rounded-3">
+                        <div class="card-body text-center d-flex flex-column justify-content-center">
+                            <h2 class="mb-0">{{ production_orders|length }}</h2>
+                            <p class="text-white-50 mb-0 small text-uppercase">Active POs</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark h-100 shadow-sm border-0 rounded-3">
+                        <div class="card-body text-center d-flex flex-column justify-content-center">
+                            <h2 class="mb-0">{{ recent_transfers|length }}</h2>
+                            <p class="text-dark-50 mb-0 small text-uppercase">Recent Events</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <form method="POST" id="transferForm">
+    {{ csrf_field() | raw }}
+                <input type="hidden" name="action" value="transfer">
+                
+                <div class="po-selector">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="form-floating">
+                                <select class="form-select" name="source_po_id" id="sourcePO" required onchange="loadSKUs('source')">
+                                    <option value="">Select Source PO</option>
+                                    {% for po in production_orders %}
+                                        <option value="{{ po.po_id }}" 
+                                                data-style="{{ po.style_code }}"
+                                                data-buyer="{{ po.company_name }}"
+                                                {% if source_po_id == po.po_id %}selected{% endif %}>
+                                            {{ po.po_number }} - {{ po.style_code }} ({{ po.company_name }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <label for="sourcePO">Source PO</label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-2 d-flex align-items-center justify-content-center py-3 py-md-0">
+                            <div class="transfer-arrow bg-white shadow-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                                <i class="fas fa-arrow-right text-primary"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-5">
+                            <div class="form-floating">
+                                <select class="form-select" name="target_po_id" id="targetPO" required onchange="loadSKUs('target')">
+                                    <option value="">Select Target PO</option>
+                                    {% for po in production_orders %}
+                                        <option value="{{ po.po_id }}" 
+                                                data-style="{{ po.style_code }}"
+                                                data-buyer="{{ po.company_name }}">
+                                            {{ po.po_number }} - {{ po.style_code }} ({{ po.company_name }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <label for="targetPO">Target PO</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="split-view">
+                    <div class="po-panel source-panel">
+                        <div class="po-panel-header">
+                            <span>Source PO Quantities</span>
+                            <span id="sourcePOInfo"></span>
+                        </div>
+                        <div class="po-panel-body">
+                            <div id="sourceSKUs">
+                                <div class="text-center text-muted p-4">
+                                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                                    <p>Select a source PO to view available quantities</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="po-panel target-panel">
+                        <div class="po-panel-header">
+                            <span>Target PO Current Quantities</span>
+                            <span id="targetPOInfo"></span>
+                        </div>
+                        <div class="po-panel-body">
+                            <div id="targetSKUs">
+                                <div class="text-center text-muted p-4">
+                                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                                    <p>Select a target PO to view current quantities</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="summary-card">
+                    <h5>Transfer Summary</h5>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-floating">
+                                <textarea class="form-control" name="notes" id="notes" style="height: 100px" placeholder="Add any notes about this transfer..."></textarea>
+                                <label for="notes">Notes</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="mb-2">
+                                <strong>Total Items to Transfer:</strong> <span id="totalTransferQty">0</span>
+                            </div>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4 btn-lg mt-3" onclick="return validateTransfer()">
+                                <i class="fas fa-check me-2"></i> Complete Transfer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Recent Transfers -->
+            {% if recent_transfers|length > 0 %}
+            <hr class="my-4">
+            <h4>Recent Transfers</h4>
+            <div class="card shadow-lg border-0 rounded-3 mb-4">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                            <th>Date</th>
+                            <th>Source PO</th>
+                            <th>Target PO</th>
+                            <th>Transferred By</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transfer in recent_transfers %}
+                        <tr>
+                            <td>{{ transfer.transfer_date|date('M d, Y H:i') }}</td>
+                            <td>{{ transfer.source_po_number }}</td>
+                            <td>{{ transfer.target_po_number }}</td>
+                            <td>{{ transfer.transferred_by_name }}</td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ BASE_URL }}/merchandising/transfer/{{ transfer.transfer_id }}" class="btn btn-outline-primary rounded-circle" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+    let sourceSKUs = [];
+    let targetSKUs = [];
+
+    // Auto-select source PO if provided in URL
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const sourcePOId = urlParams.get('source');
+        if (sourcePOId) {
+            document.getElementById('sourcePO').value = sourcePOId;
+            loadSKUs('source');
+        }
+    });
+
+    function loadSKUs(type) {
+        const poId = document.getElementById(type + 'PO').value;
+        const infoDiv = document.getElementById(type + 'POInfo');
+        const skusDiv = document.getElementById(type + 'SKUs');
+        
+        if (!poId) {
+            infoDiv.innerHTML = '';
+            skusDiv.innerHTML = `
+                <div class="text-center text-muted p-4">
+                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <p>Select a ${type} PO to view quantities</p>
+                </div>
+            `;
+            return;
+        }
+
+        const select = document.getElementById(type + 'PO');
+        const selectedOption = select.options[select.selectedIndex];
+        infoDiv.innerHTML = `${selectedOption.dataset.style} - ${selectedOption.dataset.buyer}`;
+
+        fetch(`{{ BASE_URL }}/merchandising/transfer/skus?po_id=${poId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (type === 'source') {
+                        sourceSKUs = data.skus;
+                        displaySourceSKUs(data.skus);
+                    } else {
+                        targetSKUs = data.skus;
+                        displayTargetSKUs(data.skus);
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function displaySourceSKUs(skus) {
+        const container = document.getElementById('sourceSKUs');
+        
+        if (skus.length === 0) {
+            container.innerHTML = '<p class="text-center text-muted">No SKUs found</p>';
+            return;
+        }
+
+        // Group SKUs by color and inseam
+        const grouped = {};
+        skus.forEach(sku => {
+            const key = `${sku.color}_${sku.inseam}`;
+            if (!grouped[key]) {
+                grouped[key] = { color: sku.color, inseam: sku.inseam, sizes: {} };
+            }
+            grouped[key].sizes[sku.size] = sku;
+        });
+
+        let html = '<table class="table table-sm sku-grid"><thead><tr><th>Color / Inseam</th>';
+        
+        // Get all unique sizes
+        const allSizes = [...new Set(skus.map(s => s.size))].sort();
+        allSizes.forEach(size => {
+            html += `<th>${size}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+
+        Object.values(grouped).forEach(group => {
+            html += `<tr>
+                <td>
+                    <strong>${group.color}</strong><br>
+                    <small class="text-muted">${group.inseam}</small>
+                </td>`;
+            
+            allSizes.forEach(size => {
+                const sku = group.sizes[size];
+                if (sku) {
+                    html += `<td>
+                        <div class="quantity-info">Available: ${sku.quantity_ordered}</div>
+                        <input type="number" 
+                            class="form-control form-control-sm transfer-input" 
+                            name="transfer_items[${sku.line_id}]" 
+                            min="0" 
+                            max="${sku.quantity_ordered}"
+                            placeholder="0"
+                            onchange="updateTransferTotal()">
+                    </td>`;
+                } else {
+                    html += '<td>-</td>';
+                }
+            });
+            
+            html += '</tr>';
+        });
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    function displayTargetSKUs(skus) {
+        const container = document.getElementById('targetSKUs');
+        
+        if (skus.length === 0) {
+            container.innerHTML = '<p class="text-center text-muted">No SKUs found</p>';
+            return;
+        }
+
+        // Group SKUs by color and inseam
+        const grouped = {};
+        skus.forEach(sku => {
+            const key = `${sku.color}_${sku.inseam}`;
+            if (!grouped[key]) {
+                grouped[key] = { color: sku.color, inseam: sku.inseam, sizes: {} };
+            }
+            grouped[key].sizes[sku.size] = sku;
+        });
+
+        let html = '<table class="table table-sm sku-grid"><thead><tr><th>Color / Inseam</th>';
+        
+        // Get all unique sizes
+        const allSizes = [...new Set(skus.map(s => s.size))].sort();
+        allSizes.forEach(size => {
+            html += `<th>${size}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+
+        Object.values(grouped).forEach(group => {
+            html += `<tr>
+                <td>
+                    <strong>${group.color}</strong><br>
+                    <small class="text-muted">${group.inseam}</small>
+                </td>`;
+            
+            allSizes.forEach(size => {
+                const sku = group.sizes[size];
+                if (sku) {
+                    html += `<td>
+                        <div class="badge bg-success">Current: ${sku.quantity_ordered}</div>
+                    </td>`;
+                } else {
+                    html += '<td>-</td>';
+                }
+            });
+            
+            html += '</tr>';
+        });
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    function updateTransferTotal() {
+        const inputs = document.querySelectorAll('input[name^="transfer_items"]');
+        let total = 0;
+        
+        inputs.forEach(input => {
+            total += parseInt(input.value || 0);
+        });
+        
+        document.getElementById('totalTransferQty').textContent = total;
+    }
+
+    function validateTransfer() {
+        const sourcePO = document.getElementById('sourcePO').value;
+        const targetPO = document.getElementById('targetPO').value;
+        
+        if (sourcePO === targetPO) {
+            alert('Source and Target PO cannot be the same!');
+            return false;
+        }
+        
+        const totalTransfer = parseInt(document.getElementById('totalTransferQty').textContent);
+        if (totalTransfer === 0) {
+            alert('Please enter quantities to transfer!');
+            return false;
+        }
+        
+        return confirm(`Are you sure you want to transfer ${totalTransfer} items?`);
+    }
+
+    // Handle form submission with AJAX
+    document.getElementById('transferForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+        
+        // Parse transfer_items
+        data.transfer_items = {};
+        for (let [key, value] of formData.entries()) {
+            if (key.startsWith('transfer_items[')) {
+                const lineId = key.match(/\d+/)[0];
+                data.transfer_items[lineId] = parseInt(value);
+            }
+        }
+        
+        fetch('{{ BASE_URL }}/merchandising/transfer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                window.location.reload();
+            } else {
+                alert(result.error || 'Transfer failed');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred during transfer');
+        });
+    });
+</script>
+{% endblock %}

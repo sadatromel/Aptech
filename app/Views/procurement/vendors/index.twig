@@ -1,0 +1,272 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Vendor Management | Procurement{% endblock %}
+
+{% block styles %}
+<style>
+    .hover-translate-y {
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .hover-translate-y:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.08) !important;
+    }
+    .stats-icon-box {
+        width: 52px;
+        height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .table > :not(caption) > * > * {
+        padding: 0.75rem 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Vendor Management</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item active">Vendors</li>
+    </ol>
+
+    {# Statistics Cards #}
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 hover-translate-y">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Total Vendors</span>
+                            <h3 class="mb-0 fw-bold text-dark">{{ stats.total|default(0) }}</h3>
+                        </div>
+                        <div class="flex-shrink-0 ms-3">
+                            <div class="stats-icon-box bg-primary bg-opacity-10 text-primary rounded-3">
+                                <i class="fas fa-users fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 hover-translate-y">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Active Vendors</span>
+                            <h3 class="mb-0 fw-bold text-dark">{{ stats.active|default(0) }}</h3>
+                        </div>
+                        <div class="flex-shrink-0 ms-3">
+                            <div class="stats-icon-box bg-success bg-opacity-10 text-success rounded-3">
+                                <i class="fas fa-user-check fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 hover-translate-y">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Inactive Vendors</span>
+                            <h3 class="mb-0 fw-bold text-dark">{{ stats.inactive|default(0) }}</h3>
+                        </div>
+                        <div class="flex-shrink-0 ms-3">
+                            <div class="stats-icon-box bg-warning bg-opacity-10 text-warning rounded-3">
+                                <i class="fas fa-user-slash fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 hover-translate-y">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Blacklisted</span>
+                            <h3 class="mb-0 fw-bold text-dark">{{ stats.blacklisted|default(0) }}</h3>
+                        </div>
+                        <div class="flex-shrink-0 ms-3">
+                            <div class="stats-icon-box bg-danger bg-opacity-10 text-danger rounded-3">
+                                <i class="fas fa-user-times fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Filter Bar #}
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body px-4 py-3">
+            <form action="{{ BASE_URL }}/procurement/vendors" method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label text-muted small fw-semibold">Status</label>
+                    <select name="status" class="form-select border-0 bg-light py-2 px-3" onchange="this.form.submit()">
+                        <option value="">All Statuses</option>
+                        <option value="active" {{ filters.status == 'active' ? 'selected' : '' }}>Active</option>
+                        <option value="inactive" {{ filters.status == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                        <option value="blacklisted" {{ filters.status == 'blacklisted' ? 'selected' : '' }}>Blacklisted</option>
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label text-muted small fw-semibold">Search</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0 text-muted py-2"><i class="fas fa-search"></i></span>
+                        <input type="text" name="search" class="form-control border-0 bg-light py-2"
+                               placeholder="Search by name, code or contact..." value="{{ filters.search }}">
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary py-2 px-4"><i class="fas fa-filter me-1"></i> Filter</button>
+                    <a href="{{ BASE_URL }}/procurement/vendors" class="btn btn-outline-secondary py-2 px-4"><i class="fas fa-undo me-1"></i> Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# Data Table #}
+    <div class="card shadow-sm border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center px-4">
+            <div class="h5 mb-0 text-primary">
+                <i class="fas fa-table me-2"></i>Vendor List
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-success px-4 rounded-pill" id="btnImportExcel">
+                    <i class="fas fa-file-excel me-1"></i> Import Excel
+                </button>
+                <a href="{{ BASE_URL }}/procurement/vendors/create" class="btn btn-primary px-4 rounded-pill">
+                    <i class="fas fa-plus me-1"></i> New Vendor
+                </a>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            {% if vendors is empty %}
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-users-slash fa-3x mb-3 text-secondary"></i>
+                    <p class="mb-0">No vendors found. <a href="{{ BASE_URL }}/procurement/vendors/create" class="text-primary fw-semibold">Add your first vendor →</a></p>
+                </div>
+            {% else %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="vendorsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:10%">Code</th>
+                                <th style="width:22%">Name / Company</th>
+                                <th style="width:12%">Category</th>
+                                <th style="width:15%">Contact Person</th>
+                                <th style="width:13%">Phone</th>
+                                <th style="width:8%">Status</th>
+                                <th style="width:10%">POs</th>
+                                <th style="width:10%" class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for vendor in vendors %}
+                            <tr>
+                                <td><span class="badge bg-secondary bg-opacity-10 text-secondary font-monospace">{{ vendor.vendor_code }}</span></td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ vendor.vendor_name }}</div>
+                                    {% if vendor.company_name and vendor.company_name != vendor.vendor_name %}
+                                    <div class="text-muted small">{{ vendor.company_name }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted">{{ vendor.category|default('—') }}</td>
+                                <td>{{ vendor.contact_person|default('—') }}</td>
+                                <td>{{ vendor.phone|default('—') }}</td>
+                                <td>
+                                    {% if vendor.status == 'active' %}
+                                    <span class="badge rounded-pill bg-success bg-opacity-10 text-success">Active</span>
+                                    {% elseif vendor.status == 'inactive' %}
+                                    <span class="badge rounded-pill bg-secondary bg-opacity-10 text-secondary">Inactive</span>
+                                    {% elseif vendor.status == 'blacklisted' %}
+                                    <span class="badge rounded-pill bg-danger bg-opacity-10 text-danger">Blacklisted</span>
+                                    {% else %}
+                                    <span class="badge rounded-pill bg-dark bg-opacity-10 text-dark">{{ vendor.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-info bg-opacity-10 text-info px-2 py-1">{{ vendor.total_pos|default(0) }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ BASE_URL }}/procurement/vendors/{{ vendor.vendor_id }}/edit"
+                                           class="btn btn-light rounded-circle me-1" title="Edit Vendor">
+                                            <i class="fas fa-edit text-warning"></i>
+                                        </a>
+                                        <form action="{{ BASE_URL }}/procurement/vendors/delete"
+                                              method="POST" class="d-inline"
+                                              onsubmit="return confirm('Delete vendor \'{{ vendor.vendor_name }}\'? This cannot be undone if they have no purchase orders.');">
+                                            {{ csrf_field() | raw }}
+                                            <input type="hidden" name="id" value="{{ vendor.vendor_id }}">
+                                            <button type="submit" class="btn btn-light rounded-circle" title="Delete Vendor">
+                                                <i class="fas fa-trash text-danger"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# Excel Import Modal (kept for import feature) #}
+<div class="modal fade" id="importExcelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-3">
+            <div class="modal-header border-bottom py-3">
+                <h5 class="modal-title fw-bold"><i class="fas fa-file-excel text-success me-2"></i>Import Vendors from Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="importForm" action="{{ BASE_URL }}/procurement/vendors/import" method="POST" enctype="multipart/form-data">
+                {{ csrf_field() | raw }}
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">Upload an Excel file (.xlsx or .xls) with vendor data. Existing vendors (matched by code) will be updated.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Excel File <span class="text-danger">*</span></label>
+                        <input type="file" name="excel_file" class="form-control" accept=".xlsx,.xls" required>
+                    </div>
+                    <a href="{{ BASE_URL }}/procurement/vendors/download-template" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-download me-1"></i> Download Template
+                    </a>
+                </div>
+                <div class="modal-footer border-top py-3">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success px-4">
+                        <i class="fas fa-upload me-1"></i> Import
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Import Excel modal trigger
+    const btnImport = document.getElementById('btnImportExcel');
+    if (btnImport) {
+        btnImport.addEventListener('click', function () {
+            const modal = new bootstrap.Modal(document.getElementById('importExcelModal'));
+            modal.show();
+        });
+    }
+});
+</script>
+{% endblock %}

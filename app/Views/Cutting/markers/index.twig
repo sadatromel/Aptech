@@ -1,0 +1,230 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Markers{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Page Header -->
+    <div class="col-12 mb-4">
+        <div class="page-header d-flex justify-content-between align-items-center p-4 bg-white rounded shadow-sm">
+            <div class="page-title">
+                <h1 class="h3 text-primary fw-bold mb-1">Markers</h1>
+                <p class="text-muted mb-0">Manage marker making and fabric efficiency</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMarkerModal">
+                    <i class="fas fa-plus me-2"></i>New Marker
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="col-12 mb-4">
+        <div class="stats-grid">
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.total_markers }}</h3>
+                <p class="text-muted mb-0">Total Markers</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.active_markers }}</h3>
+                <p class="text-muted mb-0">Active Markers</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.completed_markers }}</h3>
+                <p class="text-muted mb-0">Completed Markers</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.avg_efficiency|number_format(1) }}%</h3>
+                <p class="text-muted mb-0">Avg Efficiency</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Markers Table -->
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fas fa-ruler-combined me-2"></i>Markers</span>
+                <input type="text" class="form-control form-control-sm w-auto" id="searchInput" placeholder="Search markers...">
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="markersTable">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="p-3 border-0">Marker Number</th>
+                                <th class="p-3 border-0">Cutting Plan</th>
+                                <th class="p-3 border-0">Style</th>
+                                <th class="p-3 border-0">Dimensions</th>
+                                <th class="p-3 border-0">Pieces</th>
+                                <th class="p-3 border-0">Fab. Cons.</th>
+                                <th class="p-3 border-0">Efficiency</th>
+                                <th class="p-3 border-0">Status</th>
+                                <th class="p-3 border-0">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for marker in markers %}
+                            <tr>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ marker.marker_number }}</div>
+                                    <small class="text-muted">{{ marker.created_date|date('M d, Y') }}</small>
+                                </td>
+                                <td class="p-3">{{ marker.plan_number }}</td>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ marker.style_code }}</div>
+                                    <small class="text-muted">{{ marker.style_name }}</small>
+                                </td>
+                                <td class="p-3">
+                                    {{ marker.marker_length|number_format(2) }}m × {{ marker.marker_width|number_format(2) }}m
+                                    <div class="small text-muted">{{ marker.marker_type }}</div>
+                                </td>
+                                <td class="p-3">{{ marker.total_pieces }}</td>
+                                <td class="p-3">{{ marker.fabric_consumption|number_format(2) }} m²</td>
+                                <td class="p-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1" style="height: 6px;">
+                                            <div class="progress-bar bg-{{ marker.efficiency < 80 ? 'danger' : 'success' }}" role="progressbar" style="width: {{ marker.efficiency }}%"></div>
+                                        </div>
+                                        <span class="ms-2 small fw-bold">{{ marker.efficiency }}%</span>
+                                    </div>
+                                </td>
+                                <td class="p-3">
+                                    <span class="badge rounded-pill bg-info">{{ marker.status }}</span>
+                                </td>
+                                <td class="p-3">
+                                    <form action="/cutting/markers/{{ marker.marker_id }}/delete" method="POST" onsubmit="return confirm('Delete this marker?')" style="display:inline;">
+    {{ csrf_field() | raw }}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center p-4 text-muted">No markers found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal fade" id="addMarkerModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <form action="/cutting/markers" method="POST" class="modal-content">
+    {{ csrf_field() | raw }}
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">New Marker</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Marker Number</label>
+                        <input type="text" class="form-control" name="marker_number" value="MK-{{ 'now'|date('Y-m-d') }}-001" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Cutting Plan</label>
+                        <select class="form-select" name="plan_id" required>
+                            <option value="">Select Plan</option>
+                            {% for plan in plans %}
+                            <option value="{{ plan.plan_id }}">{{ plan.plan_number }} - {{ plan.style_code }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Style</label>
+                        <select class="form-select" name="style_id" required>
+                            <option value="">Select Style</option>
+                            {% for style in styles %}
+                            <option value="{{ style.style_id }}">{{ style.style_code }} - {{ style.style_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Type</label>
+                        <select class="form-select" name="marker_type">
+                            <option value="Standard">Standard</option>
+                            <option value="Tight">Tight</option>
+                            <option value="Loose">Loose</option>
+                            <option value="Special">Special</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-2">
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Total Pieces</label>
+                        <input type="number" class="form-control" name="total_pieces" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Length (m)</label>
+                        <input type="number" class="form-control" name="marker_length" step="0.01" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Width (m)</label>
+                        <input type="number" class="form-control" name="marker_width" step="0.01" required>
+                    </div>
+                     <div class="col-md-2">
+                        <label class="form-label fw-bold">Fabric Cons.</label>
+                        <input type="number" class="form-control" name="fabric_consumption" step="0.01" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Efficiency %</label>
+                        <input type="number" class="form-control" name="efficiency" step="0.1" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Date</label>
+                        <input type="date" class="form-control" name="created_date" value="{{ 'now'|date('Y-m-d') }}" required>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                     <h6>Size Combinations</h6>
+                     <div id="sizesContainer">
+                        <div class="row g-2 mb-2">
+                            <div class="col-3"><input type="text" class="form-control" name="size_combinations[0][size_name]" placeholder="Size"></div>
+                            <div class="col-3"><input type="number" class="form-control" name="size_combinations[0][quantity]" placeholder="Qty"></div>
+                            <div class="col-3"><input type="text" class="form-control" name="size_combinations[0][position]" placeholder="Position"></div>
+                        </div>
+                     </div>
+                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addSize()">+ Add Size</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Create Marker</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let sizeIndex = 1;
+function addSize() {
+    const html = `
+    <div class="row g-2 mb-2">
+        <div class="col-3"><input type="text" class="form-control" name="size_combinations[${sizeIndex}][size_name]" placeholder="Size"></div>
+        <div class="col-3"><input type="number" class="form-control" name="size_combinations[${sizeIndex}][quantity]" placeholder="Qty"></div>
+        <div class="col-3"><input type="text" class="form-control" name="size_combinations[${sizeIndex}][position]" placeholder="Position"></div>
+    </div>`;
+    document.getElementById('sizesContainer').insertAdjacentHTML('beforeend', html);
+    sizeIndex++;
+}
+
+document.getElementById('searchInput').addEventListener('keyup', function(e) {
+    const term = e.target.value.toLowerCase();
+    document.querySelectorAll('#markersTable tbody tr').forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+    });
+});
+</script>
+
+{% endblock %}

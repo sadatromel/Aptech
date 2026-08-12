@@ -1,0 +1,93 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Store Requisitions{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-8">
+        <h2 class="mb-0">Store Requisitions</h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb bg-transparent p-0 mb-0">
+                <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ BASE_URL }}/inventory">Inventory</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Requisitions</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="col-4 text-end">
+        <a href="{{ BASE_URL }}/store_requisition/create" class="btn btn-primary rounded-pill px-4">
+            <i class="bx bx-plus me-1"></i> New Requisition
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body p-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="requisitionsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Req. No</th>
+                        <th>Date</th>
+                        <th>Location</th>
+                        <th>Department</th>
+                        <th>Requested By</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in requisitions %}
+                    <tr>
+                        <td class="fw-semibold">{{ req.requisition_no }}</td>
+                        <td>{{ req.requisition_date|date('M d, Y') }}</td>
+                        <td>{{ req.location_name }}</td>
+                        <td>{{ req.department_name|default('-') }}</td>
+                        <td>{{ req.requested_by_name }}</td>
+                        <td>
+                            {% set badge_class = 'bg-secondary' %}
+                            {% if req.status == 'approved' or req.status == 'completed' %}
+                                {% set badge_class = 'bg-success' %}
+                            {% elseif req.status == 'pending' %}
+                                {% set badge_class = 'bg-warning text-dark' %}
+                            {% elseif req.status == 'rejected' or req.status == 'cancelled' %}
+                                {% set badge_class = 'bg-danger' %}
+                            {% elseif req.status == 'partial_issued' %}
+                                {% set badge_class = 'bg-info' %}
+                            {% endif %}
+                            <span class="badge {{ badge_class }} rounded-pill">{{ req.status|title }}</span>
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ BASE_URL }}/store_requisition/show?id={{ req.requisition_id }}" class="btn btn-sm btn-outline-primary rounded-pill" title="View Details">
+                                <i class="bx bx-show"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">No store requisitions found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof jQuery !== 'undefined' && $.fn.DataTable) {
+            $('#requisitionsTable').DataTable({
+                order: [[1, 'desc']],
+                pageLength: 25,
+                language: {
+                    search: "",
+                    searchPlaceholder: "Search requisitions..."
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

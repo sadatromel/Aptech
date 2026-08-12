@@ -1,0 +1,270 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Finance Dashboard & KPIs{% endblock %}
+
+{% block styles %}
+<style>
+    .premium-glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05);
+        border-radius: var(--border-radius);
+    }
+    [data-theme="dark"] .premium-glass-card {
+        background: rgba(30, 41, 59, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    
+    .metric-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    }
+    
+    .gradient-purple-pink {
+        background: linear-gradient(135deg, #7f00ff 0%, #e100ff 100%);
+        color: white;
+    }
+    .gradient-teal-green {
+        background: linear-gradient(135deg, #02aab0 0%, #00cdac 100%);
+        color: white;
+    }
+    .gradient-orange-yellow {
+        background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);
+        color: white;
+    }
+    .gradient-blue-navy {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+    }
+    
+    .recent-transaction-row:hover {
+        background-color: var(--primary-light);
+        transition: background-color 0.2s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 bg-transparent px-0">
+                <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard" class="text-decoration-none"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Finance Dashboard</li>
+            </ol>
+        </nav>
+        <h4 class="mb-0 font-weight-bold">Financial Overview</h4>
+    </div>
+
+    <!-- Alert / Action panel for pending approvals -->
+    {% if stats.pending_approvals > 0 %}
+    <div class="alert alert-info premium-glass-card d-flex align-items-center mb-4 border-start border-4 border-info" role="alert">
+        <i class="fas fa-info-circle fa-2x text-info me-3"></i>
+        <div>
+            <h5 class="alert-heading mb-1 font-weight-bold">Pending Financial Reviews</h5>
+            <p class="mb-0">There are <strong>{{ stats.pending_approvals }} items</strong> (vouchers, cost allocations, or budgets) awaiting management release. Head to the <a href="{{ BASE_URL }}/finance/vouchers" class="font-weight-bold">Vouchers & Approvals</a> tab to release them.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Metric KPI Grid -->
+    <div class="row g-4 mb-4">
+        <!-- Cash on Hand -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 premium-glass-card metric-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle p-3 gradient-teal-green me-3">
+                        <i class="fas fa-wallet fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1 text-uppercase font-size-12">Cash & Bank Balance</h6>
+                        <h3 class="mb-0 font-weight-bold">${{ stats.cash_on_hand|number_format(2) }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Working Capital -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 premium-glass-card metric-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle p-3 gradient-blue-navy me-3">
+                        <i class="fas fa-balance-scale fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1 text-uppercase font-size-12">Working Capital</h6>
+                        <h3 class="mb-0 font-weight-bold">${{ stats.working_capital|number_format(2) }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Due Payables -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 premium-glass-card metric-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle p-3 gradient-orange-yellow me-3">
+                        <i class="fas fa-file-invoice-dollar fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1 text-uppercase font-size-12">Outstanding Payables</h6>
+                        <h3 class="mb-0 font-weight-bold">${{ stats.due_payable_total|number_format(2) }}</h3>
+                        <small class="text-danger font-weight-bold">{{ stats.due_payable_count }} Outstanding Bills</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Due Receivables -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 premium-glass-card metric-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle p-3 gradient-purple-pink me-3">
+                        <i class="fas fa-hand-holding-usd fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1 text-uppercase font-size-12">Outstanding Receivables</h6>
+                        <h3 class="mb-0 font-weight-bold">${{ stats.due_receivable_total|number_format(2) }}</h3>
+                        <small class="text-success font-weight-bold">{{ stats.due_receivable_count }} Open Invoices</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts and Insights Grid -->
+    <div class="row g-4 mb-4">
+        <!-- Cash Flow Inflow vs Outflow Trend -->
+        <div class="col-xl-8">
+            <div class="card border-0 premium-glass-card h-100">
+                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-4 px-4">
+                    <h5 class="mb-0 font-weight-bold"><i class="fas fa-exchange-alt me-2 text-primary"></i>Cash Flow Trend (Inflow vs Outflow)</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <canvas id="cashflowChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Cash Accounts Breakdown -->
+        <div class="col-xl-4">
+            <div class="card border-0 premium-glass-card h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h5 class="mb-0 font-weight-bold"><i class="fas fa-university me-2 text-success"></i>Liquidity Accounts</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <ul class="list-group list-group-flush">
+                        {% if cashAccounts is empty %}
+                            <li class="list-group-item bg-transparent px-0 py-3 text-muted">No liquidity accounts found.</li>
+                        {% else %}
+                            {% for acc in cashAccounts %}
+                            <li class="list-group-item bg-transparent px-0 py-3 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0 font-weight-bold">{{ acc.account_name }}</h6>
+                                    <small class="text-muted">COA Cash Account</small>
+                                </div>
+                                <span class="font-weight-bold text-success">${{ acc.opening_balance|number_format(2) }}</span>
+                            </li>
+                            {% endfor %}
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent GL Transactions -->
+    <div class="card border-0 premium-glass-card">
+        <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold"><i class="fas fa-history me-2 text-info"></i>Recent General Ledger Postings</h5>
+            <a href="{{ BASE_URL }}/finance/accounts" class="btn btn-sm btn-outline-primary rounded-pill px-3">View Daybook</a>
+        </div>
+        <div class="card-body px-4 pb-4">
+            <div class="table-responsive">
+                <table class="table align-middle table-borderless">
+                    <thead>
+                        <tr class="text-muted font-size-12 text-uppercase">
+                            <th>Date</th>
+                            <th>Account Code</th>
+                            <th>Account Name</th>
+                            <th>Description</th>
+                            <th class="text-end">Debit</th>
+                            <th class="text-end">Credit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if recentTransactions is empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">No transactions found in General Ledger.</td>
+                        </tr>
+                        {% else %}
+                            {% for gl in recentTransactions %}
+                            <tr class="recent-transaction-row">
+                                <td>{{ gl.transaction_date|date('d-M-Y') }}</td>
+                                <td class="font-weight-bold text-primary">{{ gl.account_code }}</td>
+                                <td class="font-weight-bold">{{ gl.account_name }}</td>
+                                <td>{{ gl.description }}</td>
+                                <td class="text-end font-weight-bold {% if gl.debit_amount > 0 %}text-success{% endif %}">
+                                    {% if gl.debit_amount > 0 %}${{ gl.debit_amount|number_format(2) }}{% else %}-{% endif %}
+                                </td>
+                                <td class="text-end font-weight-bold {% if gl.credit_amount > 0 %}text-danger{% endif %}">
+                                    {% if gl.credit_amount > 0 %}${{ gl.credit_amount|number_format(2) }}{% else %}-{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const ctx = document.getElementById('cashflowChart').getContext('2d');
+    const chartData = {
+        labels: [{% for c in monthlyCashflow %}"{{ c.month_label }}",{% endfor %}],
+        datasets: [
+            {
+                label: 'Cash Inflow ($)',
+                data: [{% for c in monthlyCashflow %}{{ c.inflow }},{% endfor %}],
+                backgroundColor: 'rgba(2, 170, 176, 0.2)',
+                borderColor: '#02aab0',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true
+            },
+            {
+                label: 'Cash Outflow ($)',
+                data: [{% for c in monthlyCashflow %}{{ c.outflow }},{% endfor %}],
+                backgroundColor: 'rgba(248, 87, 166, 0.2)',
+                borderColor: '#f857a6',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true
+            }
+        ]
+    };
+
+    new Chart(ctx, {
+        type: 'line',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginForZero: true }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

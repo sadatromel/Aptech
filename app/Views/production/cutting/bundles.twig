@@ -1,0 +1,114 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Bundle Tickets • {{ plan.plan_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom d-print-none">
+        <div>
+            <h1 class="h3 fw-bold text-dark mb-1">
+                <i class="fas fa-ticket-alt text-primary me-2"></i>Bundle Tickets: {{ plan.plan_number }}
+            </h1>
+            <p class="text-muted small mb-0">Garment Cut Panel Bundles & Barcode Ticket Specification.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ BASE_URL }}/production/cutting" class="btn btn-outline-secondary rounded-pill px-3 btn-sm">
+                <i class="fas fa-arrow-left me-1"></i>Back to Cutting Plans
+            </a>
+            {% if bundles is empty %}
+            <a href="{{ BASE_URL }}/production/cutting/generate-bundles/{{ plan.plan_id }}" class="btn btn-warning rounded-pill px-4 btn-sm shadow-sm">
+                <i class="fas fa-cogs me-1"></i>Generate Bundle Tickets
+            </a>
+            {% else %}
+            <button onclick="window.print()" class="btn btn-primary rounded-pill px-4 btn-sm shadow-sm">
+                <i class="fas fa-print me-1"></i>Print Bundle Tickets
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Summary Spec -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 d-print-none">
+        <div class="card-body p-3 bg-light rounded-4">
+            <div class="row text-center g-3">
+                <div class="col-md-3">
+                    <span class="text-muted small text-uppercase d-block">Plan #</span>
+                    <span class="fw-bold fs-6 text-primary">{{ plan.plan_number }}</span>
+                </div>
+                <div class="col-md-3">
+                    <span class="text-muted small text-uppercase d-block">Planned Cut Qty</span>
+                    <span class="fw-bold fs-6 text-dark">{{ plan.total_quantity|number_format }} Pcs</span>
+                </div>
+                <div class="col-md-3">
+                    <span class="text-muted small text-uppercase d-block">Bundles Generated</span>
+                    <span class="fw-bold fs-6 text-success">{{ bundles|length }} Bundles</span>
+                </div>
+                <div class="col-md-3">
+                    <span class="text-muted small text-uppercase d-block">Status</span>
+                    <span class="badge bg-success rounded-pill fs-6 px-3">{{ plan.status|capitalize }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bundles Table / Ticket Grid -->
+    {% if bundles is empty %}
+    <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
+        <i class="fas fa-tags fa-3x text-warning opacity-50 mb-3 d-block"></i>
+        <h5 class="fw-bold text-dark">No bundle tickets generated yet for this cutting plan.</h5>
+        <p class="text-muted small mb-3">Click the button below to auto-generate size-wise bundle tickets for sewing floor tracking.</p>
+        <div>
+            <a href="{{ BASE_URL }}/production/cutting/generate-bundles/{{ plan.plan_id }}" class="btn btn-warning rounded-pill px-4">
+                <i class="fas fa-cogs me-1"></i>Generate Panel Bundles Now
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted small">
+                        <tr>
+                            <th class="ps-3">Bundle #</th>
+                            <th>Barcode Identifier</th>
+                            <th>Size</th>
+                            <th>Color</th>
+                            <th>Serial Range</th>
+                            <th class="text-end">Quantity (Pcs)</th>
+                            <th class="text-end pe-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in bundles %}
+                        <tr>
+                            <td class="ps-3 fw-bold text-primary">{{ b.bundle_number }}</td>
+                            <td>
+                                <code class="bg-light text-dark px-2 py-1 border rounded">{{ b.barcode }}</code>
+                            </td>
+                            <td><span class="badge bg-dark px-3 py-1">{{ b.size }}</span></td>
+                            <td><span class="fw-semibold text-muted">{{ b.color }}</span></td>
+                            <td><small class="text-muted">{{ b.start_serial }} - {{ b.end_serial }}</small></td>
+                            <td class="text-end fw-bold text-success">{{ b.quantity }}</td>
+                            <td class="text-end pe-3">
+                                <span class="badge rounded-pill bg-success-subtle text-success border border-success">
+                                    {{ b.status|capitalize }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+@media print {
+    .d-print-none { display: none !important; }
+}
+</style>
+{% endblock %}

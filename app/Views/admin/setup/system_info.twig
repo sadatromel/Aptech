@@ -1,0 +1,193 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}{{ pageTitle }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">System Information</h1>
+                <a href="{{ BASE_URL }}/admin/setup" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Setup
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- PHP Configuration -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fab fa-php"></i> PHP Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless table-sm">
+                        <tr>
+                            <td width="40%">PHP Version:</td>
+                            <td><strong>{{ systemStats.php_version }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Memory Limit:</td>
+                            <td><strong>{{ systemStats.memory_limit }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Max Execution Time:</td>
+                            <td><strong>{{ systemStats.max_execution_time }}s</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Upload Max Filesize:</td>
+                            <td><strong>{{ systemStats.upload_max_filesize }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Post Max Size:</td>
+                            <td><strong>{{ systemStats.post_max_size }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Server OS:</td>
+                            <td><strong>{{ systemStats.server_os }}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Database Information -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-database"></i> Database Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless table-sm">
+                        <tr>
+                            <td width="40%">MySQL Version:</td>
+                            <td><strong>{{ systemStats.mysql_version }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Database Size:</td>
+                            <td><strong>{{ systemStats.database_size }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Host:</td>
+                            <td><strong>{{ app.config.DB_HOST|default('localhost') }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Database Name:</td>
+                            <td><strong>{{ app.config.DB_NAME|default('transport_erp') }}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Disk Space -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-hdd"></i> Disk Space Usage
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="progress" style="height: 25px;">
+                                {% set usage = systemStats.disk_space.used_percentage %}
+                                <div class="progress-bar {% if usage < 70 %}bg-success{% elseif usage < 90 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                     role="progressbar" style="width: {{ usage }}%">
+                                    {{ usage }}% Used
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-right">
+                            <small class="text-muted">
+                                Free: {{ systemStats.disk_space.free }} / Total: {{ systemStats.disk_space.total }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Requirements -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-check-circle"></i> System Requirements Check
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th width="25%">Requirement</th>
+                                    <th width="15%">Required</th>
+                                    <th width="15%">Current</th>
+                                    <th width="15%">Status</th>
+                                    <th width="30%">Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for key, req in requirements %}
+                                <tr>
+                                    <td><strong>{{ key|replace({'_': ' '})|title }}</strong></td>
+                                    <td><code>{{ req.required }}</code></td>
+                                    <td><code>{{ req.current }}</code></td>
+                                    <td>
+                                        {% if req.status == 'pass' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check"></i> Pass
+                                            </span>
+                                        {% elseif req.status == 'warning' %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-exclamation-triangle"></i> Warning
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times"></i> Fail
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-muted">
+                                        {% if key == 'php_version' %}
+                                            PHP 7.4 or higher is recommended for optimal performance
+                                        {% elseif key == 'memory_limit' %}
+                                            Higher memory limit recommended for large file uploads
+                                        {% elseif key == 'max_execution_time' %}
+                                            Longer execution time may be needed for bulk operations
+                                        {% else %}
+                                            Required for proper system functionality
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PHP Info Link -->
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="{{ BASE_URL }}/admin/setup/phpinfo" target="_blank" class="btn btn-outline-info">
+                <i class="fas fa-info-circle"></i> View Full PHP Info
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

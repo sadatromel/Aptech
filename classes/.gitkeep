@@ -1,0 +1,2 @@
+# This file ensures the classes directory is tracked by git
+# Place your PHP classes here to be automatically loaded by the autoloader

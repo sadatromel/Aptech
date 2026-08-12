@@ -1,0 +1,1274 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Cutting Control Center{% endblock %}
+
+{% block content %}
+<style>
+    .glow-card {
+        transition: all 0.3s ease-in-out;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    .glow-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(28, 200, 138, 0.12);
+    }
+    .nav-pills .nav-link {
+        border-radius: 10px;
+        padding: 7px 14px;
+        font-weight: 600;
+        font-size: 0.82rem;
+        color: #5a5c69;
+        transition: all 0.25s ease;
+        white-space: nowrap;
+    }
+    .nav-pills .nav-link.active {
+        background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%);
+        color: #fff !important;
+        box-shadow: 0 4px 15px rgba(28, 200, 138, 0.35);
+    }
+    .nav-pills .nav-link:hover:not(.active) {
+        background: rgba(28,200,138,0.1);
+        color: #1cc88a;
+    }
+    .metric-icon {
+        width: 52px; height: 52px;
+        border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem;
+    }
+    .text-gradient {
+        background: linear-gradient(135deg, #1cc88a 0%, #36b9cc 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .stat-number { font-size: 1.8rem; font-weight: 800; }
+    .cutting-tab-nav { overflow-x: auto; scrollbar-width: none; }
+    .cutting-tab-nav::-webkit-scrollbar { display: none; }
+    .status-badge {
+        padding: 3px 10px; border-radius: 20px;
+        font-size: 0.75rem; font-weight: 600;
+    }
+    .status-planned { background:#e3f2fd; color:#1565c0; }
+    .status-in_progress { background:#fff8e1; color:#f57f17; }
+    .status-completed { background:#e8f5e9; color:#2e7d32; }
+    .status-cancelled { background:#fce4ec; color:#c62828; }
+    .status-approved { background:#f3e5f5; color:#6a1b9a; }
+    .status-pending { background:#fafafa; color:#616161; }
+    .status-active { background:#e0f7fa; color:#00838f; }
+    .status-generated { background:#e8eaf6; color:#283593; }
+    .status-issued { background:#fff3e0; color:#e65100; }
+    .status-pass { background:#e8f5e9; color:#2e7d32; }
+    .status-fail { background:#fce4ec; color:#c62828; }
+    .table th { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: #5a5c69; letter-spacing: 0.5px; }
+    .table td { vertical-align: middle; font-size: 0.87rem; }
+    .efficiency-bar { height: 8px; border-radius: 4px; background: #e9ecef; }
+    .efficiency-fill { height: 100%; border-radius: 4px; }
+</style>
+
+{% if session.success_message %}
+<div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+    <i class="fas fa-check-circle me-2"></i>{{ session.success_message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+{% if session.error_message %}
+<div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+    <i class="fas fa-exclamation-circle me-2"></i>{{ session.error_message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Header -->
+    <div class="col-12 mb-3">
+        <div class="page-header d-flex justify-content-between align-items-center p-4 glow-card">
+            <div>
+                <h1 class="h3 fw-bold text-gradient mb-1"><i class="fas fa-cut me-2"></i>Cutting Control Center</h1>
+                <p class="text-muted mb-0 small">Fabric Relaxing · Marker Planning · Lay Allocation · Bundle & Barcode Generation</p>
+            </div>
+            <div class="d-flex gap-2">
+                <span class="badge bg-success fs-6">{{ stats.active_plans }} Active Plans</span>
+                <span class="badge bg-info fs-6">{{ stats.total_markers }} Markers</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="col-12 mb-3">
+        <div class="p-2 glow-card cutting-tab-nav">
+            <ul class="nav nav-pills gap-1 flex-nowrap" id="cuttingTabs" role="tablist">
+                <li class="nav-item"><a class="nav-link {% if activeTab == 'dashboard' %}active{% endif %}" href="{{ BASE_URL }}/cutting/dashboard"><i class="fas fa-chart-pie me-1"></i>Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link {% if activeTab == 'plans' %}active{% endif %}" href="{{ BASE_URL }}/cutting/plans"><i class="fas fa-clipboard-list me-1"></i>Plans</a></li>
+                <li class="nav-item"><a class="nav-link {% if activeTab == 'markers' %}active{% endif %}" href="{{ BASE_URL }}/cutting/markers"><i class="fas fa-object-group me-1"></i>Markers</a></li>
+                <li class="nav-item"><a class="nav-link {% if activeTab == 'lay' %}active{% endif %}" href="{{ BASE_URL }}/cutting/lay"><i class="fas fa-layer-group me-1"></i>Lay</a></li>
+                <li class="nav-item"><a class="nav-link {% if activeTab == 'fabric' %}active{% endif %}" href="{{ BASE_URL }}/cutting/fabric"><i class="fas fa-scroll me-1"></i>Fabric</a></li>
+                <li class="nav-item"><a class="nav-link {% if activeTab == 'execution' %}active{% endif %}" href="{{ BASE_URL }}/cutting/execution"><i class="fas fa-cut me-1"></i>Execution</a></li>
+                <li class="nav-item"><a class="nav-link {% if activeTab == 'bundles' %}active{% endif %}" href="{{ BASE_URL }}/cutting/bundles"><i class="fas fa-boxes me-1"></i>Bundles</a></li>
+                <li class="nav-item"><a class="nav-link {% if activeTab == 'numbering' %}active{% endif %}" href="{{ BASE_URL }}/cutting/numbering"><i class="fas fa-sort-numeric-down me-1"></i>Numbering</a></li>
+                <li class="nav-item"><a class="nav-link {% if activeTab == 'ticketing' %}active{% endif %}" href="{{ BASE_URL }}/cutting/ticketing"><i class="fas fa-ticket-alt me-1"></i>Ticketing</a></li>
+                <li class="nav-item"><a class="nav-link {% if activeTab == 'qc' %}active{% endif %}" href="{{ BASE_URL }}/cutting/qc"><i class="fas fa-check-double me-1"></i>QC</a></li>
+                <li class="nav-item"><a class="nav-link {% if activeTab == 'reports' %}active{% endif %}" href="{{ BASE_URL }}/cutting/reports"><i class="fas fa-file-alt me-1"></i>Reports</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="col-12">
+
+        {# ===== 1. DASHBOARD ===== #}
+        {% if activeTab == 'dashboard' %}
+        <div class="row g-3">
+            <!-- KPI Cards -->
+            <div class="col-md-3 col-6">
+                <div class="card glow-card border-0 p-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted fw-bold text-uppercase mb-1" style="font-size:0.7rem">Total Plans</p>
+                            <h2 class="stat-number text-dark mb-0">{{ stats.total_plans }}</h2>
+                        </div>
+                        <div class="metric-icon" style="background:rgba(28,200,138,0.1)"><i class="fas fa-list-ol text-success"></i></div>
+                    </div>
+                    <div class="mt-2 small text-muted"><span class="text-warning">{{ stats.active_plans }}</span> active · <span class="text-success">{{ stats.completed_plans }}</span> completed</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card glow-card border-0 p-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted fw-bold text-uppercase mb-1" style="font-size:0.7rem">Total Markers</p>
+                            <h2 class="stat-number text-dark mb-0">{{ stats.total_markers }}</h2>
+                        </div>
+                        <div class="metric-icon" style="background:rgba(54,185,204,0.1)"><i class="fas fa-ruler-combined text-info"></i></div>
+                    </div>
+                    <div class="mt-2 small text-muted"><span class="text-success">{{ stats.approved_markers }}</span> approved · Avg eff: <span class="fw-bold">{{ stats.avg_efficiency }}%</span></div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card glow-card border-0 p-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted fw-bold text-uppercase mb-1" style="font-size:0.7rem">Total Bundles</p>
+                            <h2 class="stat-number text-dark mb-0">{{ stats.total_bundles }}</h2>
+                        </div>
+                        <div class="metric-icon" style="background:rgba(246,194,62,0.1)"><i class="fas fa-boxes text-warning"></i></div>
+                    </div>
+                    <div class="mt-2 small text-muted"><span class="text-info">{{ stats.active_bundles }}</span> active · <span class="fw-bold">{{ stats.total_pieces|number_format }}</span> total pieces</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card glow-card border-0 p-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted fw-bold text-uppercase mb-1" style="font-size:0.7rem">Cut Quantity</p>
+                            <h2 class="stat-number text-dark mb-0">{{ stats.total_cut_quantity|number_format }}</h2>
+                        </div>
+                        <div class="metric-icon" style="background:rgba(231,74,59,0.1)"><i class="fas fa-cut text-danger"></i></div>
+                    </div>
+                    <div class="mt-2 small text-muted">QC: <span class="text-success">{{ stats.qc_passed ?? 0 }} pass</span> · <span class="text-danger">{{ stats.qc_failed ?? 0 }} fail</span></div>
+                </div>
+            </div>
+
+            <!-- Marker Efficiency -->
+            <div class="col-md-6">
+                <div class="card glow-card border-0 p-4">
+                    <h6 class="fw-bold text-success mb-3"><i class="fas fa-tachometer-alt me-2"></i>Marker Efficiency Overview</h6>
+                    {% if stats.avg_efficiency > 0 %}
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between small text-muted mb-1">
+                                <span>Average Efficiency</span><span class="fw-bold">{{ stats.avg_efficiency }}%</span>
+                            </div>
+                            <div class="efficiency-bar">
+                                <div class="efficiency-fill bg-{{ stats.avg_efficiency >= 85 ? 'success' : (stats.avg_efficiency >= 75 ? 'warning' : 'danger') }}" style="width:{{ stats.avg_efficiency }}%"></div>
+                            </div>
+                            <small class="text-muted mt-1 d-block">Target: 85% for woven garments</small>
+                        </div>
+                        <div class="text-center p-3 rounded border {{ stats.avg_efficiency >= 85 ? 'border-success bg-light' : 'border-warning bg-light' }}">
+                            <div class="fw-bold text-{{ stats.avg_efficiency >= 85 ? 'success' : 'warning' }} fs-4">{{ stats.avg_efficiency }}%</div>
+                            <small class="text-muted">Avg</small>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3 text-muted"><i class="fas fa-info-circle me-1"></i>No marker data yet. Create markers to see efficiency metrics.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Plans -->
+            <div class="col-md-6">
+                <div class="card glow-card border-0 p-4">
+                    <h6 class="fw-bold text-success mb-3"><i class="fas fa-clock me-2"></i>Recent Cutting Plans</h6>
+                    {% if plans|length > 0 %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead><tr><th>Plan #</th><th>Style</th><th>Qty</th><th>Status</th></tr></thead>
+                            <tbody>
+                            {% for p in plans|slice(0, 5) %}
+                            <tr>
+                                <td class="fw-bold">{{ p.plan_number }}</td>
+                                <td>{{ p.style_code }}</td>
+                                <td>{{ p.total_quantity|number_format }}</td>
+                                <td><span class="status-badge status-{{ p.status }}">{{ p.status|replace({'_': ' '})|title }}</span></td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="{{ BASE_URL }}/cutting/plans" class="btn btn-sm btn-outline-success mt-2">View All Plans →</a>
+                    {% else %}
+                    <div class="text-center py-3 text-muted"><i class="fas fa-info-circle me-1"></i>No plans yet. <a href="{{ BASE_URL }}/cutting/plans" class="text-success">Create a plan</a>.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ===== 2. PLANS ===== #}
+        {% if activeTab == 'plans' %}
+        <div class="card glow-card border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-success mb-0"><i class="fas fa-clipboard-list me-2"></i>Cutting Plans</h5>
+                <div class="d-flex gap-2">
+                    <input type="text" class="form-control form-control-sm" id="planSearch" placeholder="Search..." style="width:200px">
+                    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addPlanModal">
+                        <i class="fas fa-plus me-1"></i>New Plan
+                    </button>
+                </div>
+            </div>
+            <!-- Stats Row -->
+            <div class="row g-2 mb-3">
+                <div class="col"><div class="text-center p-2 bg-light rounded"><div class="fw-bold text-primary">{{ stats.total_plans }}</div><small class="text-muted">Total</small></div></div>
+                <div class="col"><div class="text-center p-2 bg-light rounded"><div class="fw-bold text-warning">{{ stats.active_plans }}</div><small class="text-muted">Active</small></div></div>
+                <div class="col"><div class="text-center p-2 bg-light rounded"><div class="fw-bold text-success">{{ stats.completed_plans }}</div><small class="text-muted">Completed</small></div></div>
+                <div class="col"><div class="text-center p-2 bg-light rounded"><div class="fw-bold text-info">{{ stats.total_cut_quantity|number_format }}</div><small class="text-muted">Cut Qty</small></div></div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="plansTable">
+                    <thead class="table-light"><tr>
+                        <th>Plan #</th><th>Order</th><th>Style</th><th>Target Qty</th>
+                        <th>Completed</th><th>Progress</th><th>Date</th><th>Room</th><th>Status</th><th>Actions</th>
+                    </tr></thead>
+                    <tbody>
+                    {% for plan in plans %}
+                    {% set progress = plan.total_quantity > 0 ? ((plan.completed_quantity / plan.total_quantity) * 100)|round(1) : 0 %}
+                    <tr>
+                        <td><strong>{{ plan.plan_number }}</strong></td>
+                        <td>{{ plan.order_number }}</td>
+                        <td>{{ plan.style_code }}<br><small class="text-muted">{{ plan.style_name }}</small></td>
+                        <td>{{ plan.total_quantity|number_format }}</td>
+                        <td>{{ plan.completed_quantity|number_format }}</td>
+                        <td style="min-width:120px">
+                            <div class="progress" style="height:6px"><div class="progress-bar bg-success" style="width:{{ progress }}%"></div></div>
+                            <small class="text-muted">{{ progress }}%</small>
+                        </td>
+                        <td>{{ plan.planned_date ? plan.planned_date|date('M d, Y') : '-' }}</td>
+                        <td>{{ plan.cutting_room_name ?? '-' }}</td>
+                        <td><span class="status-badge status-{{ plan.status }}">{{ plan.status|replace({'_': ' '})|title }}</span></td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-xs btn-outline-info" onclick="openUpdatePlan({{ plan.plan_id }}, '{{ plan.status }}', {{ plan.completed_quantity }})" title="Update Status"><i class="fas fa-edit"></i></button>
+                                <form action="{{ BASE_URL }}/cutting/plans/{{ plan.plan_id }}/delete" method="POST" onsubmit="return confirm('Delete this plan?')" class="d-inline">
+                                    {{ csrf_field()|raw }}
+                                    <button type="submit" class="btn btn-xs btn-outline-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="10" class="text-center py-4 text-muted">No cutting plans found. <a href="#" data-bs-toggle="modal" data-bs-target="#addPlanModal">Create one.</a></td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Add Plan Modal -->
+        <div class="modal fade" id="addPlanModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <form method="POST" action="{{ BASE_URL }}/cutting/plans" class="modal-content">
+                    {{ csrf_field()|raw }}
+                    <input type="hidden" name="action" value="create_plan">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title"><i class="fas fa-plus me-2"></i>New Cutting Plan</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Plan Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="plan_number" value="CP-{{ 'now'|date('Ymd') }}-{{ random(100, 999) }}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Order <span class="text-danger">*</span></label>
+                                <select class="form-select" name="order_id" required>
+                                    <option value="">Select Order</option>
+                                    {% for o in orders %}
+                                    <option value="{{ o.order_id }}">{{ o.order_number }} – {{ o.style_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Style <span class="text-danger">*</span></label>
+                                <select class="form-select" name="style_id" required>
+                                    <option value="">Select Style</option>
+                                    {% for s in styles %}
+                                    <option value="{{ s.style_id }}">{{ s.style_code }} – {{ s.style_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Total Quantity <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="total_quantity" min="1" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Planned Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" name="planned_date" value="{{ 'now'|date('Y-m-d') }}" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Cutting Room <span class="text-danger">*</span></label>
+                                <select class="form-select" name="cutting_room_id" required>
+                                    <option value="">Select Room</option>
+                                    {% for cr in cutting_rooms %}
+                                    <option value="{{ cr.cutting_room_id }}">{{ cr.cutting_room_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Marker Efficiency (%)</label>
+                                <input type="number" class="form-control" name="marker_efficiency" step="0.1" min="0" max="100" placeholder="e.g. 85.5">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Spreading Method</label>
+                                <select class="form-select" name="spreading_method">
+                                    <option value="">Select Method</option>
+                                    <option>Face-to-face</option>
+                                    <option>Face-up</option>
+                                    <option>Face-down</option>
+                                    <option>Tubular</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Notes</label>
+                                <input type="text" class="form-control" name="notes" placeholder="Optional notes">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i>Save Plan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Update Status Modal -->
+        <div class="modal fade" id="updatePlanModal" tabindex="-1">
+            <div class="modal-dialog">
+                <form method="POST" id="updatePlanForm" class="modal-content">
+                    {{ csrf_field()|raw }}
+                    <div class="modal-header bg-info text-white">
+                        <h5 class="modal-title">Update Plan Status</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Status</label>
+                            <select class="form-select" name="status">
+                                <option value="planned">Planned</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Completed Quantity</label>
+                            <input type="number" class="form-control" name="completed_quantity" id="updateCompletedQty" min="0">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Actual Completion Date</label>
+                            <input type="date" class="form-control" name="actual_completion_date">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-info text-white">Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ===== 3. MARKERS ===== #}
+        {% if activeTab == 'markers' %}
+        <div class="card glow-card border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-success mb-0"><i class="fas fa-ruler-combined me-2"></i>CAD Marker Library</h5>
+                <div class="d-flex gap-2">
+                    <input type="text" class="form-control form-control-sm" id="markerSearch" placeholder="Search..." style="width:200px">
+                    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addMarkerModal">
+                        <i class="fas fa-plus me-1"></i>New Marker
+                    </button>
+                </div>
+            </div>
+            <div class="row g-2 mb-3">
+                <div class="col"><div class="text-center p-2 bg-light rounded"><div class="fw-bold text-primary">{{ stats.total_markers }}</div><small class="text-muted">Total</small></div></div>
+                <div class="col"><div class="text-center p-2 bg-light rounded"><div class="fw-bold text-success">{{ stats.approved_markers }}</div><small class="text-muted">Approved</small></div></div>
+                <div class="col"><div class="text-center p-2 bg-light rounded"><div class="fw-bold text-info">{{ stats.avg_efficiency }}%</div><small class="text-muted">Avg Efficiency</small></div></div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="markersTable">
+                    <thead class="table-light"><tr>
+                        <th>Marker #</th><th>Plan</th><th>Style</th><th>Type</th>
+                        <th>Dimensions (m)</th><th>Total Pieces</th><th>Efficiency</th>
+                        <th>Fabric Cons.</th><th>Date</th><th>Status</th><th>Actions</th>
+                    </tr></thead>
+                    <tbody>
+                    {% for marker in markers %}
+                    <tr>
+                        <td><strong>{{ marker.marker_number }}</strong></td>
+                        <td>{{ marker.plan_number ?? '-' }}</td>
+                        <td>{{ marker.style_code }}<br><small class="text-muted">{{ marker.style_name }}</small></td>
+                        <td><span class="badge bg-light text-dark border">{{ marker.marker_type }}</span></td>
+                        <td>{{ marker.marker_length|number_format(2) }}L × {{ marker.marker_width|number_format(2) }}W</td>
+                        <td>{{ marker.total_pieces|number_format }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="flex-grow-1 efficiency-bar">
+                                    <div class="efficiency-fill bg-{{ marker.efficiency >= 85 ? 'success' : (marker.efficiency >= 75 ? 'warning' : 'danger') }}" style="width:{{ marker.efficiency > 100 ? 100 : marker.efficiency }}%"></div>
+                                </div>
+                                <span class="fw-bold small">{{ marker.efficiency }}%</span>
+                            </div>
+                        </td>
+                        <td>{{ marker.fabric_consumption|number_format(2) }} m²</td>
+                        <td>{{ marker.created_date ? marker.created_date|date('M d, Y') : '-' }}</td>
+                        <td><span class="status-badge status-{{ marker.status }}">{{ marker.status|title }}</span></td>
+                        <td>
+                            <form action="{{ BASE_URL }}/cutting/markers/{{ marker.marker_id }}/delete" method="POST" onsubmit="return confirm('Delete this marker?')" class="d-inline">
+                                {{ csrf_field()|raw }}
+                                <button type="submit" class="btn btn-xs btn-outline-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="11" class="text-center py-4 text-muted">No markers found. <a href="#" data-bs-toggle="modal" data-bs-target="#addMarkerModal">Create one.</a></td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Add Marker Modal -->
+        <div class="modal fade" id="addMarkerModal" tabindex="-1">
+            <div class="modal-dialog modal-xl">
+                <form method="POST" action="{{ BASE_URL }}/cutting/markers" class="modal-content">
+                    {{ csrf_field()|raw }}
+                    <input type="hidden" name="action" value="create_marker">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title"><i class="fas fa-plus me-2"></i>New Marker</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Marker Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="marker_number" value="MK-{{ 'now'|date('Ymd') }}-{{ random(100, 999) }}" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Cutting Plan</label>
+                                <select class="form-select" name="plan_id">
+                                    <option value="">Select Plan (optional)</option>
+                                    {% for p in plans %}
+                                    <option value="{{ p.plan_id }}">{{ p.plan_number }} – {{ p.style_code }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Style <span class="text-danger">*</span></label>
+                                <select class="form-select" name="style_id" required>
+                                    <option value="">Select Style</option>
+                                    {% for s in styles %}
+                                    <option value="{{ s.style_id }}">{{ s.style_code }} – {{ s.style_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Marker Type</label>
+                                <select class="form-select" name="marker_type">
+                                    <option value="Standard">Standard</option>
+                                    <option value="Tight">Tight</option>
+                                    <option value="Loose">Loose</option>
+                                    <option value="Special">Special</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">Total Pieces <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="total_pieces" min="1" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">Length (m) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="marker_length" step="0.01" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">Width (m) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="marker_width" step="0.01" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">Fabric Cons. (m²) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="fabric_consumption" step="0.01" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">Efficiency % <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="efficiency" step="0.1" min="0" max="100" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" name="created_date" value="{{ 'now'|date('Y-m-d') }}" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Notes</label>
+                                <input type="text" class="form-control" name="notes">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i>Save Marker</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ===== 4. LAY ===== #}
+        {% if activeTab == 'lay' %}
+        <div class="card glow-card border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-success mb-0"><i class="fas fa-layer-group me-2"></i>Lay Planning & Spreading</h5>
+                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addLayModal">
+                    <i class="fas fa-plus me-1"></i>New Lay Sheet
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="layTable">
+                    <thead class="table-light"><tr>
+                        <th>Lay #</th><th>Plan</th><th>Style</th><th>Marker</th>
+                        <th>Plies</th><th>Width (m)</th><th>Length (m)</th><th>Spreading</th>
+                        <th>Relax (hrs)</th><th>Date</th><th>Room</th><th>Status</th><th>Actions</th>
+                    </tr></thead>
+                    <tbody>
+                    {% for lay in lays %}
+                    <tr>
+                        <td><strong>{{ lay.lay_number }}</strong></td>
+                        <td>{{ lay.plan_number ?? '-' }}</td>
+                        <td>{{ lay.style_code }}</td>
+                        <td>{{ lay.marker_number ?? '-' }}</td>
+                        <td>{{ lay.total_plies }}</td>
+                        <td>{{ lay.fabric_width|number_format(2) }}</td>
+                        <td>{{ lay.lay_length|number_format(2) }}</td>
+                        <td>{{ lay.spreading_method }}</td>
+                        <td>{{ lay.relaxation_hours }}h</td>
+                        <td>{{ lay.lay_date ? lay.lay_date|date('M d, Y') : '-' }}</td>
+                        <td>{{ lay.cutting_room_name ?? '-' }}</td>
+                        <td><span class="status-badge status-{{ lay.status }}">{{ lay.status|title }}</span></td>
+                        <td><button class="btn btn-xs btn-outline-danger" disabled><i class="fas fa-trash"></i></button></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="13" class="text-center py-4 text-muted">No lay sheets yet. <a href="#" data-bs-toggle="modal" data-bs-target="#addLayModal">Create one.</a></td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Add Lay Modal -->
+        <div class="modal fade" id="addLayModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <form method="POST" action="{{ BASE_URL }}/cutting/lay" class="modal-content">
+                    {{ csrf_field()|raw }}
+                    <input type="hidden" name="action" value="create_lay">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title"><i class="fas fa-layer-group me-2"></i>New Lay Sheet</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-4"><label class="form-label fw-bold">Lay Number</label><input type="text" class="form-control" name="lay_number" value="LAY-{{ 'now'|date('Ymd') }}-{{ random(100, 999) }}"></div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Cutting Plan</label>
+                                <select class="form-select" name="plan_id">
+                                    <option value="">Select Plan</option>
+                                    {% for p in plans %}<option value="{{ p.plan_id }}">{{ p.plan_number }} – {{ p.style_code }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Style</label>
+                                <select class="form-select" name="style_id">
+                                    <option value="">Select Style</option>
+                                    {% for s in styles %}<option value="{{ s.style_id }}">{{ s.style_code }} – {{ s.style_name }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Marker (optional)</label>
+                                <select class="form-select" name="marker_id">
+                                    <option value="">Select Marker</option>
+                                    {% for m in markers %}<option value="{{ m.marker_id }}">{{ m.marker_number }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Cutting Room</label>
+                                <select class="form-select" name="cutting_room_id">
+                                    <option value="">Select Room</option>
+                                    {% for cr in cutting_rooms %}<option value="{{ cr.cutting_room_id }}">{{ cr.cutting_room_name }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Spreading Method</label>
+                                <select class="form-select" name="spreading_method">
+                                    <option>Face-to-face</option><option>Face-up</option><option>Face-down</option><option>Tubular</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3"><label class="form-label fw-bold">Total Plies</label><input type="number" class="form-control" name="total_plies" min="1"></div>
+                            <div class="col-md-3"><label class="form-label fw-bold">Fabric Width (m)</label><input type="number" class="form-control" name="fabric_width" step="0.01"></div>
+                            <div class="col-md-3"><label class="form-label fw-bold">Lay Length (m)</label><input type="number" class="form-control" name="lay_length" step="0.01"></div>
+                            <div class="col-md-3"><label class="form-label fw-bold">Relaxation Hours</label><input type="number" class="form-control" name="relaxation_hours" value="24" min="0"></div>
+                            <div class="col-md-6"><label class="form-label fw-bold">Lay Date</label><input type="date" class="form-control" name="lay_date" value="{{ 'now'|date('Y-m-d') }}"></div>
+                            <div class="col-md-6"><label class="form-label fw-bold">Notes</label><input type="text" class="form-control" name="notes"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i>Save Lay Sheet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ===== 5. FABRIC ===== #}
+        {% if activeTab == 'fabric' %}
+        <div class="card glow-card border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-success mb-0"><i class="fas fa-scroll me-2"></i>Fabric Issue & Roll Management</h5>
+                <span class="badge bg-info">{{ stats.total_fabric_rolls ?? 0 }} Rolls</span>
+            </div>
+            {% if fabric_rolls|length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="fabricTable">
+                    <thead class="table-light"><tr>
+                        <th>Roll #</th><th>Barcode</th><th>Style</th><th>Color/Shade</th>
+                        <th>Width (m)</th><th>Length (m)</th><th>Weight (kg)</th>
+                        <th>Relaxation Start</th><th>Room</th><th>Status</th>
+                    </tr></thead>
+                    <tbody>
+                    {% for roll in fabric_rolls %}
+                    <tr>
+                        <td><strong>{{ roll.roll_number ?? roll.roll_id }}</strong></td>
+                        <td><code>{{ roll.barcode ?? '-' }}</code></td>
+                        <td>{{ roll.style_code }}</td>
+                        <td>{{ roll.shade ?? roll.color ?? '-' }}</td>
+                        <td>{{ roll.width|number_format(2) }}</td>
+                        <td>{{ roll.length|number_format(2) }}</td>
+                        <td>{{ roll.weight|number_format(2) }}</td>
+                        <td>{{ roll.relaxation_start ? roll.relaxation_start|date('M d, Y H:i') : '-' }}</td>
+                        <td>{{ roll.cutting_room_name ?? '-' }}</td>
+                        <td><span class="status-badge status-{{ roll.status }}">{{ roll.status|title }}</span></td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Fabric rolls are issued from the Inventory module. Go to <a href="{{ BASE_URL }}/inventory/transactions" class="alert-link">Inventory &rarr; Transactions</a> to issue fabric to the cutting room. Once issued, rolls will appear here with relaxation tracking.
+            </div>
+            <div class="row g-3">
+                <div class="col-md-4"><div class="card p-3 text-center border-dashed bg-light"><i class="fas fa-warehouse fa-2x text-muted mb-2"></i><h6 class="fw-bold">1. Fabric in Store</h6><p class="text-muted small mb-0">Rolls received via GRN in Inventory</p></div></div>
+                <div class="col-md-4"><div class="card p-3 text-center border-dashed bg-light"><i class="fas fa-truck-loading fa-2x text-muted mb-2"></i><h6 class="fw-bold">2. Issue to Cutting</h6><p class="text-muted small mb-0">Issue rolls from Inventory → Transactions</p></div></div>
+                <div class="col-md-4"><div class="card p-3 text-center border-dashed bg-light"><i class="fas fa-hourglass-half fa-2x text-muted mb-2"></i><h6 class="fw-bold">3. Relaxation Track</h6><p class="text-muted small mb-0">Monitor relaxation time (min 24h for woven)</p></div></div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {# ===== 6. EXECUTION ===== #}
+        {% if activeTab == 'execution' %}
+        <div class="card glow-card border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-success mb-0"><i class="fas fa-cut me-2"></i>Cutting Room Execution Log</h5>
+                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addExecutionModal">
+                    <i class="fas fa-plus me-1"></i>Log Execution
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="execTable">
+                    <thead class="table-light"><tr>
+                        <th>Exec #</th><th>Plan</th><th>Style</th><th>Operator</th>
+                        <th>Date</th><th>Start</th><th>End</th><th>Cut Qty</th>
+                        <th>Defects</th><th>Room</th><th>Status</th>
+                    </tr></thead>
+                    <tbody>
+                    {% for exec in executions %}
+                    <tr>
+                        <td><strong>{{ exec.execution_number }}</strong></td>
+                        <td>{{ exec.plan_number ?? '-' }}</td>
+                        <td>{{ exec.style_code }}</td>
+                        <td>{{ exec.operator_name }}</td>
+                        <td>{{ exec.cutting_date ? exec.cutting_date|date('M d, Y') : '-' }}</td>
+                        <td>{{ exec.start_time ?? '-' }}</td>
+                        <td>{{ exec.end_time ?? '-' }}</td>
+                        <td class="text-success fw-bold">{{ exec.cut_quantity|number_format }}</td>
+                        <td class="text-danger">{{ exec.defect_quantity }}</td>
+                        <td>{{ exec.cutting_room_name ?? '-' }}</td>
+                        <td><span class="status-badge status-{{ exec.status }}">{{ exec.status|title }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="11" class="text-center py-4 text-muted">No execution logs yet. <a href="#" data-bs-toggle="modal" data-bs-target="#addExecutionModal">Log one.</a></td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Log Execution Modal -->
+        <div class="modal fade" id="addExecutionModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <form method="POST" action="{{ BASE_URL }}/cutting/execution" class="modal-content">
+                    {{ csrf_field()|raw }}
+                    <input type="hidden" name="action" value="create_execution">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title"><i class="fas fa-cut me-2"></i>Log Cutting Execution</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-4"><label class="form-label fw-bold">Execution #</label><input type="text" class="form-control" name="execution_number" value="EX-{{ 'now'|date('Ymd') }}-{{ random(100, 999) }}"></div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Cutting Plan</label>
+                                <select class="form-select" name="plan_id">
+                                    <option value="">Select Plan</option>
+                                    {% for p in plans %}<option value="{{ p.plan_id }}">{{ p.plan_number }} – {{ p.style_code }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Style</label>
+                                <select class="form-select" name="style_id">
+                                    <option value="">Select Style</option>
+                                    {% for s in styles %}<option value="{{ s.style_id }}">{{ s.style_code }} – {{ s.style_name }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Cutting Room</label>
+                                <select class="form-select" name="cutting_room_id">
+                                    <option value="">Select Room</option>
+                                    {% for cr in cutting_rooms %}<option value="{{ cr.cutting_room_id }}">{{ cr.cutting_room_name }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Operator Name</label><input type="text" class="form-control" name="operator_name"></div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Cutting Date</label><input type="date" class="form-control" name="cutting_date" value="{{ 'now'|date('Y-m-d') }}"></div>
+                            <div class="col-md-3"><label class="form-label fw-bold">Start Time</label><input type="time" class="form-control" name="start_time"></div>
+                            <div class="col-md-3"><label class="form-label fw-bold">End Time</label><input type="time" class="form-control" name="end_time"></div>
+                            <div class="col-md-3"><label class="form-label fw-bold">Cut Quantity</label><input type="number" class="form-control" name="cut_quantity" min="0"></div>
+                            <div class="col-md-3"><label class="form-label fw-bold">Defect Quantity</label><input type="number" class="form-control" name="defect_quantity" value="0" min="0"></div>
+                            <div class="col-12"><label class="form-label fw-bold">Notes</label><textarea class="form-control" name="notes" rows="2"></textarea></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i>Save Log</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ===== 7. BUNDLES ===== #}
+        {% if activeTab == 'bundles' %}
+        <div class="card glow-card border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-success mb-0"><i class="fas fa-boxes me-2"></i>Bundle Generation</h5>
+                <div class="d-flex gap-2">
+                    <input type="text" class="form-control form-control-sm" id="bundleSearch" placeholder="Search..." style="width:200px">
+                    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addBundleModal">
+                        <i class="fas fa-plus me-1"></i>Generate Bundle
+                    </button>
+                </div>
+            </div>
+            <div class="row g-2 mb-3">
+                <div class="col"><div class="text-center p-2 bg-light rounded"><div class="fw-bold text-primary">{{ stats.total_bundles }}</div><small class="text-muted">Total</small></div></div>
+                <div class="col"><div class="text-center p-2 bg-light rounded"><div class="fw-bold text-warning">{{ stats.active_bundles }}</div><small class="text-muted">Active</small></div></div>
+                <div class="col"><div class="text-center p-2 bg-light rounded"><div class="fw-bold text-info">{{ stats.total_pieces|number_format }}</div><small class="text-muted">Total Pieces</small></div></div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="bundlesTable">
+                    <thead class="table-light"><tr>
+                        <th>Bundle #</th><th>Marker</th><th>Style</th><th>Size</th>
+                        <th>Qty</th><th>Type</th><th>Room</th><th>Date</th><th>Status</th><th>Actions</th>
+                    </tr></thead>
+                    <tbody>
+                    {% for bundle in bundles %}
+                    <tr>
+                        <td><strong>{{ bundle.bundle_number }}</strong></td>
+                        <td>{{ bundle.marker_number ?? '-' }}</td>
+                        <td>{{ bundle.style_code }}<br><small class="text-muted">{{ bundle.style_name }}</small></td>
+                        <td><span class="badge bg-secondary">{{ bundle.size_name }}</span></td>
+                        <td class="fw-bold">{{ bundle.quantity|number_format }}</td>
+                        <td>{{ bundle.bundle_type }}</td>
+                        <td>{{ bundle.cutting_room_name ?? '-' }}</td>
+                        <td>{{ bundle.generated_date ? bundle.generated_date|date('M d, Y') : '-' }}</td>
+                        <td><span class="status-badge status-{{ bundle.status }}">{{ bundle.status|replace({'_': ' '})|title }}</span></td>
+                        <td>
+                            <form action="{{ BASE_URL }}/cutting/bundles/{{ bundle.bundle_id }}/delete" method="POST" onsubmit="return confirm('Delete this bundle and all its pieces?')" class="d-inline">
+                                {{ csrf_field()|raw }}
+                                <button type="submit" class="btn btn-xs btn-outline-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="10" class="text-center py-4 text-muted">No bundles yet. <a href="#" data-bs-toggle="modal" data-bs-target="#addBundleModal">Generate one.</a></td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Add Bundle Modal -->
+        <div class="modal fade" id="addBundleModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <form method="POST" action="{{ BASE_URL }}/cutting/bundles" class="modal-content">
+                    {{ csrf_field()|raw }}
+                    <input type="hidden" name="action" value="create_bundle">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title"><i class="fas fa-boxes me-2"></i>Generate Bundle</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-4"><label class="form-label fw-bold">Bundle Number <span class="text-danger">*</span></label><input type="text" class="form-control" name="bundle_number" value="BD-{{ 'now'|date('Ymd') }}-{{ random(100, 999) }}" required></div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Marker</label>
+                                <select class="form-select" name="marker_id">
+                                    <option value="">Select Marker (optional)</option>
+                                    {% for m in markers %}<option value="{{ m.marker_id }}">{{ m.marker_number }} – {{ m.style_code }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Style <span class="text-danger">*</span></label>
+                                <select class="form-select" name="style_id" required>
+                                    <option value="">Select Style</option>
+                                    {% for s in styles %}<option value="{{ s.style_id }}">{{ s.style_code }} – {{ s.style_name }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3"><label class="form-label fw-bold">Size <span class="text-danger">*</span></label><input type="text" class="form-control" name="size_name" placeholder="e.g. M, L, XL" required></div>
+                            <div class="col-md-3"><label class="form-label fw-bold">Quantity (Pieces) <span class="text-danger">*</span></label><input type="number" class="form-control" name="bundle_quantity" min="1" required></div>
+                            <div class="col-md-3"><label class="form-label fw-bold">Bundle Type</label>
+                                <select class="form-select" name="bundle_type">
+                                    <option>Standard</option><option>Sample</option><option>Reject</option><option>Special</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3"><label class="form-label fw-bold">Cutting Room <span class="text-danger">*</span></label>
+                                <select class="form-select" name="cutting_room_id" required>
+                                    <option value="">Select Room</option>
+                                    {% for cr in cutting_rooms %}<option value="{{ cr.cutting_room_id }}">{{ cr.cutting_room_name }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6"><label class="form-label fw-bold">Generated Date</label><input type="date" class="form-control" name="generated_date" value="{{ 'now'|date('Y-m-d') }}"></div>
+                            <div class="col-md-6"><label class="form-label fw-bold">Notes</label><textarea class="form-control" name="notes" rows="1"></textarea></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success"><i class="fas fa-boxes me-1"></i>Generate Bundle</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ===== 8. NUMBERING ===== #}
+        {% if activeTab == 'numbering' %}
+        <div class="card glow-card border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-success mb-0"><i class="fas fa-sort-numeric-down me-2"></i>Panel Numbering</h5>
+                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addNumberingModal">
+                    <i class="fas fa-plus me-1"></i>Log Numbering
+                </button>
+            </div>
+            <div class="alert alert-info mb-3">
+                <i class="fas fa-info-circle me-2"></i>Panel numbering ensures all cut parts are sequentially labeled to prevent shade mixing in sewing.
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light"><tr>
+                        <th>Bundle</th><th>Style</th><th>Size</th><th>Panel Count</th>
+                        <th>Operator</th><th>Date</th><th>Status</th>
+                    </tr></thead>
+                    <tbody>
+                    {% for log in numbering_logs %}
+                    <tr>
+                        <td><strong>{{ log.bundle_number ?? '-' }}</strong></td>
+                        <td>{{ log.style_code }}</td>
+                        <td>{{ log.size_name }}</td>
+                        <td>{{ log.panel_count|number_format }}</td>
+                        <td>{{ log.operator_name }}</td>
+                        <td>{{ log.numbering_date ? log.numbering_date|date('M d, Y') : '-' }}</td>
+                        <td><span class="status-badge status-{{ log.status }}">{{ log.status|title }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center py-4 text-muted">No numbering logs yet. <a href="#" data-bs-toggle="modal" data-bs-target="#addNumberingModal">Add one.</a></td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Add Numbering Modal -->
+        <div class="modal fade" id="addNumberingModal" tabindex="-1">
+            <div class="modal-dialog">
+                <form method="POST" action="{{ BASE_URL }}/cutting/numbering" class="modal-content">
+                    {{ csrf_field()|raw }}
+                    <input type="hidden" name="action" value="create_numbering">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title">Log Panel Numbering</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6"><label class="form-label fw-bold">Bundle</label>
+                                <select class="form-select" name="bundle_id">
+                                    <option value="">Select Bundle</option>
+                                    {% for b in bundles %}<option value="{{ b.bundle_id }}">{{ b.bundle_number }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6"><label class="form-label fw-bold">Style</label>
+                                <select class="form-select" name="style_id">
+                                    <option value="">Select Style</option>
+                                    {% for s in styles %}<option value="{{ s.style_id }}">{{ s.style_code }} – {{ s.style_name }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Size</label><input type="text" class="form-control" name="size_name" placeholder="e.g. M"></div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Panel Count</label><input type="number" class="form-control" name="panel_count" min="1"></div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Date</label><input type="date" class="form-control" name="numbering_date" value="{{ 'now'|date('Y-m-d') }}"></div>
+                            <div class="col-12"><label class="form-label fw-bold">Operator Name</label><input type="text" class="form-control" name="operator_name"></div>
+                            <div class="col-12"><label class="form-label fw-bold">Notes</label><input type="text" class="form-control" name="notes"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i>Save Log</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ===== 9. TICKETING ===== #}
+        {% if activeTab == 'ticketing' %}
+        <div class="card glow-card border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-success mb-0"><i class="fas fa-ticket-alt me-2"></i>Bundle Ticketing</h5>
+                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addTicketModal">
+                    <i class="fas fa-print me-1"></i>Print Tickets
+                </button>
+            </div>
+            <div class="alert alert-info mb-3">
+                <i class="fas fa-qrcode me-2"></i>Print Barcode/QR tags for bundles to enable tracking through sewing, washing, and finishing.
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light"><tr>
+                        <th>Bundle</th><th>Style</th><th>Size</th><th>Ticket Count</th>
+                        <th>Type</th><th>Operator</th><th>Printed Date</th><th>Status</th>
+                    </tr></thead>
+                    <tbody>
+                    {% for ticket in ticketing_logs %}
+                    <tr>
+                        <td><strong>{{ ticket.bundle_number ?? '-' }}</strong></td>
+                        <td>{{ ticket.style_code }}</td>
+                        <td>{{ ticket.size_name }}</td>
+                        <td>{{ ticket.ticket_count|number_format }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ ticket.ticket_type }}</span></td>
+                        <td>{{ ticket.operator_name }}</td>
+                        <td>{{ ticket.printed_date ? ticket.printed_date|date('M d, Y') : '-' }}</td>
+                        <td><span class="status-badge status-{{ ticket.status }}">{{ ticket.status|title }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="text-center py-4 text-muted">No tickets printed yet. <a href="#" data-bs-toggle="modal" data-bs-target="#addTicketModal">Print tickets.</a></td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Add Ticket Modal -->
+        <div class="modal fade" id="addTicketModal" tabindex="-1">
+            <div class="modal-dialog">
+                <form method="POST" action="{{ BASE_URL }}/cutting/ticketing" class="modal-content">
+                    {{ csrf_field()|raw }}
+                    <input type="hidden" name="action" value="create_ticketing">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title">Print Bundle Tickets</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6"><label class="form-label fw-bold">Bundle</label>
+                                <select class="form-select" name="bundle_id">
+                                    <option value="">Select Bundle</option>
+                                    {% for b in bundles %}<option value="{{ b.bundle_id }}">{{ b.bundle_number }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6"><label class="form-label fw-bold">Style</label>
+                                <select class="form-select" name="style_id">
+                                    <option value="">Select Style</option>
+                                    {% for s in styles %}<option value="{{ s.style_id }}">{{ s.style_code }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Size</label><input type="text" class="form-control" name="size_name" placeholder="e.g. M"></div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Ticket Count</label><input type="number" class="form-control" name="ticket_count" min="1"></div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Ticket Type</label>
+                                <select class="form-select" name="ticket_type">
+                                    <option>Barcode</option><option>QR Code</option><option>Manual Tag</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6"><label class="form-label fw-bold">Print Date</label><input type="date" class="form-control" name="printed_date" value="{{ 'now'|date('Y-m-d') }}"></div>
+                            <div class="col-md-6"><label class="form-label fw-bold">Operator</label><input type="text" class="form-control" name="operator_name"></div>
+                            <div class="col-12"><label class="form-label fw-bold">Notes</label><input type="text" class="form-control" name="notes"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success"><i class="fas fa-print me-1"></i>Print Tickets</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ===== 10. QC ===== #}
+        {% if activeTab == 'qc' %}
+        <div class="card glow-card border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-success mb-0"><i class="fas fa-check-double me-2"></i>Cutting QC Inspections</h5>
+                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addQCModal">
+                    <i class="fas fa-plus me-1"></i>Log Inspection
+                </button>
+            </div>
+            <div class="row g-2 mb-3">
+                <div class="col"><div class="text-center p-2 bg-light rounded"><div class="fw-bold text-primary">{{ qc_records|length }}</div><small class="text-muted">Total</small></div></div>
+                <div class="col"><div class="text-center p-2 bg-light rounded"><div class="fw-bold text-success">{{ stats.qc_passed ?? 0 }}</div><small class="text-muted">Passed</small></div></div>
+                <div class="col"><div class="text-center p-2 bg-light rounded"><div class="fw-bold text-danger">{{ stats.qc_failed ?? 0 }}</div><small class="text-muted">Failed</small></div></div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light"><tr>
+                        <th>Plan</th><th>Style</th><th>Inspector</th><th>Date</th>
+                        <th>Checked</th><th>Defects</th><th>Defect Type</th><th>Room</th><th>Result</th><th>Notes</th>
+                    </tr></thead>
+                    <tbody>
+                    {% for qc in qc_records %}
+                    <tr>
+                        <td>{{ qc.plan_number ?? '-' }}</td>
+                        <td>{{ qc.style_code }}</td>
+                        <td>{{ qc.inspector_name }}</td>
+                        <td>{{ qc.inspection_date ? qc.inspection_date|date('M d, Y') : '-' }}</td>
+                        <td>{{ qc.checked_quantity|number_format }}</td>
+                        <td class="text-danger">{{ qc.defect_quantity }}</td>
+                        <td>{{ qc.defect_type ?? '-' }}</td>
+                        <td>{{ qc.cutting_room_name ?? '-' }}</td>
+                        <td><span class="status-badge status-{{ qc.result }}">{{ qc.result|title }}</span></td>
+                        <td class="small text-muted">{{ qc.notes ?? '' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="10" class="text-center py-4 text-muted">No QC records yet. <a href="#" data-bs-toggle="modal" data-bs-target="#addQCModal">Log an inspection.</a></td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Add QC Modal -->
+        <div class="modal fade" id="addQCModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <form method="POST" action="{{ BASE_URL }}/cutting/qc" class="modal-content">
+                    {{ csrf_field()|raw }}
+                    <input type="hidden" name="action" value="create_qc">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title"><i class="fas fa-check-double me-2"></i>Log QC Inspection</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-4"><label class="form-label fw-bold">Cutting Plan</label>
+                                <select class="form-select" name="plan_id">
+                                    <option value="">Select Plan</option>
+                                    {% for p in plans %}<option value="{{ p.plan_id }}">{{ p.plan_number }} – {{ p.style_code }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Style</label>
+                                <select class="form-select" name="style_id">
+                                    <option value="">Select Style</option>
+                                    {% for s in styles %}<option value="{{ s.style_id }}">{{ s.style_code }} – {{ s.style_name }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Cutting Room</label>
+                                <select class="form-select" name="cutting_room_id">
+                                    <option value="">Select Room</option>
+                                    {% for cr in cutting_rooms %}<option value="{{ cr.cutting_room_id }}">{{ cr.cutting_room_name }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Inspector Name</label><input type="text" class="form-control" name="inspector_name"></div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Inspection Date</label><input type="date" class="form-control" name="inspection_date" value="{{ 'now'|date('Y-m-d') }}"></div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Result</label>
+                                <select class="form-select" name="result">
+                                    <option value="pass">Pass</option>
+                                    <option value="fail">Fail</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Checked Quantity</label><input type="number" class="form-control" name="checked_quantity" min="0"></div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Defect Quantity</label><input type="number" class="form-control" name="defect_quantity" value="0" min="0"></div>
+                            <div class="col-md-4"><label class="form-label fw-bold">Defect Type</label>
+                                <select class="form-select" name="defect_type">
+                                    <option value="">N/A</option>
+                                    <option>Notch Misalignment</option><option>Shade Variation</option>
+                                    <option>Wrong Size</option><option>Fabric Defect</option>
+                                    <option>Wrong Count</option><option>Other</option>
+                                </select>
+                            </div>
+                            <div class="col-12"><label class="form-label fw-bold">Notes</label><textarea class="form-control" name="notes" rows="2"></textarea></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i>Save Inspection</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ===== 11. REPORTS ===== #}
+        {% if activeTab == 'reports' %}
+        <div class="row g-3">
+            <div class="col-12">
+                <div class="card glow-card border-0 p-4">
+                    <h5 class="fw-bold text-success mb-3"><i class="fas fa-file-alt me-2"></i>Cutting Module Reports</h5>
+                    <div class="row g-3">
+                        <!-- Report Cards -->
+                        <div class="col-md-4">
+                            <div class="card border p-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="metric-icon me-3" style="background:rgba(28,200,138,0.1)"><i class="fas fa-clipboard-list text-success"></i></div>
+                                    <div><h6 class="fw-bold mb-0">Plan Summary</h6><small class="text-muted">All cutting plans with status</small></div>
+                                </div>
+                                <table class="table table-sm table-bordered mb-2">
+                                    <tr><td>Total Plans</td><td class="fw-bold text-primary">{{ stats.total_plans }}</td></tr>
+                                    <tr><td>Active</td><td class="fw-bold text-warning">{{ stats.active_plans }}</td></tr>
+                                    <tr><td>Completed</td><td class="fw-bold text-success">{{ stats.completed_plans }}</td></tr>
+                                    <tr><td>Total Cut Qty</td><td class="fw-bold text-info">{{ stats.total_cut_quantity|number_format }}</td></tr>
+                                </table>
+                                <a href="{{ BASE_URL }}/cutting/plans" class="btn btn-sm btn-outline-success w-100">View Plans →</a>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border p-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="metric-icon me-3" style="background:rgba(54,185,204,0.1)"><i class="fas fa-ruler-combined text-info"></i></div>
+                                    <div><h6 class="fw-bold mb-0">Marker Efficiency</h6><small class="text-muted">CAD marker performance stats</small></div>
+                                </div>
+                                <table class="table table-sm table-bordered mb-2">
+                                    <tr><td>Total Markers</td><td class="fw-bold text-primary">{{ stats.total_markers }}</td></tr>
+                                    <tr><td>Approved</td><td class="fw-bold text-success">{{ stats.approved_markers }}</td></tr>
+                                    <tr><td>Avg Efficiency</td><td class="fw-bold text-{{ stats.avg_efficiency >= 85 ? 'success' : 'warning' }}">{{ stats.avg_efficiency }}%</td></tr>
+                                </table>
+                                <a href="{{ BASE_URL }}/cutting/markers" class="btn btn-sm btn-outline-info w-100">View Markers →</a>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border p-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="metric-icon me-3" style="background:rgba(231,74,59,0.1)"><i class="fas fa-check-double text-danger"></i></div>
+                                    <div><h6 class="fw-bold mb-0">QC Summary</h6><small class="text-muted">Cutting quality audit results</small></div>
+                                </div>
+                                <table class="table table-sm table-bordered mb-2">
+                                    <tr><td>Total Inspections</td><td class="fw-bold text-primary">{{ qc_records|length }}</td></tr>
+                                    <tr><td>Passed</td><td class="fw-bold text-success">{{ stats.qc_passed ?? 0 }}</td></tr>
+                                    <tr><td>Failed</td><td class="fw-bold text-danger">{{ stats.qc_failed ?? 0 }}</td></tr>
+                                    <tr><td>Pass Rate</td><td class="fw-bold">
+                                        {% if qc_records|length > 0 %}{{ (((stats.qc_passed ?? 0) / qc_records|length) * 100)|number_format(1) }}%{% else %}N/A{% endif %}
+                                    </td></tr>
+                                </table>
+                                <a href="{{ BASE_URL }}/cutting/qc" class="btn btn-sm btn-outline-danger w-100">View QC →</a>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border p-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="metric-icon me-3" style="background:rgba(246,194,62,0.1)"><i class="fas fa-boxes text-warning"></i></div>
+                                    <div><h6 class="fw-bold mb-0">Bundle Report</h6><small class="text-muted">Bundle generation summary</small></div>
+                                </div>
+                                <table class="table table-sm table-bordered mb-2">
+                                    <tr><td>Total Bundles</td><td class="fw-bold text-primary">{{ stats.total_bundles }}</td></tr>
+                                    <tr><td>Active</td><td class="fw-bold text-warning">{{ stats.active_bundles }}</td></tr>
+                                    <tr><td>Total Pieces</td><td class="fw-bold text-info">{{ stats.total_pieces|number_format }}</td></tr>
+                                </table>
+                                <a href="{{ BASE_URL }}/cutting/bundles" class="btn btn-sm btn-outline-warning w-100">View Bundles →</a>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border p-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="metric-icon me-3" style="background:rgba(28,200,138,0.1)"><i class="fas fa-layer-group text-success"></i></div>
+                                    <div><h6 class="fw-bold mb-0">Lay Sheets</h6><small class="text-muted">Spreading and lay data</small></div>
+                                </div>
+                                <table class="table table-sm table-bordered mb-2">
+                                    <tr><td>Total Lays</td><td class="fw-bold text-primary">{{ stats.total_lays ?? 0 }}</td></tr>
+                                    <tr><td>Fabric Rolls</td><td class="fw-bold text-info">{{ stats.total_fabric_rolls ?? 0 }}</td></tr>
+                                </table>
+                                <a href="{{ BASE_URL }}/cutting/lay" class="btn btn-sm btn-outline-success w-100">View Lays →</a>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border p-3 h-100">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="metric-icon me-3" style="background:rgba(54,185,204,0.1)"><i class="fas fa-cut text-info"></i></div>
+                                    <div><h6 class="fw-bold mb-0">Execution Log</h6><small class="text-muted">Operator-level cutting records</small></div>
+                                </div>
+                                <table class="table table-sm table-bordered mb-2">
+                                    <tr><td>Execution Records</td><td class="fw-bold text-primary">{{ stats.total_executions ?? 0 }}</td></tr>
+                                </table>
+                                <a href="{{ BASE_URL }}/cutting/execution" class="btn btn-sm btn-outline-info w-100">View Execution →</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div><!-- /col-12 -->
+</div><!-- /row -->
+
+<style>
+.btn-xs { padding: 3px 8px; font-size: 0.75rem; }
+.border-dashed { border: 2px dashed #dee2e6 !important; }
+</style>
+
+<script>
+// Generic search filter
+function filterTable(inputId, tableId) {
+    document.getElementById(inputId)?.addEventListener('keyup', function() {
+        const term = this.value.toLowerCase();
+        document.querySelectorAll('#' + tableId + ' tbody tr').forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+        });
+    });
+}
+filterTable('planSearch', 'plansTable');
+filterTable('markerSearch', 'markersTable');
+filterTable('bundleSearch', 'bundlesTable');
+
+// Open update plan modal
+function openUpdatePlan(planId, currentStatus, currentQty) {
+    const form = document.getElementById('updatePlanForm');
+    form.action = '{{ BASE_URL }}/cutting/plans/' + planId + '/update-status';
+    form.querySelector('[name="status"]').value = currentStatus;
+    document.getElementById('updateCompletedQty').value = currentQty;
+    new bootstrap.Modal(document.getElementById('updatePlanModal')).show();
+}
+</script>
+{% endblock %}

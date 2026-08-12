@@ -1,0 +1,167 @@
+{% extends "layouts/app.twig" %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4 p-4 rounded-3 text-white shadow-sm" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%);">
+        <div>
+            <span class="badge bg-white text-warning mb-2 font-monospace" style="color: #b45309;"><i class="fas fa-gavel me-1"></i> BLA 2006 7-GRADE WAGE SCALE</span>
+            <h2 class="mb-1 font-weight-bold">RMG Minimum Wage Compliance Audit</h2>
+            <p class="mb-0 opacity-75">Legal minimum basic and gross salary validation under Bangladesh Labour Law Gazette.</p>
+        </div>
+        <div>
+            <a href="{{ BASE_URL }}/hr/rmg-compliance" class="btn btn-light rounded-pill px-4 font-weight-bold text-warning shadow-sm" style="color: #b45309;"><i class="fas fa-arrow-left me-1"></i>Back to Compliance</a>
+        </div>
+    </div>
+
+    <!-- Overview Statistics -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Total Graded Employees</div>
+                    <h3 class="fw-bold mb-0 text-primary">{{ employees|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Wage Violations</div>
+                    <h3 class="fw-bold mb-0 {% if violations > 0 %}text-danger{% else %}text-success{% endif %}">
+                        {{ violations }}
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-12 col-lg-6">
+            {% if violations > 0 %}
+            <div class="alert alert-danger mb-0 border-0 shadow-sm d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                <div>
+                    <h6 class="fw-bold mb-1">Wage Compliance Warning!</h6>
+                    <span>There are {{ violations }} employee accounts currently paid below the national gazetted minimum wage. Please review basic and gross salaries immediately.</span>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-success mb-0 border-0 shadow-sm d-flex align-items-center">
+                <i class="fas fa-check-circle fa-2x me-3"></i>
+                <div>
+                    <h6 class="fw-bold mb-1">Compliance Check Passed!</h6>
+                    <span>All active employees are paid equal to or above their statutory grade minimums.</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Wage Scale Reference Sheet -->
+        <div class="col-lg-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 border-0">
+                    <h6 class="m-0 fw-bold text-primary"><i class="fas fa-info-circle me-1"></i>RMG Gazette standard (2024)</h6>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush small">
+                        {% for standard in wageGazette %}
+                        <li class="list-group-item py-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-dark">Grade {{ standard.grade }}</span>
+                                <span class="badge bg-secondary-subtle text-secondary">{{ standard.roles|split(',')|first }}</span>
+                            </div>
+                            <div class="text-muted">Min. Gross: <span class="fw-semibold text-dark">BDT {{ standard.minimum_gross|number_format(0) }}</span></div>
+                            <div class="text-muted">Min. Basic: <span class="fw-semibold text-dark">BDT {{ standard.minimum_basic|number_format(0) }}</span></div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employee Audit Table -->
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 border-0">
+                    <h6 class="m-0 fw-bold text-primary"><i class="fas fa-users-cog me-1"></i>Wage Compliance Audit List</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Designation</th>
+                                    <th>Grade</th>
+                                    <th>Basic Salary</th>
+                                    <th>Gross Salary</th>
+                                    <th class="text-center">Compliance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for emp in employees %}
+                                <tr class="{% if not emp.is_compliant %}table-danger-subtle{% endif %}">
+                                    <td>
+                                        <div class="fw-bold">{{ emp.first_name }} {{ emp.last_name }}</div>
+                                        <div class="small text-muted">{{ emp.employee_code }} &bull; {{ emp.department_name }}</div>
+                                    </td>
+                                    <td>{{ emp.position_name }}</td>
+                                    <td>
+                                        {% if emp.worker_grade %}
+                                        <span class="badge bg-dark rounded-pill px-3">Grade {{ emp.worker_grade }}</span>
+                                        {% else %}
+                                        <span class="text-muted small">None</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">BDT {{ emp.basic_salary|number_format(2) }}</div>
+                                        {% if emp.required_basic > 0 %}
+                                        <div class="small text-muted">Req: BDT {{ emp.required_basic|number_format(0) }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">BDT {{ emp.salary|number_format(2) }}</div>
+                                        {% if emp.required_gross > 0 %}
+                                        <div class="small text-muted">Req: BDT {{ emp.required_gross|number_format(0) }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if emp.is_compliant %}
+                                        <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2">
+                                            <i class="fas fa-check me-1"></i>Compliant
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-danger text-white rounded-pill px-3 py-2" data-bs-toggle="tooltip" title="Wage is below legal standard!">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>Violation
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5 text-muted">No employees found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.table-danger-subtle {
+    background-color: rgba(231, 76, 60, 0.05) !important;
+}
+</style>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

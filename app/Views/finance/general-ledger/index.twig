@@ -1,0 +1,106 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}General Ledger{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">General Ledger</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/finance/accounts">Finance</a></li>
+        <li class="breadcrumb-item active">General Ledger</li>
+    </ol>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-filter me-1"></i> Filter Ledger Entries
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ BASE_URL }}/finance/general-ledger" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Account</label>
+                    <select class="form-select" name="account_id">
+                        <option value="">All Accounts</option>
+                        {% for account in dropdowns.accounts %}
+                            <option value="{{ account.account_id }}" {% if filters.account_id == account.account_id %}selected{% endif %}>
+                                {{ account.account_code }} - {{ account.account_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Cost Center</label>
+                    <select class="form-select" name="cost_center_id">
+                        <option value="">All Cost Centers</option>
+                        {% for cc in dropdowns.cost_centers %}
+                            <option value="{{ cc.cost_center_id }}" {% if filters.cost_center_id == cc.cost_center_id %}selected{% endif %}>
+                                {{ cc.cost_center_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">From Date</label>
+                    <input type="date" class="form-control" name="date_from" value="{{ filters.date_from }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">To Date</label>
+                    <input type="date" class="form-control" name="date_to" value="{{ filters.date_to }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div><i class="fas fa-book me-1"></i> Ledger Entries</div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="ledgerTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Account</th>
+                            <th>Cost Center</th>
+                            <th>Description</th>
+                            <th>Ref</th>
+                            <th class="text-end">Debit</th>
+                            <th class="text-end">Credit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set total_debit = 0 %}
+                        {% set total_credit = 0 %}
+                        {% for entry in entries %}
+                            {% set total_debit = total_debit + entry.debit_amount %}
+                            {% set total_credit = total_credit + entry.credit_amount %}
+                            <tr>
+                                <td>{{ entry.transaction_date|date('Y-m-d') }}</td>
+                                <td>{{ entry.account_code }} - {{ entry.account_name }}</td>
+                                <td>{{ entry.cost_center_name|default('-') }}</td>
+                                <td>{{ entry.description }}</td>
+                                <td>{{ entry.reference_type }} {{ entry.reference_id ? '#' ~ entry.reference_id : '' }}</td>
+                                <td class="text-end">{{ entry.debit_amount > 0 ? entry.debit_amount|number_format(2) : '-' }}</td>
+                                <td class="text-end">{{ entry.credit_amount > 0 ? entry.credit_amount|number_format(2) : '-' }}</td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="7" class="text-center">No entries found</td></tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="fw-bold">
+                            <td colspan="5" class="text-end">Total</td>
+                            <td class="text-end">{{ total_debit|number_format(2) }}</td>
+                            <td class="text-end">{{ total_credit|number_format(2) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

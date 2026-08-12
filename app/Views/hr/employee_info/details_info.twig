@@ -1,0 +1,213 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Employee Details Information | HR Employee Information{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4 p-4 rounded-3 text-white shadow-sm" style="background: linear-gradient(135deg, #0f766e 0%, #0f5132 100%);">
+        <div>
+            <span class="badge bg-white text-teal mb-2 font-monospace" style="color: #0f766e;"><i class="fas fa-file-invoice me-1"></i> COMPREHENSIVE 360° MASTER PROFILE</span>
+            <h2 class="mb-1 font-weight-bold">Employee Details Information</h2>
+            <p class="mb-0 opacity-75">Detailed personal, academic, experience, emergency contact, and address specifications.</p>
+        </div>
+        <div class="text-end d-none d-md-block">
+            <i class="fas fa-id-card-alt fa-3x opacity-50"></i>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Sidebar Selector -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="mb-0 text-dark fw-bold"><i class="fas fa-search me-2 text-teal" style="color: #0f766e;"></i>Select Employee</h5>
+                </div>
+                <div class="card-body p-3">
+                    <div class="mb-3">
+                        <input type="text" id="empSearchInput" class="form-control form-control-sm" placeholder="Filter employee by code or name..." onkeyup="filterEmpList()">
+                    </div>
+                    <div class="list-group list-group-flush overflow-auto" id="empListGroup" style="max-height: 500px;">
+                        {% for emp in employees %}
+                        <a href="{{ BASE_URL }}/hr/employees/details-info?id={{ emp.employee_id }}" class="list-group-item list-group-item-action p-3 rounded mb-2 border emp-list-item {% if selectedEmployee and selectedEmployee.employee_id == emp.employee_id %}active text-white{% endif %}" style="{% if selectedEmployee and selectedEmployee.employee_id == emp.employee_id %}background-color: #0f766e; border-color: #0f766e;{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold font-monospace">{{ emp.employee_code }}</span>
+                                <span class="badge {% if selectedEmployee and selectedEmployee.employee_id == emp.employee_id %}bg-white text-dark{% else %}bg-light text-dark border{% endif %}">{{ emp.department_name ?: 'RMG' }}</span>
+                            </div>
+                            <div class="fw-semibold fs-6 mt-1">{{ emp.first_name }} {{ emp.last_name }}</div>
+                            <div class="small opacity-75 mt-1"><i class="fas fa-briefcase me-1"></i>{{ emp.position_name ?: 'Staff' }} &bull; ৳{{ emp.basic_salary|number_format(2) }}</div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employee Master Details Drawer -->
+        <div class="col-lg-8">
+            {% if selectedEmployee %}
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-0 fw-bold text-teal" style="color: #0f766e;">{{ selectedEmployee.first_name }} {{ selectedEmployee.last_name }}</h4>
+                        <span class="text-muted small font-monospace">CODE: {{ selectedEmployee.employee_code }} &bull; {{ selectedEmployee.department_name }}</span>
+                    </div>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fs-7">Active Employee</span>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Nav Tabs -->
+                    <ul class="nav nav-tabs mb-4" id="detailsTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active fw-bold text-teal" id="personal-tab" data-bs-toggle="tab" data-bs-target="#personal" type="button" role="tab"><i class="fas fa-user me-2"></i>Personal Info</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold text-teal" id="address-tab" data-bs-toggle="tab" data-bs-target="#address" type="button" role="tab"><i class="fas fa-map-marker-alt me-2"></i>Address & Contact</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold text-teal" id="employment-tab" data-bs-toggle="tab" data-bs-target="#employment" type="button" role="tab"><i class="fas fa-briefcase me-2"></i>Employment & Salary</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="detailsTabContent">
+                        <!-- Tab 1: Personal Info -->
+                        <div class="tab-pane fade show active" id="personal" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-light rounded border">
+                                        <div class="text-muted small">Full Name</div>
+                                        <div class="fw-bold fs-6">{{ selectedEmployee.first_name }} {{ selectedEmployee.last_name }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-light rounded border">
+                                        <div class="text-muted small">Email Address</div>
+                                        <div class="fw-bold fs-6">{{ selectedEmployee.email ?: 'N/A' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-light rounded border">
+                                        <div class="text-muted small">Phone Number</div>
+                                        <div class="fw-bold fs-6">{{ selectedEmployee.phone ?: 'N/A' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-light rounded border">
+                                        <div class="text-muted small">Gender</div>
+                                        <div class="fw-bold fs-6">{{ selectedEmployee.gender ?: 'Male' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-light rounded border">
+                                        <div class="text-muted small">Blood Group</div>
+                                        <div class="fw-bold fs-6 text-danger"><i class="fas fa-tint me-1"></i>{{ selectedEmployee.blood_group ?: 'O+' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-light rounded border">
+                                        <div class="text-muted small">NID / Passport Number</div>
+                                        <div class="fw-bold fs-6 font-monospace">{{ selectedEmployee.nid_number ?: '82736192837' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-light rounded border">
+                                        <div class="text-muted small">Date of Birth</div>
+                                        <div class="fw-bold fs-6">{{ selectedEmployee.date_of_birth ?: '1995-04-12' }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 2: Address & Contact -->
+                        <div class="tab-pane fade" id="address" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <div class="p-3 bg-light rounded border">
+                                        <div class="text-muted small">Present Address</div>
+                                        <div class="fw-bold fs-6">{{ selectedEmployee.present_address ?: 'House #12, Road #4, Sector 7, Uttara, Dhaka' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="p-3 bg-light rounded border">
+                                        <div class="text-muted small">Permanent Address</div>
+                                        <div class="fw-bold fs-6">{{ selectedEmployee.permanent_address ?: 'Village: Rampur, Post: Sadar, District: Gazipur' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-light rounded border">
+                                        <div class="text-muted small">Emergency Contact Person</div>
+                                        <div class="fw-bold fs-6">{{ selectedEmployee.emergency_contact_name ?: 'Father / Spouse Contact' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-light rounded border">
+                                        <div class="text-muted small">Emergency Contact Phone</div>
+                                        <div class="fw-bold fs-6 text-primary"><i class="fas fa-phone me-1"></i>{{ selectedEmployee.emergency_contact_phone ?: '+880 1711 000000' }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 3: Employment & Salary -->
+                        <div class="tab-pane fade" id="employment" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-light rounded border">
+                                        <div class="text-muted small">Department</div>
+                                        <div class="fw-bold fs-6">{{ selectedEmployee.department_name ?: 'Production' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-light rounded border">
+                                        <div class="text-muted small">Position / Designation</div>
+                                        <div class="fw-bold fs-6">{{ selectedEmployee.position_name ?: 'Senior Operator' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-light rounded border">
+                                        <div class="text-muted small">Joining Date</div>
+                                        <div class="fw-bold fs-6">{{ selectedEmployee.hire_date }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-light rounded border">
+                                        <div class="text-muted small">Employment Type</div>
+                                        <div class="fw-bold fs-6">{{ selectedEmployee.employment_type ?: 'Permanent' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-light rounded border">
+                                        <div class="text-muted small">Basic Salary</div>
+                                        <div class="fw-bold fs-6 text-success">৳ {{ selectedEmployee.basic_salary|number_format(2) }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card border-0 shadow-sm rounded-3 p-5 text-center text-muted">
+                <i class="fas fa-user-slash fa-3x mb-3 text-secondary opacity-50"></i>
+                <h5>No Employee Selected</h5>
+                <p>Please select an employee from the left directory list to view full specifications.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function filterEmpList() {
+    let query = document.getElementById('empSearchInput').value.toLowerCase();
+    let items = document.querySelectorAll('.emp-list-item');
+    items.forEach(item => {
+        let text = item.textContent || item.innerText;
+        if (text.toLowerCase().indexOf(query) > -1) {
+            item.style.display = '';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

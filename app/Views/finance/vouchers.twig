@@ -1,0 +1,214 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Voucher Management & Approvals{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 bg-transparent px-0">
+                <li class="breadcrumb-item"><a href="{{ BASE_URL }}/finance/dashboard" class="text-decoration-none">Finance</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Voucher Register</li>
+            </ol>
+        </nav>
+        <h4 class="mb-0 font-weight-bold">Voucher Management & Approvals</h4>
+    </div>
+
+    <!-- Alerts -->
+    {% if session.success_message %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ session.success_message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+    {% if session.error_message %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ session.error_message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <!-- Tabs / Navigation -->
+    <ul class="nav nav-tabs nav-tabs-custom mb-4" id="voucherTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-pane" type="button" role="tab"><i class="fas fa-file-invoice me-2"></i>Voucher Register</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="approvals-tab" data-bs-toggle="tab" data-bs-target="#approvals-pane" type="button" role="tab">
+                <i class="fas fa-check-double me-2"></i>Approvals & Releases
+                {% if pendingVouchers|length > 0 %}
+                <span class="badge bg-danger ms-2">{{ pendingVouchers|length }}</span>
+                {% endif %}
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tabs Content -->
+    <div class="tab-content" id="voucherTabsContent">
+        
+        <!-- VOUCHER REGISTER -->
+        <div class="tab-pane fade show active" id="register-pane" role="tabpanel">
+            <div class="card border-0 shadow-sm p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="mb-0 font-weight-bold">Posted Vouchers Register</h5>
+                    <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#createVoucherModal">
+                        <i class="fas fa-plus me-1"></i> New Voucher
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr class="text-muted">
+                                <th>Posting Date</th>
+                                <th>Voucher Type</th>
+                                <th>Reference ID</th>
+                                <th>Narration</th>
+                                <th class="text-end">Total Amount</th>
+                                <th class="text-center">Lines Count</th>
+                                <th class="text-center">Audit Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if vouchers is empty %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">No vouchers posted yet. Click 'New Voucher' to start.</td>
+                            </tr>
+                            {% else %}
+                                {% for v in vouchers %}
+                                <tr>
+                                    <td>{{ v.transaction_date|date('d-M-Y') }}</td>
+                                    <td>
+                                        <span class="badge {% if v.reference_type == 'Payment' %}bg-warning text-dark{% elseif v.reference_type == 'Receipt' %}bg-success{% else %}bg-primary{% endif %}">
+                                            {{ v.reference_type|upper }}
+                                        </span>
+                                    </td>
+                                    <td class="font-weight-bold">#{{ v.reference_id }}</td>
+                                    <td>{{ v.description }}</td>
+                                    <td class="text-end font-weight-bold text-success">${{ v.total_amount|number_format(2) }}</td>
+                                    <td class="text-center font-weight-bold">{{ v.line_count }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success">POSTED</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- APPROVALS & RELEASES -->
+        <div class="tab-pane fade" id="approvals-pane" role="tabpanel">
+            <div class="row g-4">
+                {% if pendingVouchers is empty %}
+                <div class="col-12 text-center text-muted py-5">
+                    <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                    <h5>All caught up! No vouchers awaiting release/approval.</h5>
+                </div>
+                {% else %}
+                    {% for p in pendingVouchers %}
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm p-4 border-start border-4 {% if p.type == 'Payment' %}border-warning{% else %}border-primary{% endif %}">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="badge bg-light text-dark font-weight-bold">{{ p.number }}</span>
+                                <span class="badge bg-danger">{{ p.status|upper }}</span>
+                            </div>
+                            <h5 class="font-weight-bold my-1">${{ p.amount|number_format(2) }}</h5>
+                            <p class="text-secondary font-size-13 mb-3">{{ p.description }}</p>
+                            <small class="text-muted mb-3 d-block"><i class="fas fa-calendar-alt me-1"></i>Date: {{ p.date }}</small>
+                            <div class="d-flex gap-2">
+                                <form action="{{ BASE_URL }}/finance/vouchers/approve" method="POST" class="flex-grow-1">
+                                    {{ csrf_field() | raw }}
+                                    <input type="hidden" name="id" value="{{ p.id }}">
+                                    <input type="hidden" name="action" value="approve">
+                                    <button type="submit" class="btn btn-success btn-sm w-100 rounded-pill"><i class="fas fa-check me-1"></i>Release/Post</button>
+                                </form>
+                                <form action="{{ BASE_URL }}/finance/vouchers/approve" method="POST" class="flex-grow-1">
+                                    {{ csrf_field() | raw }}
+                                    <input type="hidden" name="id" value="{{ p.id }}">
+                                    <input type="hidden" name="action" value="reject">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm w-100 rounded-pill"><i class="fas fa-times me-1"></i>Reject</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: New Voucher -->
+<div class="modal fade" id="createVoucherModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ BASE_URL }}/finance/vouchers/store" method="POST">
+            {{ csrf_field() | raw }}
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold">Post Double Entry Voucher</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Posting Date</label>
+                        <input type="date" class="form-control" name="transaction_date" value="{{ 'now'|date('Y-m-d') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Voucher Type</label>
+                        <select class="form-select" name="voucher_type">
+                            <option value="Journal">Journal Voucher (JV)</option>
+                            <option value="Payment">Payment Voucher (PV)</option>
+                            <option value="Receipt">Receipt Voucher (RV)</option>
+                            <option value="Contra">Contra Voucher (CV)</option>
+                            <option value="Debit Note">Debit Note (DN)</option>
+                            <option value="Credit Note">Credit Note (CN)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Debit Account (Increase Assets / Expenses)</label>
+                        <select class="form-select" name="debit_account" required>
+                            <option value="">-- Select Account --</option>
+                            {% for acc in accounts %}
+                            <option value="{{ acc.account_id }}">{{ acc.account_code }} - {{ acc.account_name }} ({{ acc.account_type }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Credit Account (Increase Liabilities / Income)</label>
+                        <select class="form-select" name="credit_account" required>
+                            <option value="">-- Select Account --</option>
+                            {% for acc in accounts %}
+                            <option value="{{ acc.account_id }}">{{ acc.account_code }} - {{ acc.account_name }} ({{ acc.account_type }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Amount ($)</label>
+                        <input type="number" step="0.01" class="form-control" name="amount" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Narration / Description</label>
+                        <textarea class="form-control" name="description" placeholder="e.g. Paid office internet bills" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Workflow Action</label>
+                        <select class="form-select" name="status">
+                            <option value="posted">Post Directly to General Ledger</option>
+                            <option value="pending_release">Submit for Release (Pending Release)</option>
+                            <option value="pending_approval">Submit for Approval (Pending Approval)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Submit / Post Voucher</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

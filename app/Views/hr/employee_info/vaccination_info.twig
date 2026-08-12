@@ -1,0 +1,153 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Employee Vaccination Information | HR Employee Information{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4 p-4 rounded-3 text-white shadow-sm" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);">
+        <div>
+            <span class="badge bg-white text-sky mb-2 font-monospace" style="color: #0369a1;"><i class="fas fa-syringe me-1"></i> AUDIT & HEALTH IMMUNIZATION REGISTRY</span>
+            <h2 class="mb-1 font-weight-bold">Employee Vaccination Information</h2>
+            <p class="mb-0 opacity-75">Track COVID-19, Hepatitis, Tetanus Toxoid, and buyer audit immunization records.</p>
+        </div>
+        <div class="text-end d-none d-md-block">
+            <i class="fas fa-shield-virus fa-3x opacity-50"></i>
+        </div>
+    </div>
+
+    {% if flash_success %}
+    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+        <i class="fas fa-check-circle me-2"></i> {{ flash_success }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Form -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="mb-0 text-sky fw-bold" style="color: #0369a1;"><i class="fas fa-plus-circle me-2"></i>Log Employee Vaccination</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form action="{{ BASE_URL }}/hr/employees/vaccination-info" method="POST">
+                        {{ csrf_field() | raw }}
+                        <div class="mb-3">
+                            <label for="employee_id" class="form-label fw-bold">Select Employee *</label>
+                            <select class="form-select fw-bold border-sky" id="employee_id" name="employee_id" required>
+                                <option value="">-- Choose Employee --</option>
+                                {% for emp in employees %}
+                                <option value="{{ emp.employee_id }}">{{ emp.employee_code }} - {{ emp.first_name }} {{ emp.last_name }} ({{ emp.department_name }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="vaccine_name" class="form-label fw-semibold">Vaccine Name *</label>
+                            <select class="form-select" id="vaccine_name" name="vaccine_name" required>
+                                <option value="COVID-19 (Sinopharm / Pfizer / Moderna)">COVID-19 (Sinopharm / Pfizer / Moderna)</option>
+                                <option value="Hepatitis B Vaccine">Hepatitis B Vaccine</option>
+                                <option value="Tetanus Toxoid (TT)">Tetanus Toxoid (TT)</option>
+                                <option value="Typhoid Vaccine">Typhoid Vaccine</option>
+                                <option value="Influenza / Flu Shot">Influenza / Flu Shot</option>
+                            </select>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label for="dose_number" class="form-label fw-semibold">Dose Number *</label>
+                                <select class="form-select" id="dose_number" name="dose_number" required>
+                                    <option value="1st Dose">1st Dose</option>
+                                    <option value="2nd Dose">2nd Dose</option>
+                                    <option value="Booster Dose (3rd)">Booster Dose (3rd)</option>
+                                    <option value="Booster Dose (4th)">Booster Dose (4th)</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label for="dose_status" class="form-label fw-semibold">Immunization Status *</label>
+                                <select class="form-select" id="dose_status" name="dose_status" required>
+                                    <option value="Fully Vaccinated">Fully Vaccinated</option>
+                                    <option value="Partially Vaccinated">Partially Vaccinated</option>
+                                    <option value="Medical Exemption">Medical Exemption</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label for="vaccination_date" class="form-label fw-semibold">Date Administered *</label>
+                                <input type="date" class="form-control" id="vaccination_date" name="vaccination_date" value="{{ "now"|date("Y-m-d") }}" required>
+                            </div>
+                            <div class="col-6">
+                                <label for="certificate_no" class="form-label fw-semibold">Certificate / Reg No.</label>
+                                <input type="text" class="form-control font-monospace" id="certificate_no" name="certificate_no" placeholder="e.g. VAC-827391">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="center_name" class="form-label fw-semibold">Medical Center / Hospital</label>
+                            <input type="text" class="form-control" id="center_name" name="center_name" placeholder="e.g. Gazipur General Hospital / Factory Medical Center">
+                        </div>
+
+                        <button type="submit" class="btn text-white w-100 rounded-pill py-3 fw-bold shadow-sm" style="background-color: #0369a1;"><i class="fas fa-save me-2"></i> Save Vaccination Record</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-dark fw-bold"><i class="fas fa-list me-2"></i>Employee Immunization Records</h5>
+                    <span class="badge bg-sky-subtle text-sky border">Total: {{ records|length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Vaccine</th>
+                                    <th>Dose</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if records is empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">No vaccination records logged yet.</td>
+                                </tr>
+                                {% else %}
+                                {% for rec in records %}
+                                <tr>
+                                    <td class="fw-semibold">
+                                        <div class="fw-bold">{{ rec.employee_name }}</div>
+                                        <span class="font-monospace small text-muted">{{ rec.employee_code }}</span>
+                                    </td>
+                                    <td class="fw-bold text-dark">{{ rec.vaccine_name }}</td>
+                                    <td><span class="badge bg-light text-dark border">{{ rec.dose_number }}</span></td>
+                                    <td>{{ rec.vaccination_date }}</td>
+                                    <td>
+                                        {% if rec.dose_status == 'Fully Vaccinated' %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="fas fa-shield-alt me-1"></i>Fully Vaccinated</span>
+                                        {% elseif rec.dose_status == 'Partially Vaccinated' %}
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Partial</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary-subtle text-secondary border">Exempted</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

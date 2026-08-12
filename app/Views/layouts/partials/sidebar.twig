@@ -1,0 +1,1668 @@
+<nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+    <div class="position-sticky pt-3">
+        <!-- Sidebar Quick Search Box -->
+        <div class="sidebar-search-wrapper px-3 mb-3 position-relative">
+            <div class="input-group input-group-sm sidebar-search-input-group shadow-sm">
+                <span class="input-group-text bg-transparent border-end-0 text-muted pe-1">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" 
+                       id="sidebarSearchInput" 
+                       class="form-control border-start-0 border-end-0 bg-transparent" 
+                       placeholder="Search page or report..." 
+                       aria-label="Search page or report"
+                       autocomplete="off">
+                <button class="btn btn-link border-start-0 text-muted d-none p-0 pe-2" 
+                        type="button" 
+                        id="clearSidebarSearch" 
+                        title="Clear search"
+                        style="text-decoration: none;">
+                    <i class="fas fa-times-circle"></i>
+                </button>
+            </div>
+            <!-- Live Search Results Dropdown -->
+            <div id="sidebarSearchResults" class="sidebar-search-dropdown shadow-lg d-none">
+            </div>
+        </div>
+
+        <ul class="nav flex-column">
+            <!-- Master Library -->
+            <li class="nav-item has-submenu">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#masterLibrarySubmenu" aria-expanded="false">
+                    <i class="fas fa-book"></i>
+                    Master Library
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </a>
+                <ul class="submenu collapse" id="masterLibrarySubmenu">
+                    {% if canView('master_library', 'view_master_library_dashboard') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_countries') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/countries">
+                            <i class="fas fa-globe"></i>
+                            Countries
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('merchandising', 'buyers') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/buyers">
+                            <i class="fas fa-user-tie"></i>
+                            Buyers
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_cities') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/cities">
+                            <i class="fas fa-city"></i>
+                            Cities
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_districts') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/districts">
+                            <i class="fas fa-map-marked-alt"></i>
+                            Districts
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_sub_districts') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/sub_districts">
+                            <i class="fas fa-layer-group"></i>
+                            Sub-Districts
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_banks') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/banks">
+                            <i class="fas fa-university"></i>
+                            Banks
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_currencies') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/currencies">
+                            <i class="fas fa-money-bill-wave"></i>
+                            Currencies
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_factories') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/factories">
+                            <i class="fas fa-industry"></i>
+                            Factories
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_stores') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/stores">
+                            <i class="fas fa-warehouse"></i>
+                            Stores
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_racks') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/store_locations">
+                            <i class="fas fa-boxes"></i>
+                            Store Locations
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_item_categories') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/item_categories">
+                            <i class="fas fa-tags"></i>
+                            Item Categories
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_production_floors') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/production_floors">
+                            <i class="fas fa-hard-hat"></i>
+                            Production Floors
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_production_floors') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/store_rooms">
+                            <i class="fas fa-door-open"></i>
+                            Rooms
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_production_floors') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/store_racks">
+                            <i class="fas fa-align-justify"></i>
+                            Racks
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_production_lines') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/production_lines">
+                            <i class="fas fa-stream"></i>
+                            Production Lines
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_trims_costing_template') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/trims_costing_template">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            Trims Costing Template
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_size_ranges') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/size-ranges">
+                            <i class="fas fa-ruler-horizontal"></i>
+                            Size Ranges
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'Buyer Brands') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/buyer_brands">
+                            <i class="fas fa-tags"></i>
+                            Buyer Brands
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'Product Categories') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/product_categories">
+                            <i class="fas fa-layer-group"></i>
+                            Product Categories
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'Product Departments') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/product_departments">
+                            <i class="fas fa-building"></i>
+                            Product Departments
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_garment_sample_types') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/garment_sample_types">
+                            <i class="fas fa-tags"></i>
+                            Garment Sample Types
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_product_natures') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/product_natures">
+                            <i class="fas fa-leaf"></i>
+                            Product Natures
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_product_types') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/product_types">
+                            <i class="fas fa-shapes"></i>
+                            Product Types
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_garments_items') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/garments_items">
+                            <i class="fas fa-tshirt"></i>
+                            Garments Items
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_uoms') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/uoms">
+                            <i class="fas fa-ruler"></i>
+                            Units of Measure (UOM)
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_terms_conditions') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/terms_conditions">
+                            <i class="fas fa-file-contract"></i>
+                            Terms &amp; Conditions
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_employee_departments') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/employee_departments">
+                            <i class="fas fa-sitemap"></i>
+                            Employee Departments
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_employee_sections') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/employee_sections">
+                            <i class="fas fa-layer-group"></i>
+                            Employee Sections
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('master_library', 'view_employee_designations') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/employee_designations">
+                            <i class="fas fa-id-badge"></i>
+                            Employee Designations
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('procurement', 'view_vendors') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/master_library/vendors">
+                            <i class="fas fa-users"></i>
+                            Vendors
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link text-info" href="{{ BASE_URL }}/master_library/reports">
+                            <i class="fas fa-file-invoice"></i>
+                            Master Library Reports
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Commercial -->
+            <li class="nav-item has-submenu">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#commercialSubmenu" aria-expanded="false">
+                    <i class="fas fa-chart-bar"></i>
+                    Commercial
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </a>
+                <ul class="submenu collapse" id="commercialSubmenu">
+                    <li class="nav-item">
+                        <a class="nav-link text-primary" href="{{ BASE_URL }}/commercial/dashboard">
+                            <i class="fas fa-chart-pie"></i>
+                            Executive Dashboard
+                        </a>
+                    </li>
+                    {% if canView('commercial', 'view_orders') or true %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/commercial/quotations">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            Quotations
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/commercial/sales-orders">
+                            <i class="fas fa-shopping-bag"></i>
+                            Sales Orders
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/commercial/sales-contracts">
+                            <i class="fas fa-file-contract"></i>
+                            Sales Contracts
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/commercial/invoices">
+                            <i class="fas fa-receipt"></i>
+                            Invoices
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="{{ BASE_URL }}/commercial/letters-of-credit">
+                            <i class="fas fa-university"></i>
+                            Letters of Credit (L/C)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-secondary" href="{{ BASE_URL }}/commercial/export-documents">
+                            <i class="fas fa-ship"></i>
+                            Export Documents
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-success" href="{{ BASE_URL }}/commercial/reports">
+                            <i class="fas fa-file-alt"></i>
+                            Commercial Reports
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </li>
+
+            <!-- Finance & Accounts -->
+            <li class="nav-item has-submenu">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#financeSubmenu" aria-expanded="false">
+                    <i class="fas fa-coins text-warning"></i>
+                    Finance &amp; Accounts
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </a>
+                <ul class="submenu collapse" id="financeSubmenu">
+                    <li class="nav-item">
+                        <a class="nav-link text-primary" href="{{ BASE_URL }}/finance/dashboard">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Finance Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/finance/accounts">
+                            <i class="fas fa-sitemap"></i>
+                            Chart of Accounts &amp; Daybook
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/finance/vouchers">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            Vouchers &amp; Approvals
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-info" href="{{ BASE_URL }}/finance/cash-bank">
+                            <i class="fas fa-university"></i>
+                            Cash, Bank &amp; Exchange
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/finance/subledgers">
+                            <i class="fas fa-hand-holding-usd"></i>
+                            Subledgers &amp; Cost Centers
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-purple" href="{{ BASE_URL }}/finance/general-ledger" style="color: #7c3aed;">
+                            <i class="fas fa-book"></i>
+                            General Ledger
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-success" href="{{ BASE_URL }}/finance/reports">
+                            <i class="fas fa-chart-line"></i>
+                            Financial Reports &amp; Budgets
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Merchandising -->
+            <li class="nav-item has-submenu">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#merchandisingSubmenu" aria-expanded="false">
+                    <i class="fas fa-tshirt"></i>
+                    Merchandising
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </a>
+                <ul class="submenu collapse" id="merchandisingSubmenu">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/merchandising/dashboard">
+                            <i class="fas fa-chart-pie"></i>
+                            Executive Dashboard
+                        </a>
+                    </li>
+                    {% if canView('merchandising', 'view_styles') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/merchandising/styles">
+                            <i class="fas fa-drafting-compass"></i>
+                            Styles
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/merchandising/tech-packs">
+                            <i class="fas fa-file-invoice"></i>
+                            Tech Packs
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if canView('merchandising', 'view_bom') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/merchandising/bom">
+                            <i class="fas fa-list-ol"></i>
+                            BOM
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="{{ BASE_URL }}/merchandising/tna">
+                            <i class="fas fa-calendar-alt"></i>
+                            T&A Calendar
+                        </a>
+                    </li>
+
+                    {% if canView('merchandising', 'view_styles') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/merchandising/sampling">
+                            <i class="fas fa-cut"></i>
+                            Sampling
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/merchandising/sample-planning">
+                            <i class="fas fa-clock"></i>
+                            Sample Tracking (Req Wise)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/merchandising/sample-production">
+                            <i class="fas fa-chart-line"></i>
+                            Sample Prod Tracking
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('production', 'view_production_orders') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/merchandising/production-orders">
+                            <i class="fas fa-industry"></i>
+                            Production Orders
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('store_inventory', 'view_inventory') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/transfer">
+                            <i class="fas fa-exchange-alt"></i>
+                            Transfer Quantities
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('merchandising', 'view_styles') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/merchandising/costing">
+                            <i class="fas fa-calculator"></i>
+                            Bulk Costing
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('procurement', 'view_purchase_requests') or canView('procurement', 'view_purchase_orders') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/merchandising/purchase-requests">
+                            <i class="fas fa-file-invoice"></i>
+                            Purchase Requests
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link text-primary" href="{{ BASE_URL }}/merchandising/reports">
+                            <i class="fas fa-file-contract"></i>
+                            Merchandising Reports
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Production -->
+            <li class="nav-item has-submenu">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#productionSubmenu" aria-expanded="false">
+                    <i class="fas fa-cogs"></i>
+                    Production
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </a>
+                <ul class="submenu collapse" id="productionSubmenu">
+                    <li class="nav-item">
+                        <a class="nav-link text-primary" href="{{ BASE_URL }}/production/dashboard">
+                            <i class="fas fa-chart-pie"></i>
+                            Control Center Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/production/planning">
+                            <i class="fas fa-calendar-alt"></i>
+                            Production Planning
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/production/capacity">
+                            <i class="fas fa-chart-line"></i>
+                            Capacity Planning
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="{{ BASE_URL }}/production/cutting">
+                            <i class="fas fa-cut"></i>
+                            Cutting & Bundles
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-info" href="{{ BASE_URL }}/production/sewing">
+                            <i class="fas fa-layer-group"></i>
+                            Sewing Floor & Lines
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/production/finishing">
+                            <i class="fas fa-tshirt"></i>
+                            Finishing & Ironing
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="{{ BASE_URL }}/production/quality">
+                            <i class="fas fa-check-double"></i>
+                            Quality Assurance (QC)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/production/packing">
+                            <i class="fas fa-boxes"></i>
+                            Packing & Cartons
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-secondary" href="{{ BASE_URL }}/production/washing">
+                            <i class="fas fa-soap"></i>
+                            Washing Plant
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-success" href="{{ BASE_URL }}/production/reports">
+                            <i class="fas fa-file-invoice"></i>
+                            Production Reports
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Cutting -->
+            <li class="nav-item has-submenu">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#cuttingSubmenu" aria-expanded="false">
+                    <i class="fas fa-cut"></i>
+                    Cutting
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </a>
+                <ul class="submenu collapse" id="cuttingSubmenu">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/cutting/dashboard">
+                            <i class="fas fa-chart-pie"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/cutting/plans">
+                            <i class="fas fa-clipboard-list"></i>
+                            Cutting Plans
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/cutting/marker">
+                            <i class="fas fa-object-group"></i>
+                            Marker Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/cutting/lay">
+                            <i class="fas fa-layer-group"></i>
+                            Lay Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/cutting/fabric">
+                            <i class="fas fa-scroll"></i>
+                            Fabric Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/cutting/execution">
+                            <i class="fas fa-cut"></i>
+                            Cutting Execution
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/cutting/bundles">
+                            <i class="fas fa-boxes"></i>
+                            Bundle Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/cutting/numbering">
+                            <i class="fas fa-sort-numeric-down"></i>
+                            Numbering
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/cutting/ticketing">
+                            <i class="fas fa-ticket-alt"></i>
+                            Ticketing
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/cutting/qc">
+                            <i class="fas fa-check-double"></i>
+                            Cutting QC
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/cutting/reports">
+                            <i class="fas fa-file-alt"></i>
+                            Reports
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Sewing -->
+            <li class="nav-item has-submenu">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#sewingSubmenu" aria-expanded="false">
+                    <i class="fas fa-layer-group"></i>
+                    Sewing
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </a>
+                <ul class="submenu collapse" id="sewingSubmenu">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/sewing/dashboard">
+                            <i class="fas fa-chart-pie"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/sewing/lines">
+                            <i class="fas fa-sitemap"></i>
+                            Line Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/sewing/input">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Input Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/sewing/production">
+                            <i class="fas fa-tshirt"></i>
+                            Production
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/sewing/output">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Output Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/sewing/wip">
+                            <i class="fas fa-spinner"></i>
+                            WIP
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/sewing/quality">
+                            <i class="fas fa-tasks"></i>
+                            Quality
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/sewing/machine">
+                            <i class="fas fa-tools"></i>
+                            Machine Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/sewing/operator">
+                            <i class="fas fa-users-cog"></i>
+                            Operator Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/sewing/incentives">
+                            <i class="fas fa-coins"></i>
+                            Incentives
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/sewing/productivity">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Productivity
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/sewing/reports">
+                            <i class="fas fa-file-invoice"></i>
+                            Reports
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Finishing -->
+            <li class="nav-item has-submenu">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#finishingSubmenu" aria-expanded="false">
+                    <i class="fas fa-box-open"></i>
+                    Finishing
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </a>
+                <ul class="submenu collapse" id="finishingSubmenu">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/finishing/dashboard">
+                            <i class="fas fa-chart-pie"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/finishing/receive">
+                            <i class="fas fa-download"></i>
+                            Washing Receive
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/finishing/ironing">
+                            <i class="fas fa-hot-tub"></i>
+                            Ironing & Trimming
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/finishing/qc">
+                            <i class="fas fa-check-double"></i>
+                            Final Inspection
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/finishing/packing">
+                            <i class="fas fa-box"></i>
+                            Folding & Poly Packing
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/finishing/reports">
+                            <i class="fas fa-file-alt"></i>
+                            Reports
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Washing -->
+            <li class="nav-item has-submenu">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#washingSubmenu" aria-expanded="false">
+                    <i class="fas fa-soap"></i>
+                    Washing
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </a>
+                <ul class="submenu collapse" id="washingSubmenu">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/washing/dashboard">
+                            <i class="fas fa-chart-pie"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/washing/plan">
+                            <i class="fas fa-calendar-alt"></i>
+                            Washing Plan
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/washing/recipe">
+                            <i class="fas fa-flask"></i>
+                            Washing Recipe
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/washing/progress">
+                            <i class="fas fa-spinner"></i>
+                            Washing Progress
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/washing/qc">
+                            <i class="fas fa-check-double"></i>
+                            Washing QC
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/washing/reports">
+                            <i class="fas fa-file-alt"></i>
+                            Reports
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Quality -->
+            <li class="nav-item has-submenu">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#qualitySubmenu" aria-expanded="false">
+                    <i class="fas fa-award"></i>
+                    Quality Control
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </a>
+                <ul class="submenu collapse" id="qualitySubmenu">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/quality/dashboard">
+                            <i class="fas fa-chart-pie"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/quality/inline">
+                            <i class="fas fa-search"></i>
+                            Inline & Endline QC
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/quality/audit">
+                            <i class="fas fa-check-double"></i>
+                            Final Audit & AQL
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/quality/library">
+                            <i class="fas fa-book"></i>
+                            Defect Library
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/quality/capa">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            CAPA Tracking
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/quality/reports">
+                            <i class="fas fa-file-alt"></i>
+                            Reports
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Packing -->
+            <li class="nav-item has-submenu">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#packingSubmenu" aria-expanded="false">
+                    <i class="fas fa-boxes"></i>
+                    Packing & Shipment
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </a>
+                <ul class="submenu collapse" id="packingSubmenu">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/packing/dashboard">
+                            <i class="fas fa-chart-pie"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/packing/list">
+                            <i class="fas fa-list-ul"></i>
+                            Packing List & Assortment
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/packing/cartons">
+                            <i class="fas fa-box"></i>
+                            Carton Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/packing/scan">
+                            <i class="fas fa-barcode"></i>
+                            Barcode Scanning
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/packing/shipment">
+                            <i class="fas fa-truck-loading"></i>
+                            Shipment Packing
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/packing/reports">
+                            <i class="fas fa-file-alt"></i>
+                            Reports
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Procurement -->
+            <li class="nav-item has-submenu">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#procurementSubmenu" aria-expanded="false">
+                    <i class="fas fa-shopping-cart"></i>
+                    Procurement
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </a>
+                <ul class="submenu collapse" id="procurementSubmenu">
+                    {% if canView('procurement', 'view_purchase_orders') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/purchase_orders">
+                            <i class="fas fa-file-invoice"></i>
+                            Purchase Orders
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('procurement', 'view_vendors') %}
+                    {# Vendors link moved to Master Library sidebar #}
+                    {% endif %}
+                     {% if canView('procurement', 'view_purchase_orders') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/carton_booking">
+                            <i class="fas fa-box"></i>
+                            Carton Booking
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="{{ BASE_URL }}/procurement/reports">
+                            <i class="fas fa-file-alt"></i>
+                            Procurement Reports
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Store & Inventory -->
+            <li class="nav-item has-submenu">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#storeSubmenu" aria-expanded="false">
+                    <i class="fas fa-warehouse"></i>
+                    Store & Inventory
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </a>
+                <ul class="submenu collapse" id="storeSubmenu">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/inventory/dashboard">
+                            <i class="fas fa-chart-line"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/inventory/items">
+                            <i class="fas fa-boxes"></i>
+                            Item Master
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/inventory/warehouses">
+                            <i class="fas fa-map-marker-alt"></i>
+                            Warehouse Master
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/inventory/transactions">
+                            <i class="fas fa-dolly"></i>
+                            Transactions & GRN
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/inventory/production">
+                            <i class="fas fa-cut"></i>
+                            Production & RMG Stores
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/inventory/control">
+                            <i class="fas fa-clipboard-check"></i>
+                            Control & Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-primary" href="{{ BASE_URL }}/inventory/reports">
+                            <i class="fas fa-chart-bar"></i>
+                            Inventory Reports
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Transport -->
+            <li class="nav-item has-submenu">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#transportSubmenu" aria-expanded="false">
+                    <i class="fas fa-truck"></i>
+                    Transport
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </a>
+                <ul class="submenu collapse" id="transportSubmenu">
+                    {% if canView('vehicle_management', 'view_vehicles') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/parts_inventory">
+                            <i class="fas fa-boxes"></i>
+                            Parts Inventory
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/vehicles">
+                            <i class="fas fa-list"></i>
+                            All Vehicles
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/transport/maintenance">
+                            <i class="fas fa-tools"></i>
+                            Maintenance
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/employee_seat_allotment">
+                            <i class="fas fa-chair"></i>
+                            Seat Allotment
+                        </a>
+                    </li>
+                     <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/vehicle_routes">
+                            <i class="fas fa-route"></i>
+                            Vehicle Routes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/vehicle_requisition">
+                            <i class="fas fa-clipboard-list"></i>
+                            Requisition
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="{{ BASE_URL }}/transport/reports">
+                            <i class="fas fa-file-medical"></i>
+                            Transport Reports
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </li>
+
+
+
+            <!-- HR -->
+            <li class="nav-item has-submenu">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#hrSubmenu" aria-expanded="false">
+                    <i class="fas fa-users"></i>
+                    HR Module
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </a>
+                <ul class="submenu collapse" id="hrSubmenu">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/dashboard">
+                            <i class="fas fa-chart-line text-info"></i>
+                            HR Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/employees">
+                            <i class="fas fa-user-tie"></i>
+                            Employee Directory
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/showcase/recruitment/cv-bank">
+                            <i class="fas fa-briefcase"></i>
+                            Recruitment & circulars
+                        </a>
+                    </li>
+                    <!-- Employee Information Sub-menu -->
+                    <li class="nav-item has-submenu">
+                        <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#employeeInformationSubmenu" aria-expanded="false">
+                            <i class="fas fa-id-card text-info"></i>
+                            Employee Information
+                            <i class="fas fa-chevron-down dropdown-icon"></i>
+                        </a>
+                        <ul class="submenu collapse" id="employeeInformationSubmenu">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/employees/weekend">
+                                    <i class="fas fa-calendar-week text-indigo"></i>
+                                    Employee Weekend
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/employees/basic-info">
+                                    <i class="fas fa-user-tag text-sky"></i>
+                                    Employee Basic
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/employees/details-info">
+                                    <i class="fas fa-id-card-alt text-teal"></i>
+                                    Employee Details
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/employees/policy-tagging">
+                                    <i class="fas fa-file-contract text-purple"></i>
+                                    Employee Policy Tagging Information
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/employees/salary-info">
+                                    <i class="fas fa-coins text-emerald"></i>
+                                    Employee Salary Information
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/employees/submitted-documents">
+                                    <i class="fas fa-folder-open text-primary"></i>
+                                    Employee Submitted Documents
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/employees/vaccination-info">
+                                    <i class="fas fa-syringe text-info"></i>
+                                    Employee Vaccination Information
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/employees/health-medical">
+                                    <i class="fas fa-heartbeat text-danger"></i>
+                                    Health and Medical Information
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/employees/tax-certificate">
+                                    <i class="fas fa-receipt text-warning"></i>
+                                    Tax Certificate Information
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <!-- Attendance Management Sub-menu -->
+                    <li class="nav-item has-submenu">
+                        <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#attendanceManagementSubmenu" aria-expanded="false">
+                            <i class="fas fa-calendar-check text-success"></i>
+                            Attendance Management
+                            <i class="fas fa-chevron-down dropdown-icon"></i>
+                        </a>
+                        <ul class="submenu collapse" id="attendanceManagementSubmenu">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/attendance">
+                                    <i class="fas fa-calendar-alt text-success"></i>
+                                    Attendance Register
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/attendance/movement-bulk">
+                                    <i class="fas fa-walking text-primary"></i>
+                                    Bulk Movement Entry
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/attendance/date-transfer">
+                                    <i class="fas fa-exchange-alt text-teal" style="color: #0d9488;"></i>
+                                    Date Attendance Transfer
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/attendance/define-holiday">
+                                    <i class="fas fa-calendar-plus text-success"></i>
+                                    Define Holiday
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/attendance/define-weekend">
+                                    <i class="fas fa-calendar-week text-primary"></i>
+                                    Define Weekend
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/attendance/roster-reprocess">
+                                    <i class="fas fa-sync-alt text-warning"></i>
+                                    Duty Roster Re-process
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/attendance/holiday-remove">
+                                    <i class="fas fa-calendar-minus text-danger"></i>
+                                    Holiday Remove
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/attendance/manual-entry">
+                                    <i class="fas fa-fingerprint text-purple" style="color: #7c3aed;"></i>
+                                    Manual Attendance Entry
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/attendance/movement-register">
+                                    <i class="fas fa-clipboard-list text-info"></i>
+                                    Movement Register
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/attendance/ot-requisition">
+                                    <i class="fas fa-clock text-warning"></i>
+                                    OT Requisition
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/showcase/shift-management/shift-master">
+                            <i class="fas fa-business-time"></i>
+                            Shift Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/leave">
+                            <i class="fas fa-calendar-alt text-primary"></i>
+                            Leave Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/leave-entry">
+                            <i class="fas fa-calendar-plus text-success"></i>
+                            Leave Entry
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/leave-delete">
+                            <i class="fas fa-calendar-minus text-danger"></i>
+                            Leave Delete
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/reports/job-card">
+                            <i class="fas fa-id-badge text-primary"></i>
+                            Job Card Report
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/reports/job-card-four-hours">
+                            <i class="fas fa-business-time text-info"></i>
+                            Job Card Four Hours
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/reports/extra-ot-payment-sheet">
+                            <i class="fas fa-coins text-warning"></i>
+                            Extra OT Payment Sheet
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/reports/salary-sheet-staff">
+                            <i class="fas fa-file-invoice-dollar text-danger"></i>
+                            Salary Sheet (Staff)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/reports/salary-sheet-worker">
+                            <i class="fas fa-users-gear text-success"></i>
+                            Salary Sheet (Worker)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/reports/ot-payment-sheet">
+                            <i class="fas fa-calculator text-primary"></i>
+                            OT Payment Sheet
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/reports/payslip-bangla">
+                            <i class="fas fa-receipt text-success"></i>
+                            Pay Slip (বাংলা)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/reports/payslip-english">
+                            <i class="fas fa-file-invoice text-info"></i>
+                            Pay Slip (English)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/reports/leave-status">
+                            <i class="fas fa-calendar-check text-success"></i>
+                            Employee Leave Status
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/reports/employee-leave-record">
+                            <i class="fas fa-address-card text-info"></i>
+                            Employee Wise Leave Record
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/reports/annual-leave-statement">
+                            <i class="fas fa-file-contract text-warning"></i>
+                            Yearly Annual Leave Statement
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/reports/yearly-leave-balance">
+                            <i class="fas fa-table-cells text-primary"></i>
+                            Employee Leave Balance Yearly
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/showcase/overtime/ot-approval">
+                            <i class="fas fa-calculator text-warning"></i>
+                            Overtime Management
+                        </a>
+                    </li>
+                    <!-- Payment Management Sub-menu -->
+                    <li class="nav-item has-submenu">
+                        <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#paymentManagementSubmenu" aria-expanded="false">
+                            <i class="fas fa-money-check-dollar text-warning"></i>
+                            Payment Management
+                            <i class="fas fa-chevron-down dropdown-icon"></i>
+                        </a>
+                        <ul class="submenu collapse" id="paymentManagementSubmenu">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/payroll">
+                                    <i class="fas fa-file-invoice-dollar text-primary"></i>
+                                    Payroll Management
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/payroll/bonus-reprocess">
+                                    <i class="fas fa-sync-alt text-info"></i>
+                                    Bonus Re-process
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/payroll/cost-center-salary">
+                                    <i class="fas fa-calculator text-primary"></i>
+                                    Cost Center Wise Salary Process
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/payroll/earn-leave-monthly">
+                                    <i class="fas fa-calendar-check text-success"></i>
+                                    Earn Leave Payment Process Monthly
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/payroll/earn-leave-yearly">
+                                    <i class="fas fa-coins text-warning"></i>
+                                    Earn Leave Payment Process Yearly
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/employees/promotion-bulk">
+                                    <i class="fas fa-users-cog text-primary"></i>
+                                    Employee Promotion Entry Bulk
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/payroll/final-settlement">
+                                    <i class="fas fa-user-minus text-danger"></i>
+                                    Final Settlement Process
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/payroll/fraction-salary-reprocess">
+                                    <i class="fas fa-redo text-info"></i>
+                                    Fraction Month Salary Re-process
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/payroll/holiday-allowance">
+                                    <i class="fas fa-umbrella-beach text-success"></i>
+                                    Holiday Allowance Process
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/employees/increment-entry">
+                                    <i class="fas fa-arrow-up text-success"></i>
+                                    Increment Entry
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/employees/increment-bulk">
+                                    <i class="fas fa-chart-line text-success"></i>
+                                    Increment Entry [Bulk]
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/employees/lay-off">
+                                    <i class="fas fa-user-slash text-danger"></i>
+                                    Lay Off Employee
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/payroll/monthly-bill-process">
+                                    <i class="fas fa-receipt text-primary"></i>
+                                    Monthly Bill Process
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/payroll/night-allowance">
+                                    <i class="fas fa-moon text-indigo"></i>
+                                    Night Allowance Process
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/employees/promotion-entry">
+                                    <i class="fas fa-award text-primary"></i>
+                                    Promotion Entry
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/payroll/salary-adjustment">
+                                    <i class="fas fa-sliders-h text-warning"></i>
+                                    Salary Adjustment Entry
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/payroll/period-lock">
+                                    <i class="fas fa-lock text-danger"></i>
+                                    Salary Period Lock
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ BASE_URL }}/hr/payroll/tiffin-bill">
+                                    <i class="fas fa-cookie-bite text-warning"></i>
+                                    Tiffin Bill Process
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/showcase/benefits/allowance-setup">
+                            <i class="fas fa-coins text-warning"></i>
+                            Benefits & Comp
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/showcase/performance/appraisals">
+                            <i class="fas fa-award text-cyan"></i>
+                            Performance Appraisal
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/showcase/training/schedule">
+                            <i class="fas fa-graduation-cap"></i>
+                            Training Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/showcase/ess/portal">
+                            <i class="fas fa-user-lock"></i>
+                            Self Service (ESS)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/showcase/loan-advance/requests">
+                            <i class="fas fa-hand-holding-dollar"></i>
+                            Loan & Advance
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/showcase/disciplinary/warning-letters">
+                            <i class="fas fa-circle-exclamation text-danger"></i>
+                            Disciplinary Actions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/showcase/welfare/canteen-dormitory">
+                            <i class="fas fa-hospital-user"></i>
+                            Employee Welfare
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/showcase/time-office/time-cards">
+                            <i class="fas fa-stopwatch"></i>
+                            Time Office Registry
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/rmg-compliance">
+                            <i class="fas fa-scale-balanced text-warning"></i>
+                            RMG Compliance
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/showcase/administration/gatepass-vehicles">
+                            <i class="fas fa-building"></i>
+                            HR Administration
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/showcase/documents/employee-contracts">
+                            <i class="fas fa-file-invoice"></i>
+                            Document Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link font-weight-bold text-primary" href="{{ BASE_URL }}/hr/reports/monthly-detailed-attendance">
+                            <i class="fas fa-calendar-check text-primary"></i>
+                            Monthly Attendance Report
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/reports">
+                            <i class="fas fa-chart-pie text-info"></i>
+                            HR Reports Hub
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/showcase/approvals/pending">
+                            <i class="fas fa-clipboard-check text-success"></i>
+                            Approval Workflows
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/showcase/settings/hr-rules">
+                            <i class="fas fa-gears text-secondary"></i>
+                            HR settings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/showcase/rmg-specific/sewing-line-operators">
+                            <i class="fas fa-vest text-warning"></i>
+                            Sewing Line Operators
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/hr/showcase/rmg-specific/worker-age-verification">
+                            <i class="fas fa-child-reaching text-pink"></i>
+                            Child Labor Prevention
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Visitor Management -->
+            <li class="nav-item has-submenu">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#visitorSubmenu" aria-expanded="false">
+                    <i class="fas fa-id-badge"></i>
+                    Visitor Mgmt
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </a>
+                <ul class="submenu collapse" id="visitorSubmenu">
+                    {% if canView('Visitor', 'view_visitor_log') or canView('Visitor', 'visitor_log') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/visitor_log">
+                            <i class="fas fa-list-alt"></i>
+                            Visitor Log
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if canView('Visitor', 'add_visitor') or canView('Visitor', 'create_visitor') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/add_visitor">
+                            <i class="fas fa-user-plus"></i>
+                            Check In Visitor
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </li>
+
+            <!-- Quality -->
+            <li class="nav-item has-submenu">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#qualitySubmenu" aria-expanded="false">
+                    <i class="fas fa-clipboard-check"></i>
+                    Quality
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </a>
+                <ul class="submenu collapse" id="qualitySubmenu">
+                    {% if canView('sewing', 'manage_qc') or canView('sewing', 'view_line_performance') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/sewing/qc">
+                            <i class="fas fa-search"></i>
+                            QC Checks
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/sewing/qc">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Defects
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </li>
+
+            <!-- Admin -->
+            {% if session.user_role in ['Super Admin', 'Admin', 'super admin', 'admin', 'System Administrator', 'Supper Admin'] %}
+            <li class="nav-item has-submenu">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#adminSubmenu" aria-expanded="false">
+                    <i class="fas fa-cog"></i>
+                    Admin
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </a>
+                <ul class="submenu collapse" id="adminSubmenu">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/admin/users">
+                            <i class="fas fa-users-cog"></i>
+                            User Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/register">
+                            <i class="fas fa-user-plus"></i>
+                            Register New User
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/admin/roles">
+                            <i class="fas fa-shield-alt"></i>
+                            Role Permissions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/admin/setup">
+                            <i class="fas fa-cogs"></i>
+                            Setup & Installation
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/admin/settings">
+                            <i class="fas fa-cogs"></i>
+                            System Settings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ BASE_URL }}/admin/module_loader">
+                            <i class="fas fa-cubes"></i>
+                            Module Loader
+                        </a>
+                    </li>
+
+                </ul>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>
+

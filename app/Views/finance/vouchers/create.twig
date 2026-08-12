@@ -1,0 +1,194 @@
+{% extends "layouts/app.twig" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="card-title">{{ type }} Voucher Entry</h4>
+                <a href="{{ BASE_URL }}/finance/vouchers" class="btn btn-secondary">Back to Daybook</a>
+            </div>
+            <div class="card-body">
+                {% if error %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+
+                <form action="{{ BASE_URL }}/finance/vouchers/store" method="POST" id="voucherForm">
+    {{ csrf_field() | raw }}
+                    <input type="hidden" name="voucher_type" value="{{ type }}">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-2">
+                            <label>Voucher No</label>
+                            <input type="text" name="voucher_number" class="form-control" value="{{ voucherNumber }}" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label>Date</label>
+                            <input type="date" name="date" class="form-control" value="{{ "now"|date("Y-m-d") }}" required>
+                        </div>
+                         <div class="col-md-7 text-end">
+                            <div class="btn-group">
+                                <a href="{{ BASE_URL }}/finance/vouchers/create?type=Payment" class="btn btn-outline-primary {% if type=='Payment' %}active{% endif %}">Payment</a>
+                                <a href="{{ BASE_URL }}/finance/vouchers/create?type=Receipt" class="btn btn-outline-primary {% if type=='Receipt' %}active{% endif %}">Receipt</a>
+                                <a href="{{ BASE_URL }}/finance/vouchers/create?type=Contra" class="btn btn-outline-primary {% if type=='Contra' %}active{% endif %}">Contra</a>
+                                <a href="{{ BASE_URL }}/finance/vouchers/create?type=Journal" class="btn btn-outline-primary {% if type=='Journal' %}active{% endif %}">Journal</a>
+                                <a href="{{ BASE_URL }}/finance/vouchers/create?type=Sales" class="btn btn-outline-primary {% if type=='Sales' %}active{% endif %}">Sales</a>
+                                <a href="{{ BASE_URL }}/finance/vouchers/create?type=Purchase" class="btn btn-outline-primary {% if type=='Purchase' %}active{% endif %}">Purchase</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th width="10%">Dr/Cr</th>
+                                <th width="40%">Account</th>
+                                <th width="20%">Debit</th>
+                                <th width="20%">Credit</th>
+                                <th width="10%">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="entriesHelper">
+                            {# Initial Rows - usually 2 for double entry #}
+                            <tr class="entry-row">
+                                <td>
+                                    <select name="entries[0][type]" class="form-select user-select-none" onchange="toggleDrCr(this)">
+                                        <option value="dr">Dr</option>
+                                        <option value="cr">Cr</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="entries[0][account_id]" class="form-select select2">
+                                        <option value="">Select Account</option>
+                                        {% for acc in accounts %}
+                                            <option value="{{ acc.account_id }}">{{ acc.account_name }} ({{ acc.account_code }})</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td><input type="number" name="entries[0][debit]" step="0.01" class="form-control debit-input" oninput="calcTotals()"></td>
+                                <td><input type="number" name="entries[0][credit]" step="0.01" class="form-control credit-input" readonly oninput="calcTotals()"></td>
+                                <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">X</button></td>
+                            </tr>
+                            <tr class="entry-row">
+                                <td>
+                                    <select name="entries[1][type]" class="form-select user-select-none" onchange="toggleDrCr(this)">
+                                        <option value="cr" selected>Cr</option>
+                                        <option value="dr">Dr</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="entries[1][account_id]" class="form-select select2">
+                                        <option value="">Select Account</option>
+                                        {% for acc in accounts %}
+                                            <option value="{{ acc.account_id }}">{{ acc.account_name }} ({{ acc.account_code }})</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td><input type="number" name="entries[1][debit]" step="0.01" class="form-control debit-input" readonly oninput="calcTotals()"></td>
+                                <td><input type="number" name="entries[1][credit]" step="0.01" class="form-control credit-input" oninput="calcTotals()"></td>
+                                <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">X</button></td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="2" class="text-end fw-bold">Current Total</td>
+                                <td><input type="text" id="totalDebit" class="form-control fw-bold" readonly value="0.00"></td>
+                                <td><input type="text" id="totalCredit" class="form-control fw-bold" readonly value="0.00"></td>
+                                <td><button type="button" class="btn btn-success btn-sm" onclick="addRow()">+ Add</button></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <div class="mb-3">
+                        <label>Narration</label>
+                        <textarea name="narration" class="form-control" rows="2" placeholder="Enter narration..."></textarea>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary" id="saveBtn">Save Voucher</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let rowCount = 2;
+
+    function calcTotals() {
+        let totalDr = 0;
+        let totalCr = 0;
+        document.querySelectorAll('.debit-input').forEach(i => totalDr += parseFloat(i.value || 0));
+        document.querySelectorAll('.credit-input').forEach(i => totalCr += parseFloat(i.value || 0));
+        
+        document.getElementById('totalDebit').value = totalDr.toFixed(2);
+        document.getElementById('totalCredit').value = totalCr.toFixed(2);
+        
+        // Simple color validation
+        if (Math.abs(totalDr - totalCr) < 0.01 && totalDr > 0) {
+             document.getElementById('totalDebit').classList.remove('text-danger');
+             document.getElementById('totalCredit').classList.remove('text-danger');
+             document.getElementById('totalDebit').classList.add('text-success');
+             document.getElementById('totalCredit').classList.add('text-success');
+             document.getElementById('saveBtn').disabled = false;
+        } else {
+             document.getElementById('totalDebit').classList.add('text-danger');
+             document.getElementById('totalCredit').classList.add('text-danger');
+             document.getElementById('saveBtn').disabled = true;
+        }
+    }
+
+    function toggleDrCr(select) {
+        let row = select.closest('tr');
+        let debitInput = row.querySelector('.debit-input');
+        let creditInput = row.querySelector('.credit-input');
+        
+        if (select.value === 'dr') {
+            creditInput.value = '';
+            creditInput.readOnly = true;
+            debitInput.readOnly = false;
+        } else {
+            debitInput.value = '';
+            debitInput.readOnly = true;
+            creditInput.readOnly = false;
+        }
+        calcTotals();
+    }
+
+    function addRow() {
+        let tbody = document.getElementById('entriesHelper');
+        let index = rowCount++;
+        let tr = document.createElement('tr');
+        tr.className = 'entry-row';
+        tr.innerHTML = `
+            <td>
+                <select name="entries[${index}][type]" class="form-select user-select-none" onchange="toggleDrCr(this)">
+                    <option value="dr">Dr</option>
+                    <option value="cr">Cr</option>
+                </select>
+            </td>
+            <td>
+                <select name="entries[${index}][account_id]" class="form-select">
+                    <option value="">Select Account</option>
+                    {% for acc in accounts %}
+                        <option value="{{ acc.account_id }}">{{ acc.account_name }} ({{ acc.account_code }})</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td><input type="number" name="entries[${index}][debit]" step="0.01" class="form-control debit-input" oninput="calcTotals()"></td>
+            <td><input type="number" name="entries[${index}][credit]" step="0.01" class="form-control credit-input" readonly oninput="calcTotals()"></td>
+            <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">X</button></td>
+        `;
+        tbody.appendChild(tr);
+    }
+
+    function removeRow(btn) {
+        btn.closest('tr').remove();
+        calcTotals();
+    }
+    
+    // Init
+    calcTotals();
+</script>
+{% endblock %}

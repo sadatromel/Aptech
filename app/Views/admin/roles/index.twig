@@ -1,0 +1,321 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}User Roles Management - RMG ERP{% endblock %}
+
+{% block styles %}
+<style>
+    /* Statistics Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: var(--bg-card);
+        padding: 1.5rem;
+        border-radius: 15px;
+        box-shadow: var(--card-shadow);
+        text-align: center;
+        transition: transform 0.3s ease;
+        border: 1px solid var(--border-color);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stat-card h3 {
+        color: var(--primary);
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .stat-card p {
+        color: var(--text-secondary);
+        margin: 0.5rem 0 0 0;
+        font-size: 0.9rem;
+    }
+    
+    /* Cards */
+    .card {
+        box-shadow: var(--card-shadow);
+        border: 1px solid var(--border-color);
+        margin-bottom: 1.5rem;
+        background: var(--bg-card);
+    }
+    
+    .card-header {
+        background-color: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+    }
+    
+    /* Role badges */
+    .role-badge {
+        display: inline-block;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .role-badge.admin {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .role-badge.manager {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+    
+    .role-badge.user {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+    
+    /* Search box */
+    .search-box {
+        position: relative;
+    }
+    
+    .search-box input {
+        padding-left: 2.5rem;
+    }
+    
+    .search-box i {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+    }
+    
+    /* Page header */
+    .border-bottom {
+        border-color: var(--border-color) !important;
+    }
+    
+    h1.h2, h2 {
+        color: var(--text-primary) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">User Roles Management</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createRoleModal">
+        <i class="fas fa-plus"></i> Create New Role
+    </button>
+</div>
+
+<!-- Statistics Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>{{ roles|length }}</h3>
+        <p>Total Roles</p>
+    </div>
+    <div class="stat-card">
+        <h3 id="totalUsers">{{ totalUsers }}</h3>
+        <p>Total Users</p>
+    </div>
+    <div class="stat-card">
+        <h3 id="activeRoles">{{ activeRoles }}</h3>
+        <p>Active Roles</p>
+    </div>
+</div>
+
+<!-- Search -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" class="form-control" id="roleSearch" placeholder="Search roles...">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-user-shield"></i> System Roles
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="rolesTable">
+                <thead>
+                    <tr>
+                        <th>Role Name</th>
+                        <th>Description</th>
+                        <th>Users Count</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for role in roles %}
+                    <tr data-role-name="{{ role.role_name|lower }}" data-description="{{ role.description|lower }}">
+                        <td>
+                            <span class="role-badge {{ role.role_name|lower }}">{{ role.role_name }}</span>
+                        </td>
+                        <td>{{ role.description|default('No description') }}</td>
+                        <td>
+                            <span class="badge bg-info">{{ role.user_count }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-success">Active</span>
+                        </td>
+                        <td>{{ role.created_at|date('M d, Y') }}</td>
+                        <td>
+
+                            <button class="btn btn-sm btn-info me-1" onclick="viewRole({{ role.role_id }})" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <a href="{{ BASE_URL }}/admin/roles?action=edit&id={{ role.role_id }}" class="btn btn-sm btn-warning me-1" title="Edit Role">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button class="btn btn-sm btn-danger delete-role" data-id="{{ role.role_id }}" data-name="{{ role.role_name }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<!-- Create Role Modal -->
+<div class="modal fade" id="createRoleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Role</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createRoleForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Role Name *</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Role</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Search functionality
+document.getElementById('roleSearch').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#rolesTable tbody tr');
+    
+    rows.forEach(row => {
+        const roleName = row.dataset.roleName || '';
+        const description = row.dataset.description || '';
+        const matches = roleName.includes(searchTerm) || description.includes(searchTerm);
+        row.style.display = matches ? '' : 'none';
+    });
+});
+
+// Create role
+document.getElementById('createRoleForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    
+    try {
+        const response = await fetch('{{ BASE_URL }}/admin/roles?action=store', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            alert('Role created successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + (result.message || 'Failed to create role'));
+        }
+    } catch (error) {
+        alert('An error occurred while creating the role');
+        console.error(error);
+    }
+});
+
+// View role
+function viewRole(roleId) {
+    alert('View role details for ID: ' + roleId);
+}
+
+
+
+// Delete role functionality
+document.querySelectorAll('.delete-role').forEach(button => {
+    button.addEventListener('click', async function() {
+        const roleId = this.dataset.id;
+        const roleName = this.dataset.name;
+        
+        if (!confirm(`Are you sure you want to delete the role "${roleName}"? This action cannot be undone.`)) {
+            return;
+        }
+        
+        try {
+            // Use POST with application/x-www-form-urlencoded to match index.php expectation
+            const formData = new URLSearchParams();
+            formData.append('id', roleId);
+            
+            const response = await fetch('{{ BASE_URL }}/admin/roles?action=delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                alert(result.message);
+                location.reload();
+            } else {
+                alert('Error: ' + result.message);
+            }
+        } catch (error) {
+            alert('An error occurred while deleting the role');
+            console.error(error);
+        }
+    });
+});
+
+// Update stats on page load
+// Update stats on page load - REMOVED (Handled by Controller)
+// document.addEventListener('DOMContentLoaded', function() {
+// });
+</script>
+{% endblock %}

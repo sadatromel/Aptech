@@ -1,0 +1,800 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Washing Control Center{% endblock %}
+
+{% block content %}
+<style>
+    .glow-card {
+        transition: all 0.3s ease-in-out;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+    }
+    .glow-card:hover {
+        box-shadow: 0 14px 32px rgba(0, 201, 167, 0.12);
+    }
+    .nav-pills .nav-link {
+        border-radius: 10px;
+        padding: 7px 14px;
+        font-weight: 600;
+        font-size: .83rem;
+        color: #5a5c69;
+        transition: all 0.25s ease;
+    }
+    .nav-pills .nav-link.active {
+        background: linear-gradient(135deg, #00c9a7 0%, #008770 100%);
+        color: #fff !important;
+        box-shadow: 0 4px 14px rgba(0, 201, 167, 0.32);
+    }
+    .nav-pills .nav-link:hover:not(.active) {
+        background: #f0fdfa;
+        color: #00a385;
+    }
+    .metric-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+    }
+    .bg-light-success { background: rgba(0, 201, 167, 0.12); }
+    .bg-light-info { background: rgba(54, 185, 204, 0.12); }
+    .bg-light-primary { background: rgba(78, 115, 223, 0.12); }
+    .bg-light-warning { background: rgba(246, 194, 62, 0.12); }
+    .bg-light-danger { background: rgba(231, 74, 59, 0.12); }
+    
+    .text-gradient {
+        background: linear-gradient(135deg, #00c9a7 0%, #36b9cc 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .bar-wrap { height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; transition: width .6s ease; }
+    .report-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #00c9a7;
+        border-bottom: 2px solid #e0fbf6;
+        padding-bottom: 8px;
+        margin-bottom: 14px;
+    }
+    @media print {
+        .no-print { display: none !important; }
+        .glow-card { box-shadow: none; border: 1px solid #ddd; }
+    }
+</style>
+
+{# ── Alert messages ── #}
+{% if app.session.flash('success_message') %}
+<div class="alert alert-success alert-dismissible fade show mx-2" role="alert">
+    <i class="fas fa-check-circle me-2"></i>{{ app.session.flash('success_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+{% if app.session.flash('error_message') %}
+<div class="alert alert-danger alert-dismissible fade show mx-2" role="alert">
+    <i class="fas fa-exclamation-circle me-2"></i>{{ app.session.flash('error_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Header -->
+    <div class="col-12 mb-3">
+        <div class="page-header d-flex justify-content-between align-items-center p-4 glow-card">
+            <div>
+                <h1 class="h3 fw-bold text-gradient mb-1">Washing Control Center</h1>
+                <p class="text-muted mb-0 small">Chemical Formulation · Recipes · Batch Scheduling · Progress Logs · Shade QC</p>
+            </div>
+            <div class="d-flex gap-2 no-print">
+                <span class="badge bg-success text-white px-3 py-2"><i class="fas fa-layer-group me-1"></i>{{ totalBatches }} Batches</span>
+                <span class="badge bg-info text-white px-3 py-2"><i class="fas fa-calendar me-1"></i>{{ "now"|date("d M Y") }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="col-12 mb-3 no-print">
+        <div class="p-2 glow-card">
+            <ul class="nav nav-pills gap-1 flex-wrap">
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'dashboard' %}active{% endif %}" href="{{ BASE_URL }}/washing/dashboard"><i class="fas fa-chart-pie me-1"></i>Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'plan' %}active{% endif %}" href="{{ BASE_URL }}/washing/plan"><i class="fas fa-calendar-alt me-1"></i>Washing Plan</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'recipe' %}active{% endif %}" href="{{ BASE_URL }}/washing/recipe"><i class="fas fa-flask me-1"></i>Washing Recipe</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'progress' %}active{% endif %}" href="{{ BASE_URL }}/washing/progress"><i class="fas fa-tasks me-1"></i>Washing Progress</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'qc' %}active{% endif %}" href="{{ BASE_URL }}/washing/qc"><i class="fas fa-check-double me-1"></i>Washing QC</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if activeTab == 'reports' %}active{% endif %}" href="{{ BASE_URL }}/washing/reports"><i class="fas fa-file-invoice me-1"></i>Reports</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="col-12">
+        <div class="tab-content">
+
+            {# ═══════════════════════════════════════
+               1. DASHBOARD
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'dashboard' %}
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card glow-card p-3 border-0">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-muted fw-bold text-uppercase small mb-1">Total Batches Logged</h6>
+                                <h3 class="fw-bold mb-0">{{ totalBatches }}</h3>
+                                <small class="text-success">{{ activeCount }} currently running</small>
+                            </div>
+                            <div class="metric-icon bg-light-success text-success"><i class="fas fa-layer-group"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card glow-card p-3 border-0">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-muted fw-bold text-uppercase small mb-1">Total Washed Quantity</h6>
+                                <h3 class="fw-bold mb-0">{{ totalWashed|number_format }} pcs</h3>
+                                <small class="text-info">delivered to finishing</small>
+                            </div>
+                            <div class="metric-icon bg-light-info text-info"><i class="fas fa-tshirt"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card glow-card p-3 border-0">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-muted fw-bold text-uppercase small mb-1">Active Recipes</h6>
+                                <h3 class="fw-bold mb-0">{{ recipes|length }}</h3>
+                                <small class="text-warning">standard formulations</small>
+                            </div>
+                            <div class="metric-icon bg-light-warning text-warning"><i class="fas fa-flask"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <div class="card glow-card border-0 p-4">
+                        <h6 class="fw-bold text-success mb-3"><i class="fas fa-history me-2"></i>Active & Recent Batches</h6>
+                        {% if batches|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Batch Number</th>
+                                        <th>Recipe Name</th>
+                                        <th>Wash Type</th>
+                                        <th>Quantity</th>
+                                        <th>Machine</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for b in batches|slice(0, 8) %}
+                                <tr>
+                                    <td><strong>{{ b.batch_number }}</strong></td>
+                                    <td>{{ b.recipe_name }}</td>
+                                    <td><span class="badge bg-light text-dark border">{{ b.wash_type|upper }}</span></td>
+                                    <td class="fw-bold">{{ b.total_quantity }}</td>
+                                    <td>{{ b.machine_no ?? 'M-01' }}</td>
+                                    <td>
+                                        <span class="badge {% if b.status == 'qc_passed' %}bg-success{% elseif b.status == 'qc_failed' %}bg-danger{% elseif b.status == 'pending' %}bg-secondary{% else %}bg-warning text-dark{% endif %}">
+                                            {{ b.status|upper }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-soap fa-3x mb-3 opacity-25 d-block"></i>
+                            No wash batches created yet. Go to <a href="{{ BASE_URL }}/washing/plan">Washing Plan</a> to start.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card glow-card border-0 p-4 h-100">
+                        <h6 class="fw-bold text-success mb-3"><i class="fas fa-chart-pie me-2"></i>Status Distribution</h6>
+                        {% if batches|length > 0 %}
+                        <div class="d-flex flex-column gap-3">
+                            {% set statusMap = {'pending': 0, 'washing': 0, 'extracting': 0, 'drying': 0, 'completed': 0, 'qc_passed': 0, 'qc_failed': 0} %}
+                            {% for b in batches %}
+                                {% set statusMap = statusMap|merge({(b.status): (statusMap[b.status] ?? 0) + 1}) %}
+                            {% endfor %}
+                            
+                            {% for key, val in statusMap %}
+                            {% if val > 0 %}
+                            <div>
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span class="fw-semibold text-uppercase text-muted">{{ key }}</span>
+                                    <span class="fw-bold text-dark">{{ val }} ({{ (val / batches|length * 100)|round }}%)</span>
+                                </div>
+                                <div class="bar-wrap">
+                                    <div class="bar-fill {% if key == 'qc_passed' %}bg-success{% elseif key == 'qc_failed' %}bg-danger{% elseif key == 'pending' %}bg-secondary{% else %}bg-warning{% endif %}" style="width: {{ (val / batches|length * 100)|round }}%"></div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5 text-muted small">No data available.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ═══════════════════════════════════════
+               2. WASHING PLAN
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'plan' %}
+            <div class="card glow-card border-0 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="fw-bold text-success mb-0">Washing Batch Plan</h5>
+                        <small class="text-muted">Schedule new batches and select active recipes</small>
+                    </div>
+                    <button class="btn btn-success btn-sm no-print" data-bs-toggle="modal" data-bs-target="#createBatchModal">
+                        <i class="fas fa-plus me-1"></i>Create Wash Batch
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Batch No.</th>
+                                <th>Recipe / Style</th>
+                                <th>Wash Type</th>
+                                <th>Quantity (pcs)</th>
+                                <th>Machine No.</th>
+                                <th>Date Scheduled</th>
+                                <th>Status</th>
+                                <th class="no-print">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for b in batches %}
+                        <tr>
+                            <td><strong>{{ b.batch_number }}</strong></td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ b.recipe_name }}</div>
+                                <small class="text-muted">Ref Style: {{ b.style_id }}</small>
+                            </td>
+                            <td><span class="badge bg-light text-dark border">{{ b.wash_type|upper }}</span></td>
+                            <td class="fw-bold">{{ b.total_quantity|number_format }}</td>
+                            <td>{{ b.machine_no }}</td>
+                            <td class="small text-muted">{{ b.wash_date }}</td>
+                            <td>
+                                <span class="badge {% if b.status == 'qc_passed' %}bg-success{% elseif b.status == 'qc_failed' %}bg-danger{% elseif b.status == 'pending' %}bg-secondary{% else %}bg-warning text-dark{% endif %}">
+                                    {{ b.status|upper }}
+                                </span>
+                            </td>
+                            <td class="no-print">
+                                {% if b.status == 'pending' %}
+                                <form method="POST" action="{{ BASE_URL }}/washing/plan" style="display:inline;">
+                                    {{ csrf_field() | raw }}
+                                    <input type="hidden" name="action" value="update_batch_status">
+                                    <input type="hidden" name="batch_id" value="{{ b.batch_id }}">
+                                    <input type="hidden" name="status" value="washing">
+                                    <button type="submit" class="btn btn-sm btn-outline-warning">Start Wash</button>
+                                </form>
+                                {% else %}
+                                <a href="{{ BASE_URL }}/washing/progress" class="btn btn-sm btn-outline-info">Track Progress</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-5">No wash batches scheduled. Click "Create Wash Batch" to schedule.</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Create Batch Modal -->
+            <div class="modal fade" id="createBatchModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <form method="POST" action="{{ BASE_URL }}/washing/plan" class="modal-content">
+                        {{ csrf_field() | raw }}
+                        <input type="hidden" name="action" value="create_batch">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Schedule Wash Batch</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Washing Recipe</label>
+                                <select class="form-select form-select-sm" name="recipe_name" required>
+                                    <option value="">— Select Recipe —</option>
+                                    {% for r in recipes %}
+                                    <option value="{{ r.recipe_name }}">{{ r.recipe_name }} ({{ r.wash_type }})</option>
+                                    {% endfor %}
+                                    <option value="Enzyme wash">Enzyme Wash (Standard)</option>
+                                    <option value="Bleach wash">Bleach Wash (Standard)</option>
+                                    <option value="Stone wash">Stone Wash (Standard)</option>
+                                    <option value="Soft wash">Soft Wash (Standard)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Wash Type</label>
+                                <select class="form-select form-select-sm" name="wash_type">
+                                    <option value="enzyme">Enzyme Wash</option>
+                                    <option value="bleach">Bleach Wash</option>
+                                    <option value="stone">Stone Wash</option>
+                                    <option value="soft">Soft Wash</option>
+                                    <option value="regular">Regular Soft Wash</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Style Reference</label>
+                                <select class="form-select form-select-sm" name="style_id">
+                                    <option value="">— Select Style —</option>
+                                    {% for s in styles %}<option value="{{ s.style_id }}">{{ s.style_code }} – {{ s.style_name }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Production Order (PO)</label>
+                                <select class="form-select form-select-sm" name="order_id">
+                                    <option value="">— Select Order —</option>
+                                    {% for o in orders %}<option value="{{ o.id }}">{{ o.po_number }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-6 mb-3">
+                                    <label class="form-label fw-bold small">Batch Qty (pcs)</label>
+                                    <input type="number" class="form-control form-control-sm" name="quantity" min="1" placeholder="500" required>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <label class="form-label fw-bold small">Machine No.</label>
+                                    <input type="text" class="form-control form-control-sm" name="machine_no" placeholder="e.g. MC-01" required>
+                                </div>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-6 mb-3">
+                                    <label class="form-label fw-bold small">Wash Date</label>
+                                    <input type="date" class="form-control form-control-sm" name="wash_date" value="{{ "now"|date("Y-m-d") }}" required>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <label class="form-label fw-bold small">Start Time</label>
+                                    <input type="time" class="form-control form-control-sm" name="start_time" value="{{ "now"|date("H:i") }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-success text-white">Schedule Batch</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ═══════════════════════════════════════
+               3. WASHING RECIPE
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'recipe' %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card glow-card border-0 p-4">
+                        <h5 class="fw-bold mb-1" style="color:#00c9a7;"><i class="fas fa-flask me-2"></i>Create Recipe</h5>
+                        <p class="text-muted small mb-3">Add standard chemical formulations for washing treatments.</p>
+                        <form method="POST" action="{{ BASE_URL }}/washing/recipe">
+                            {{ csrf_field() | raw }}
+                            <input type="hidden" name="action" value="create_recipe">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Recipe Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm" name="recipe_name" placeholder="e.g. Deep Dye Soft Wash" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Wash Type</label>
+                                <select class="form-select form-select-sm" name="wash_type">
+                                    <option value="enzyme">Enzyme Wash</option>
+                                    <option value="bleach">Bleach Wash</option>
+                                    <option value="stone">Stone Wash</option>
+                                    <option value="soft">Soft Wash</option>
+                                    <option value="acid">Acid Wash</option>
+                                </select>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-6 mb-3">
+                                    <label class="form-label fw-semibold small">Temp (°C)</label>
+                                    <input type="number" class="form-control form-control-sm" name="temp_c" min="0" max="100" value="45">
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <label class="form-label fw-semibold small">Duration (mins)</label>
+                                    <input type="number" class="form-control form-control-sm" name="duration_mins" min="1" value="40">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Liquor Ratio</label>
+                                <input type="text" class="form-control form-control-sm" name="liquor_ratio" value="1:10" placeholder="e.g. 1:10">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Chemical Formula (g/L)</label>
+                                <textarea class="form-control form-control-sm" name="chemical_formula" rows="3" placeholder="Softener: 2g/L, Enzyme: 1.5g/L, Acetic Acid: 0.5g/L"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Special Instructions</label>
+                                <textarea class="form-control form-control-sm" name="instructions" rows="2"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-success text-white w-100"><i class="fas fa-save me-1"></i>Save Recipe</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card glow-card border-0 p-4 h-100">
+                        <h5 class="fw-bold mb-3" style="color:#00c9a7;"><i class="fas fa-flask me-2"></i>Recipe Formulations</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Recipe Name</th>
+                                        <th>Type</th>
+                                        <th>Temp/Time</th>
+                                        <th>Ratio</th>
+                                        <th>Formulation / Formula</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for r in recipes %}
+                                <tr>
+                                    <td><strong>{{ r.recipe_name }}</strong></td>
+                                    <td><span class="badge bg-light text-dark border">{{ r.wash_type|upper }}</span></td>
+                                    <td class="small">{{ r.temp_c }}°C / {{ r.duration_mins }} min</td>
+                                    <td><code>{{ r.liquor_ratio }}</code></td>
+                                    <td class="small text-muted">{{ r.chemical_formula|length > 50 ? r.chemical_formula|slice(0, 50) ~ '...' : r.chemical_formula }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">No recipe formulations stored. Create one on the left.</td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ═══════════════════════════════════════
+               4. WASHING PROGRESS
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'progress' %}
+            <div class="card glow-card border-0 p-4">
+                <h5 class="fw-bold mb-3" style="color:#00c9a7;"><i class="fas fa-hourglass-half me-2"></i>Live Machine &amp; Batch Status</h5>
+                <div class="row g-3">
+                    {% for b in batches %}
+                    {% if b.status != 'qc_passed' and b.status != 'qc_failed' %}
+                    <div class="col-md-4">
+                        <div class="card border-0 p-3 rounded" style="border-left: 4px solid {% if b.status == 'washing' %}#00c9a7{% elseif b.status == 'extracting' %}#36b9cc{% elseif b.status == 'drying' %}#f6c23e{% else %}#858796{% endif %}; background: #fdfdfd; box-shadow: 0 4px 12px rgba(0,0,0,0.02); border: 1px solid #eee;">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <strong>{{ b.batch_number }}</strong>
+                                <span class="badge {% if b.status == 'washing' %}bg-success{% elseif b.status == 'extracting' %}bg-info{% elseif b.status == 'drying' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                    {{ b.status|upper }}
+                                </span>
+                            </div>
+                            <div class="small text-muted mb-2">
+                                Recipe: <strong>{{ b.recipe_name }}</strong><br>
+                                Qty: <strong>{{ b.total_quantity }} pcs</strong> | Machine: <strong>{{ b.machine_no }}</strong>
+                            </div>
+
+                            {# Progress stage bar #}
+                            <div class="bar-wrap mb-3">
+                                {% set pct = 0 %}
+                                {% if b.status == 'washing' %}{% set pct = 33 %}
+                                {% elseif b.status == 'extracting' %}{% set pct = 66 %}
+                                {% elseif b.status == 'drying' %}{% set pct = 90 %}
+                                {% elseif b.status == 'completed' %}{% set pct = 100 %}{% endif %}
+                                <div class="bar-fill {% if b.status == 'washing' %}bg-success{% elseif b.status == 'extracting' %}bg-info{% elseif b.status == 'drying' %}bg-warning{% else %}bg-secondary{% endif %}" style="width: {{ pct }}%"></div>
+                            </div>
+
+                            {# Action buttons #}
+                            <div class="no-print d-flex gap-1 justify-content-end">
+                                {% if b.status == 'pending' %}
+                                <form method="POST" action="{{ BASE_URL }}/washing/progress">
+                                    {{ csrf_field() | raw }}
+                                    <input type="hidden" name="action" value="update_batch_status">
+                                    <input type="hidden" name="batch_id" value="{{ b.batch_id }}">
+                                    <input type="hidden" name="status" value="washing">
+                                    <button type="submit" class="btn btn-xs btn-success text-white btn-sm py-1"><i class="fas fa-soap me-1"></i>Start Wash</button>
+                                </form>
+                                {% elseif b.status == 'washing' %}
+                                <form method="POST" action="{{ BASE_URL }}/washing/progress">
+                                    {{ csrf_field() | raw }}
+                                    <input type="hidden" name="action" value="update_batch_status">
+                                    <input type="hidden" name="batch_id" value="{{ b.batch_id }}">
+                                    <input type="hidden" name="status" value="extracting">
+                                    <button type="submit" class="btn btn-xs btn-info text-white btn-sm py-1"><i class="fas fa-redo me-1"></i>Start Extractor</button>
+                                </form>
+                                {% elseif b.status == 'extracting' %}
+                                <form method="POST" action="{{ BASE_URL }}/washing/progress">
+                                    {{ csrf_field() | raw }}
+                                    <input type="hidden" name="action" value="update_batch_status">
+                                    <input type="hidden" name="batch_id" value="{{ b.batch_id }}">
+                                    <input type="hidden" name="status" value="drying">
+                                    <button type="submit" class="btn btn-xs btn-warning text-dark btn-sm py-1"><i class="fas fa-sun me-1"></i>Start Dryer</button>
+                                </form>
+                                {% elseif b.status == 'drying' %}
+                                <form method="POST" action="{{ BASE_URL }}/washing/progress">
+                                    {{ csrf_field() | raw }}
+                                    <input type="hidden" name="action" value="update_batch_status">
+                                    <input type="hidden" name="batch_id" value="{{ b.batch_id }}">
+                                    <input type="hidden" name="status" value="completed">
+                                    <button type="submit" class="btn btn-xs btn-danger text-white btn-sm py-1"><i class="fas fa-check-circle me-1"></i>Unload (Finish)</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="col-12 text-center text-muted py-5">
+                        <i class="fas fa-spinner fa-3x mb-3 d-block opacity-25"></i>No active wash batches in progress. Schedule them in the plan page.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {# ═══════════════════════════════════════
+               5. WASHING QC
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'qc' %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card glow-card border-0 p-4">
+                        <h5 class="fw-bold mb-1" style="color:#00c9a7;"><i class="fas fa-check-double me-2"></i>Log Batch Wash QC</h5>
+                        <p class="text-muted small mb-3">Audit shade matching (shade band), pH level, and fabric shrinkage results.</p>
+                        <form method="POST" action="{{ BASE_URL }}/washing/qc">
+                            {{ csrf_field() | raw }}
+                            <input type="hidden" name="action" value="log_wash_qc">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Unloaded Batch <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-sm" name="batch_id" required>
+                                    <option value="">— Select Batch —</option>
+                                    {% for b in batches %}
+                                    {% if b.status == 'completed' or b.status == 'drying' %}
+                                    <option value="{{ b.batch_id }}">{{ b.batch_number }} ({{ b.recipe_name }})</option>
+                                    {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Shade Band Approval</label>
+                                <div class="d-flex gap-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="shade_status" value="pass" id="shadePass" checked>
+                                        <label class="form-check-label text-success fw-bold small" for="shadePass">Approved (Pass)</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="shade_status" value="fail" id="shadeFail">
+                                        <label class="form-check-label text-danger fw-bold small" for="shadeFail">Rejected (Fail)</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label fw-semibold small">Tested pH Level</label>
+                                    <input type="number" class="form-control form-control-sm" name="ph_level" step="0.1" value="7.0" min="0" max="14">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label fw-semibold small">Shrinkage Status</label>
+                                    <select class="form-select form-select-sm" name="shrinkage_status">
+                                        <option value="pass">Pass (within 3%)</option>
+                                        <option value="fail">Fail (exceeds 3%)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Inspector Name</label>
+                                <input type="text" class="form-control form-control-sm" name="inspector_name" value="Quality Auditor">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Audit Date</label>
+                                <input type="date" class="form-control form-control-sm" name="qc_date" value="{{ "now"|date("Y-m-d") }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Notes / Observations</label>
+                                <textarea class="form-control form-control-sm" name="remarks" rows="2" placeholder="e.g. pH neutralized with acetic acid."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-success text-white w-100"><i class="fas fa-save me-1"></i>Save QC Log</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card glow-card border-0 p-4 h-100">
+                        <h5 class="fw-bold mb-3" style="color:#00c9a7;"><i class="fas fa-clipboard-check me-2"></i>QC Audit History</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Batch No.</th>
+                                        <th>Shade Band</th>
+                                        <th>pH Level</th>
+                                        <th>Shrinkage</th>
+                                        <th>Inspector</th>
+                                        <th>Date</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for q in qcRecords %}
+                                <tr>
+                                    <td><strong>{{ q.batch_number }}</strong></td>
+                                    <td>
+                                        {% if q.shade_status == 'pass' %}
+                                        <span class="badge bg-success">Passed</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Failed</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="fw-semibold {% if q.ph_level >= 6 and q.ph_level <= 8 %}text-success{% else %}text-danger{% endif %}">
+                                            {{ q.ph_level }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if q.shrinkage_status == 'pass' %}
+                                        <span class="text-success"><i class="fas fa-check-circle"></i> OK</span>
+                                        {% else %}
+                                        <span class="text-danger"><i class="fas fa-times-circle"></i> Bad</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small">{{ q.inspector_name }}</td>
+                                    <td class="small text-muted">{{ q.qc_date }}</td>
+                                    <td class="small text-muted">{{ q.remarks }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-5">No wash QC inspections performed yet. Use the form to record audits.</td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# ═══════════════════════════════════════
+               6. REPORTS
+            ═══════════════════════════════════════ #}
+            {% if activeTab == 'reports' %}
+            <div class="card glow-card border-0 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+                    <div>
+                        <h5 class="fw-bold mb-0" style="color:#00c9a7;"><i class="fas fa-file-invoice me-2"></i>Washing Reports &amp; Utility Dashboards</h5>
+                        <small class="text-muted">Review recipe statistics, batch totals and shade check summaries</small>
+                    </div>
+                    <button onclick="window.print()" class="btn btn-outline-success btn-sm"><i class="fas fa-print me-1"></i>Print Report</button>
+                </div>
+
+                <div class="report-section-title"><i class="fas fa-chart-line me-2"></i>Wash Performance Summary</div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="card border-0 p-3 text-center text-white" style="background: linear-gradient(135deg, #00c9a7, #008770); border-radius: 12px;">
+                            <div class="h3 fw-bold mb-0">{{ totalBatches }}</div>
+                            <div class="small opacity-75">Batches Processed</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 p-3 text-center text-white" style="background: linear-gradient(135deg, #36b9cc, #258391); border-radius: 12px;">
+                            <div class="h3 fw-bold mb-0">{{ totalWashed|number_format }}</div>
+                            <div class="small opacity-75">Total Quantity (pcs)</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 p-3 text-center text-white" style="background: linear-gradient(135deg, #f6c23e, #dda20a); border-radius: 12px;">
+                            <div class="h3 fw-bold mb-0">{{ passPct }}%</div>
+                            <div class="small opacity-75">QC Acceptability Rate ({{ passCount }} batches passed)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section-title"><i class="fas fa-flask me-2"></i>Chemical Formulation & Recipe Logs</div>
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-success">
+                            <tr>
+                                <th>Recipe Name</th>
+                                <th>Wash Type</th>
+                                <th>Temperature</th>
+                                <th>Duration</th>
+                                <th>Water liquor ratio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for r in recipes %}
+                        <tr>
+                            <td><strong>{{ r.recipe_name }}</strong></td>
+                            <td>{{ r.wash_type|upper }}</td>
+                            <td>{{ r.temp_c }}°C</td>
+                            <td>{{ r.duration_mins }} mins</td>
+                            <td><code>{{ r.liquor_ratio }}</code></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-2">No recipe logs available.</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="report-section-title"><i class="fas fa-boxes me-2"></i>Washing Batch Detail Logs</div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Batch Number</th>
+                                <th>Recipe Name</th>
+                                <th>Wash Type</th>
+                                <th>Quantity</th>
+                                <th>Machine</th>
+                                <th>Wash Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for b in batches %}
+                        <tr>
+                            <td class="text-muted small">{{ loop.index }}</td>
+                            <td><strong>{{ b.batch_number }}</strong></td>
+                            <td>{{ b.recipe_name }}</td>
+                            <td>{{ b.wash_type|upper }}</td>
+                            <td class="fw-bold">{{ b.total_quantity }}</td>
+                            <td>{{ b.machine_no }}</td>
+                            <td>{{ b.wash_date }}</td>
+                            <td><span class="badge {% if b.status == 'qc_passed' %}bg-success{% else %}bg-secondary{% endif %}">{{ b.status|upper }}</span></td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="p-3 rounded mt-4" style="background:#f8f9fa;">
+                    <div class="row">
+                        <div class="col-md-6 small text-muted">
+                            <strong>Report Date:</strong> {{ "now"|date("d M Y, H:i") }}<br>
+                            <strong>Author:</strong> Aptech Washing Plant Manager
+                        </div>
+                        <div class="col-md-6 text-end small text-muted">
+                            <strong>ERP System:</strong> Aptech RMG ERP<br>
+                            <strong>Division:</strong> Washing &amp; Wet Processing
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,195 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}{{ pageTitle }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">Setup & Installation</h1>
+                <div class="btn-group">
+                    <a href="{{ BASE_URL }}/admin/setup?tab=tools" class="btn btn-outline-primary">
+                        <i class="fas fa-info-circle"></i> System Info
+                    </a>
+                    <a href="{{ BASE_URL }}/admin/setup?tab=configuration" class="btn btn-outline-primary">
+                        <i class="fas fa-cog"></i> Configuration
+                    </a>
+                    <a href="{{ BASE_URL }}/admin/setup?tab=backups" class="btn btn-outline-primary">
+                        <i class="fas fa-download"></i> Backup
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Overview Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ systemStats.php_version }}</h4>
+                            <p class="card-text">PHP Version</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fab fa-php fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ systemStats.mysql_version }}</h4>
+                            <p class="card-text">MySQL Version</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-database fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ systemStats.disk_space.used_percentage }}%</h4>
+                            <p class="card-text">Disk Used</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-hdd fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ systemStats.config_count }}</h4>
+                            <p class="card-text">Config Items</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-sliders-h fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Requirements Check -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">System Requirements</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Requirement</th>
+                                    <th>Required</th>
+                                    <th>Current</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for key, req in requirements %}
+                                <tr>
+                                    <td>{{ key|replace({'_': ' '})|title }}</td>
+                                    <td>{{ req.required }}</td>
+                                    <td>{{ req.current }}</td>
+                                    <td>
+                                        {% if req.status == 'pass' %}
+                                            <span class="badge bg-success">Pass</span>
+                                        {% elseif req.status == 'warning' %}
+                                            <span class="badge bg-warning">Warning</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Fail</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Backups -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Recent Backups</h5>
+                    <a href="{{ BASE_URL }}/admin/setup?tab=backups" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus"></i> Create Backup
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if backups|length > 0 %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Filename</th>
+                                    <th>Size</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for backup in backups|slice(0, 5) %}
+                                <tr>
+                                    <td>{{ backup.filename }}</td>
+                                    <td>{{ backup.size }}</td>
+                                    <td>{{ backup.created }}</td>
+                                    <td>
+                                        <a href="{{ BASE_URL }}/admin/setup/download_backup?filename={{ backup.filename }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-archive fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No backups found. Create your first backup to ensure data safety.</p>
+                        <a href="{{ BASE_URL }}/admin/setup?tab=backups" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Create Backup
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+// Auto-refresh system stats every 5 minutes
+setInterval(function() {
+    location.reload();
+}, 300000);
+</script>
+{% endblock %}

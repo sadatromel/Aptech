@@ -1,0 +1,189 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Add New Room | Master Library{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Add New Room</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library/store_rooms">Rooms</a></li>
+        <li class="breadcrumb-item active">Add New</li>
+    </ol>
+
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <h5 class="mb-0 text-primary"><i class="fas fa-plus me-1"></i> New Room Details</h5>
+        </div>
+        <div class="card-body p-4">
+            <form action="{{ BASE_URL }}/master_library/store_rooms/create" method="POST">
+                {{ csrf_field() | raw }}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                         <div class="form-floating mb-3 mb-md-0">
+                            <input class="form-control" id="room_code" name="room_code" type="text" placeholder="Enter room code" required />
+                            <label for="room_code">Room Code</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3 mb-md-0">
+                            <input class="form-control" id="room_name" name="room_name" type="text" placeholder="Enter room name" required />
+                            <label for="room_name">Room Name</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                         <div class="form-floating mb-3 mb-md-0">
+                              <select class="form-select" id="factory_id" name="factory_id" required>
+                                <option value="">Select Factory</option>
+                                {% for factory in factories %}
+                                <option value="{{ factory.factory_id }}">{{ factory.factory_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="factory_id">Factory</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                         <div class="form-floating mb-3 mb-md-0">
+                              <select class="form-select" id="store_id" name="store_id" required disabled>
+                                <option value="">Select Store</option>
+                            </select>
+                            <label for="store_id">Store</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                         <div class="form-floating mb-3 mb-md-0">
+                              <select class="form-select" id="rack_id" name="rack_id" required disabled>
+                                <option value="">Select Store Location</option>
+                            </select>
+                            <label for="rack_id">Store Location</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                         <div class="form-floating mb-3 mb-md-0">
+                              <select class="form-select" id="floor_id" name="floor_id" required disabled>
+                                <option value="">Select Floor Name</option>
+                            </select>
+                            <label for="floor_id">Floor Name</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="form-floating mb-3">
+                            <textarea class="form-control" id="description" name="description" placeholder="Enter description" style="height: 100px;"></textarea>
+                            <label for="description">Description</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <select class="form-select" id="status" name="status">
+                                <option value="active" selected>Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                            <label for="status">Status</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 mb-0">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ BASE_URL }}/master_library/store_rooms" class="btn btn-light me-md-2 px-4 rounded-pill border">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 rounded-pill">Save Room</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const factorySelect = document.getElementById('factory_id');
+    const storeSelect = document.getElementById('store_id');
+    const locationSelect = document.getElementById('rack_id');
+    const floorSelect = document.getElementById('floor_id');
+
+    factorySelect.addEventListener('change', function() {
+        const factoryId = this.value;
+        storeSelect.innerHTML = '<option value="">Select Store</option>';
+        storeSelect.disabled = true;
+        locationSelect.innerHTML = '<option value="">Select Store Location</option>';
+        locationSelect.disabled = true;
+        floorSelect.innerHTML = '<option value="">Select Floor Name</option>';
+        floorSelect.disabled = true;
+
+        if (factoryId) {
+            fetch(`{{ BASE_URL }}/master_library/store_locations/get-stores?factory_id=${factoryId}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(store => {
+                        const option = document.createElement('option');
+                        option.value = store.location_id;
+                        option.textContent = store.location_name;
+                        storeSelect.appendChild(option);
+                    });
+                    storeSelect.disabled = false;
+                })
+                .catch(err => console.error('Error fetching stores:', err));
+        }
+    });
+
+    storeSelect.addEventListener('change', function() {
+        const storeId = this.value;
+        locationSelect.innerHTML = '<option value="">Select Store Location</option>';
+        locationSelect.disabled = true;
+        floorSelect.innerHTML = '<option value="">Select Floor Name</option>';
+        floorSelect.disabled = true;
+
+        if (storeId) {
+            fetch(`{{ BASE_URL }}/master_library/store_locations/get-locations?store_id=${storeId}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(loc => {
+                        const option = document.createElement('option');
+                        option.value = loc.rack_id;
+                        option.textContent = loc.rack_name;
+                        locationSelect.appendChild(option);
+                    });
+                    locationSelect.disabled = false;
+                })
+                .catch(err => console.error('Error fetching locations:', err));
+        }
+    });
+
+    locationSelect.addEventListener('change', function() {
+        const rackId = this.value;
+        floorSelect.innerHTML = '<option value="">Select Floor Name</option>';
+        floorSelect.disabled = true;
+
+        if (rackId) {
+            fetch(`{{ BASE_URL }}/master_library/production_floors/get-floors?rack_id=${rackId}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(floor => {
+                        const option = document.createElement('option');
+                        option.value = floor.floor_id;
+                        option.textContent = floor.floor_name;
+                        floorSelect.appendChild(option);
+                    });
+                    floorSelect.disabled = false;
+                })
+                .catch(err => console.error('Error fetching floors:', err));
+        }
+    });
+});
+</script>
+{% endblock %}

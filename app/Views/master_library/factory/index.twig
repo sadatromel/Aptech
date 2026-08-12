@@ -1,0 +1,57 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Factories | Master Library{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Factories</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item active">Factories</li>
+    </ol>
+
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+            <div class="h5 mb-0 text-primary"><i class="fas fa-table me-2"></i>Factory List</div>
+            <a href="{{ BASE_URL }}/master_library/factories/create" class="btn btn-primary px-4 rounded-pill"><i class="fas fa-plus me-1"></i> Add New</a>
+        </div>
+        <div class="card-body p-4">
+            <table id="datatablesSimple" class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Location</th>
+                        <th>Manager</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for factory in factories %}
+                    <tr>
+                        <td>{{ factory.factory_code }}</td>
+                        <td>{{ factory.factory_name }}</td>
+                        <td>{{ factory.city }}</td>
+                        <td>{{ factory.contact_person }}</td>
+                         <td>
+                            <span class="badge rounded-pill bg-{{ factory.status == 'active' ? 'success' : 'secondary' }}">{{ factory.status|capitalize }}</span>
+                        </td>
+                        <td>
+                        <td>
+                            <a href="{{ BASE_URL }}/master_library/factories/edit/{{ factory.factory_id }}" class="btn btn-warning btn-sm rounded-circle" title="Edit"><i class="fas fa-edit"></i></a>
+                            <form action="{{ BASE_URL }}/master_library/factories/delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure?');">
+    {{ csrf_field() | raw }}
+                                <input type="hidden" name="id" value="{{ factory.factory_id }}">
+                                <button type="submit" class="btn btn-danger btn-sm rounded-circle" title="Delete"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Procurement Reports Hub{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h3 mb-1 font-weight-bold text-gray-800">
+                <i class="fas fa-shopping-cart text-danger me-2"></i>Procurement Reports Center
+            </h2>
+            <p class="text-muted small mb-0">Purchase Order Status, Vendor Performance, Accessories & Material Procurement</p>
+        </div>
+        <a href="{{ BASE_URL }}/purchase_orders" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i> Procurement Module
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-danger text-white rounded-circle p-3 me-3">
+                            <i class="fas fa-file-invoice fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title h6 mb-1 font-weight-bold">Purchase Orders Summary</h5>
+                            <span class="badge bg-light text-danger">Orders</span>
+                        </div>
+                    </div>
+                    <p class="card-text small text-muted">Purchase Order status tracking, open POs, pending approvals, and delivery dates.</p>
+                </div>
+                <div class="card-footer bg-transparent border-0 pb-3">
+                    <a href="{{ BASE_URL }}/purchase_orders" class="btn btn-sm btn-outline-danger w-100">Open PO Report</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary text-white rounded-circle p-3 me-3">
+                            <i class="fas fa-users fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title h6 mb-1 font-weight-bold">Vendor Performance Report</h5>
+                            <span class="badge bg-light text-primary">Vendors</span>
+                        </div>
+                    </div>
+                    <p class="card-text small text-muted">Supplier quality ratings, on-time delivery rate (OTD), and price competitiveness logs.</p>
+                </div>
+                <div class="card-footer bg-transparent border-0 pb-3">
+                    <a href="{{ BASE_URL }}/master_library/vendors" class="btn btn-sm btn-outline-primary w-100">Open Vendor Report</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-secondary text-white rounded-circle p-3 me-3">
+                            <i class="fas fa-box fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title h6 mb-1 font-weight-bold">Carton Booking Register</h5>
+                            <span class="badge bg-light text-secondary">Packing Materials</span>
+                        </div>
+                    </div>
+                    <p class="card-text small text-muted">Carton supplier orders, size specs, delivered quantities, and pending bookings.</p>
+                </div>
+                <div class="card-footer bg-transparent border-0 pb-3">
+                    <a href="{{ BASE_URL }}/carton_booking" class="btn btn-sm btn-outline-secondary w-100">Open Carton Booking Report</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

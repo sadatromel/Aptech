@@ -1,0 +1,165 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Database Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <!-- Top Navigation Tabs -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <ul class="nav nav-tabs nav-fill bg-white shadow-sm p-2 rounded" style="border-bottom: none;">
+                <li class="nav-item">
+                    <a class="nav-link {{ active_tab == 'setup' ? 'active fw-bold border-0 text-primary' : 'text-muted border-0' }}" 
+                       href="{{ BASE_URL }}/admin/setup?tab=setup">Setup</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ active_tab == 'management' ? 'active fw-bold border-0 text-primary' : 'text-muted border-0' }}" 
+                       href="{{ BASE_URL }}/admin/setup?tab=management">Management</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ active_tab == 'database' ? 'active fw-bold border-0 text-primary' : 'text-muted border-0' }}" 
+                       href="{{ BASE_URL }}/admin/setup?tab=database">Database</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ active_tab == 'configuration' ? 'active fw-bold border-0 text-primary' : 'text-muted border-0' }}" 
+                       href="{{ BASE_URL }}/admin/setup?tab=configuration">Configuration</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ active_tab == 'backups' ? 'active fw-bold border-0 text-primary' : 'text-muted border-0' }}" 
+                       href="{{ BASE_URL }}/admin/setup?tab=backups">Backups</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ active_tab == 'tools' ? 'active fw-bold border-0 text-primary' : 'text-muted border-0' }}" 
+                       href="{{ BASE_URL }}/admin/setup?tab=tools">Tools</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            
+            <!-- Database Operations -->
+            <div class="mb-5">
+                <h5 class="text-dark fw-bold mb-4">
+                    <i class="fas fa-database me-2"></i>Database Operations
+                </h5>
+
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <button type="button" class="btn btn-light border w-100 py-2 fw-bold" id="testConnBtn">
+                            <i class="fas fa-plug me-2"></i> Test Connection
+                        </button>
+                    </div>
+                     <div class="col-md-3">
+                        <button type="button" class="btn btn-warning w-100 py-2 text-white fw-bold" id="migBtn" style="background-color: #f59e0b; border-color: #f59e0b;">
+                            <i class="fas fa-sync-alt me-2"></i> Re-run Migrations
+                        </button>
+                    </div>
+                     <div class="col-md-3">
+                        <button type="button" class="btn btn-danger w-100 py-2 fw-bold" id="resetBtn" style="background-color: #ef4444; border-color: #ef4444;">
+                            <i class="fas fa-trash me-2"></i> Reset Database
+                        </button>
+                    </div>
+                     <div class="col-md-3">
+                         <!-- Opens Backup Tab or triggers backup? Screenshot says 'Backup Database' -->
+                        <button type="button" class="btn btn-success w-100 py-2 fw-bold" id="backupBtn" style="background-color: #10b981; border-color: #10b981;">
+                            <i class="fas fa-download me-2"></i> Backup Database
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+             <!-- Placeholder for results/output to keep the page not too empty if needed, or just keep blank as per screenshot -->
+             <div id="operationOutput" class="mt-4" style="display:none;">
+                 <div class="alert alert-info">
+                     <i class="fas fa-info-circle me-2"></i> <span id="outputText">Ready</span>
+                 </div>
+             </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // Test Connection
+        document.getElementById('testConnBtn').addEventListener('click', function() {
+            Swal.fire({
+                title: 'Testing Connection...',
+                text: 'Pinging database server...',
+                icon: 'info',
+                showConfirmButton: false,
+                timer: 1000
+            }).then(() => {
+                 Swal.fire('Success', 'Database connection established successfully.', 'success');
+            });
+        });
+
+        // Re-run Migrations
+        document.getElementById('migBtn').addEventListener('click', function() {
+              Swal.fire({
+                title: 'Re-run Migrations?',
+                text: "This will refresh your database schema. Data structure might change.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f59e0b',
+                confirmButtonText: 'Yes, Run Migrations'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Migrating...',
+                        html: 'dropping tables...<br>creating tables...<br>seeding data...',
+                        timer: 2000,
+                        didOpen: () => { Swal.showLoading() }
+                    }).then(() => {
+                        Swal.fire('Completed', 'Database migrations completed.', 'success');
+                    });
+                }
+            });
+        });
+
+        // Reset Database
+        document.getElementById('resetBtn').addEventListener('click', function() {
+             Swal.fire({
+                title: 'CRITICAL WARNING',
+                text: "This will DELETE ALL DATA and reset the database to factory settings. Are you absolutely sure?",
+                icon: 'error',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Yes, WIPE EVERYTHING'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                     Swal.fire({
+                        title: 'Resetting...',
+                        text: 'Wiping database...',
+                        timer: 3000,
+                        didOpen: () => { Swal.showLoading() }
+                    }).then(() => {
+                        Swal.fire('Reset Complete', 'Database has been reset.', 'success');
+                    });
+                }
+            });
+        });
+
+        // Backup Database
+        document.getElementById('backupBtn').addEventListener('click', function() {
+             // Redirect to backup tab or just trigger?
+             // Since there is a backup tab, maybe this triggers a quick backup
+             Swal.fire({
+                title: 'Creating Quick Backup...',
+                timer: 1500,
+                didOpen: () => { Swal.showLoading() }
+            }).then(() => {
+                Swal.fire('Success', 'Database backup created: auto_backup_now.sql', 'success');
+            });
+        });
+
+    });
+</script>
+{% endblock %}

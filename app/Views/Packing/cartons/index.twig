@@ -1,0 +1,274 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Carton Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Page Header -->
+    <div class="col-12 mb-4">
+        <div class="page-header d-flex justify-content-between align-items-center p-4 bg-white rounded shadow-sm">
+            <div class="page-title">
+                <h1 class="h3 text-primary fw-bold mb-1">Carton Management</h1>
+                <p class="text-muted mb-0">Track carton details, dimensions, and weights</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCartonModal">
+                    <i class="fas fa-plus me-2"></i>Add Carton
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="col-12 mb-4">
+        <div class="stats-grid">
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.total_cartons }}</h3>
+                <p class="text-muted mb-0">Total Cartons</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.total_quantity|number_format }}</h3>
+                <p class="text-muted mb-0">Total Pieces</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.total_cbm|number_format(3) }}</h3>
+                <p class="text-muted mb-0">Total CBM</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.total_weight|number_format(1) }}kg</h3>
+                <p class="text-muted mb-0">Total Weight</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cartons Table -->
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fas fa-cube me-2"></i>Cartons</span>
+                <input type="text" class="form-control form-control-sm w-auto" id="searchInput" placeholder="Search cartons...">
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="cartonsTable">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="p-3 border-0">Carton #</th>
+                                <th class="p-3 border-0">Order/Style</th>
+                                <th class="p-3 border-0">Size/Qty</th>
+                                <th class="p-3 border-0">Weight</th>
+                                <th class="p-3 border-0">Dimensions</th>
+                                <th class="p-3 border-0">CBM</th>
+                                <th class="p-3 border-0">Packing Date</th>
+                                <th class="p-3 border-0">Packed By</th>
+                                <th class="p-3 border-0">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for carton in cartons %}
+                            <tr>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ carton.carton_number }}</div>
+                                    <small class="text-muted">{{ carton.plan_number }}</small>
+                                </td>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ carton.order_number }}</div>
+                                    <small class="text-muted">{{ carton.style_code }} - {{ carton.style_name }}</small>
+                                </td>
+                                <td class="p-3">
+                                    {{ carton.size_name }}
+                                    <div class="small text-muted">{{ carton.quantity|number_format }} pieces</div>
+                                </td>
+                                <td class="p-3">
+                                    {{ carton.net_weight|number_format(2) }} / {{ carton.gross_weight|number_format(2) }}
+                                    <div class="small text-muted">Net / Gross (kg)</div>
+                                </td>
+                                <td class="p-3">
+                                    <span class="badge bg-light text-dark border">{{ carton.length }}×{{ carton.width }}×{{ carton.height }}cm</span>
+                                </td>
+                                <td class="p-3">{{ carton.cbm|number_format(3) }}</td>
+                                <td class="p-3">{{ carton.packing_date|date('M j, Y') }}</td>
+                                <td class="p-3">{{ carton.packed_by_name }}</td>
+                                <td class="p-3">
+                                    <button class="btn btn-sm btn-outline-info" onclick="viewCarton({{ carton.carton_id }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <form action="/packing/cartons/{{ carton.carton_id }}/delete" method="POST" onsubmit="return confirm('Delete this carton?')" style="display:inline;">
+    {{ csrf_field() | raw }}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center p-4 text-muted">No cartons found. Add your first carton to get started.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Carton Modal -->
+<div class="modal fade" id="addCartonModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form action="/packing/cartons" method="POST" class="modal-content">
+    {{ csrf_field() | raw }}
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Add Carton</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Carton Number</label>
+                        <input type="text" class="form-control" name="carton_number" value="CTN-{{ 'now'|date('Y-m-d') }}-001" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Packing Plan</label>
+                        <select class="form-select" name="packing_plan_id" onchange="updateOrderFromPlan()">
+                            <option value="">Select Plan</option>
+                            {% for plan in plans %}
+                            <option value="{{ plan.plan_id }}" data-order="{{ plan.order_number }}">{{ plan.plan_number }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Order *</label>
+                        <select class="form-select" name="order_id" required onchange="updateStyleFromOrder()">
+                            <option value="">Select Order</option>
+                            {% for order in orders %}
+                            <option value="{{ order.order_id }}" data-style="{{ order.style_code }}">{{ order.order_number }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Style</label>
+                        <select class="form-select" name="style_id" required>
+                            <option value="">Select Style</option>
+                            {% for style in styles %}
+                            <option value="{{ style.style_id }}">{{ style.style_code }} - {{ style.style_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Size *</label>
+                        <input type="text" class="form-control" name="size_name" placeholder="e.g., M" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Quantity *</label>
+                        <input type="number" class="form-control" name="quantity" min="1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Net Weight (kg) *</label>
+                        <input type="number" class="form-control" name="net_weight" step="0.01" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Gross Weight (kg) *</label>
+                        <input type="number" class="form-control" name="gross_weight" step="0.01" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Length (cm) *</label>
+                        <input type="number" class="form-control" name="length" step="0.1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Width (cm) *</label>
+                        <input type="number" class="form-control" name="width" step="0.1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Height (cm) *</label>
+                        <input type="number" class="form-control" name="height" step="0.1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">CBM</label>
+                        <input type="number" class="form-control" name="cbm" step="0.001" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Packed By</label>
+                        <select class="form-select" name="packed_by">
+                            <option value="">Select Packer</option>
+                            {% for packer in packers %}
+                            <option value="{{ packer.employee_id }}">{{ packer.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Packing Date *</label>
+                        <input type="date" class="form-control" name="packing_date" value="{{ 'now'|date('Y-m-d') }}" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" name="notes" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Add Carton</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function(e) {
+    const term = e.target.value.toLowerCase();
+    document.querySelectorAll('#cartonsTable tbody tr').forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+    });
+});
+
+function calculateCBM() {
+    const length = parseFloat(document.querySelector('input[name="length"]').value) || 0;
+    const width = parseFloat(document.querySelector('input[name="width"]').value) || 0;
+    const height = parseFloat(document.querySelector('input[name="height"]').value) || 0;
+    const cbm = (length * width * height) / 1000000;
+    document.querySelector('input[name="cbm"]').value = cbm.toFixed(3);
+}
+
+['length', 'width', 'height'].forEach(field => {
+    document.querySelector(`input[name="${field}"]`).addEventListener('input', calculateCBM);
+});
+
+function updateOrderFromPlan() {
+    const planSelect = document.querySelector('select[name="packing_plan_id"]');
+    const orderSelect = document.querySelector('select[name="order_id"]');
+    const selectedOption = planSelect.options[planSelect.selectedIndex];
+    const orderNumber = selectedOption.getAttribute('data-order');
+    
+    for (let option of orderSelect.options) {
+        if (option.text.includes(orderNumber)) {
+            orderSelect.value = option.value;
+            updateStyleFromOrder();
+            break;
+        }
+    }
+}
+
+function updateStyleFromOrder() {
+    const orderSelect = document.querySelector('select[name="order_id"]');
+    const styleSelect = document.querySelector('select[name="style_id"]');
+    const selectedOption = orderSelect.options[orderSelect.selectedIndex];
+    const styleCode = selectedOption.getAttribute('data-style');
+    
+    for (let option of styleSelect.options) {
+        if (option.text.includes(styleCode)) {
+            styleSelect.value = option.value;
+            break;
+        }
+    }
+}
+
+function viewCarton(id) {
+    fetch(`/packing/cartons/${id}/data`).then(r => r.json()).then(d => {
+        console.log("Viewing Carton", d);
+        alert(`Carton: ${d.carton_number}\nOrder: ${d.order_number}\nWeight: ${d.gross_weight}kg`);
+    });
+}
+</script>
+{% endblock %}

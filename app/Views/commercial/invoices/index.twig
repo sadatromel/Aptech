@@ -1,0 +1,186 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Commercial • Invoices{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Commercial Invoices</h1>
+            <p class="text-muted">Manage your billing, payments, and accounts receivable.</p>
+        </div>
+        <a href="{{ BASE_URL }}/commercial/invoices/create" class="btn btn-primary rounded-pill px-4 shadow-sm">
+            <i class="fas fa-plus me-2"></i>New Invoice
+        </a>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 bg-primary-soft p-3 rounded-3 me-3">
+                            <i class="fas fa-file-invoice text-primary fa-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small mb-1">Total Amount</div>
+                            <div class="h4 fw-bold mb-0 text-dark">${{ totals.total_amount|number_format(2) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 bg-success-soft p-3 rounded-3 me-3">
+                            <i class="fas fa-hand-holding-usd text-success fa-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small mb-1">Total Paid</div>
+                            <div class="h4 fw-bold mb-0 text-dark">${{ totals.total_paid|number_format(2) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 bg-danger-soft p-3 rounded-3 me-3">
+                            <i class="fas fa-exclamation-circle text-danger fa-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small mb-1">Outstanding Balance</div>
+                            <div class="h4 fw-bold mb-0 text-dark">${{ totals.total_balance|number_format(2) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ BASE_URL }}/commercial/invoices" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">Customer</label>
+                    <select name="customer" class="form-select form-select-sm">
+                        <option value="">All Customers</option>
+                        {% for c in customers %}
+                            <option value="{{ c.customer_id }}" {{ filters.customer == c.customer_id ? 'selected' : '' }}>{{ c.customer_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">Status</label>
+                    <select name="status" class="form-select form-select-sm">
+                        <option value="">All Status</option>
+                        <option value="pending" {{ filters.status == 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="partial" {{ filters.status == 'partial' ? 'selected' : '' }}>Partial</option>
+                        <option value="paid" {{ filters.status == 'paid' ? 'selected' : '' }}>Paid</option>
+                        <option value="overdue" {{ filters.status == 'overdue' ? 'selected' : '' }}>Overdue</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">From</label>
+                    <input type="date" name="date_from" class="form-control form-control-sm" value="{{ filters.date_from }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">To</label>
+                    <input type="date" name="date_to" class="form-control form-control-sm" value="{{ filters.date_to }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-sm btn-primary w-100 me-2">Filter</button>
+                    <a href="{{ BASE_URL }}/commercial/invoices" class="btn btn-sm btn-outline-secondary w-100">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4 overflow-hidden">
+        <div class="card-header bg-white py-3 border-0">
+            <h5 class="mb-0 fw-bold">Invoice List</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Invoice #</th>
+                            <th>Customer</th>
+                            <th>Date</th>
+                            <th class="text-end">Total</th>
+                            <th class="text-end">Paid</th>
+                            <th class="text-end">Balance</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for invoice in invoices %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold text-dark">{{ invoice.invoice_number }}</div>
+                                    {% if invoice.order_number %}
+                                        <small class="text-muted">Order: {{ invoice.order_number }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ invoice.customer_name }}</div>
+                                </td>
+                                <td>
+                                    <div class="small">{{ invoice.invoice_date|date('d M Y') }}</div>
+                                    <small class="text-muted">Due: {{ invoice.due_date|date('d M Y') }}</small>
+                                </td>
+                                <td class="text-end fw-bold text-dark">
+                                    ${{ invoice.total_amount|number_format(2) }}
+                                </td>
+                                <td class="text-end text-success">
+                                    ${{ invoice.paid_amount|number_format(2) }}
+                                </td>
+                                <td class="text-end text-danger fw-semibold">
+                                    ${{ invoice.balance|number_format(2) }}
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge rounded-pill bg-{{ invoice.status == 'paid' ? 'success' : (invoice.status == 'partial' ? 'info' : 'warning text-dark') }}">
+                                        {{ invoice.status|capitalize }}
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="d-flex justify-content-end">
+                                        <a href="{{ BASE_URL }}/commercial/invoices/show/{{ invoice.id }}" class="btn btn-icon btn-sm btn-outline-info rounded-circle me-1" title="View"><i class="fas fa-eye"></i></a>
+                                        <a href="{{ BASE_URL }}/commercial/invoices/print/{{ invoice.id }}" target="_blank" class="btn btn-icon btn-sm btn-outline-secondary rounded-circle me-1" title="Print"><i class="fas fa-print"></i></a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="fas fa-file-invoice-dollar fa-4x mb-3 opacity-25"></i>
+                                    <h5 class="fw-normal">No invoices found</h5>
+                                    <p class="mb-4">Create your first invoice to start billing.</p>
+                                    <a href="{{ BASE_URL }}/commercial/invoices/create" class="btn btn-primary rounded-pill px-4">
+                                        <i class="fas fa-plus me-2"></i>Create New Invoice
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-primary-soft { background-color: rgba(13, 110, 253, 0.1); }
+    .bg-success-soft { background-color: rgba(25, 135, 84, 0.1); }
+    .bg-danger-soft { background-color: rgba(220, 53, 69, 0.1); }
+    .btn-icon { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+</style>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "layouts/app.twig" %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Add New Product Department</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item"><a href="{{ parse_url(BASE_URL).path }}/master_library/product_departments">Product Departments</a></li>
+        <li class="breadcrumb-item active">Add New</li>
+    </ol>
+
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+             <div class="h5 mb-0 text-primary"><i class="fas fa-plus me-2"></i>New Department Details</div>
+        </div>
+        <div class="card-body p-4">
+            <form action="{{ parse_url(BASE_URL).path }}/master_library/product_departments/store" method="POST">
+    {{ csrf_field() | raw }}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="department_code" class="form-label">Department Code <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="department_code" name="department_code" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="department_name" class="form-label">Department Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="department_name" name="department_name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="2"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="active" selected>Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-4 mb-0">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ parse_url(BASE_URL).path }}/master_library/product_departments" class="btn btn-light me-md-2 px-4 rounded-pill border">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 rounded-pill"><i class="fas fa-save me-1"></i> Save Department</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

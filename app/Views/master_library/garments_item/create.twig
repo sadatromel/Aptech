@@ -1,0 +1,93 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Add New Garments Item | Master Library{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Add New Garments Item</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library/garments_items">Garments Items</a></li>
+        <li class="breadcrumb-item active">Add New</li>
+    </ol>
+
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <h5 class="mb-0 text-primary"><i class="fas fa-plus me-1"></i> New Garments Item Details</h5>
+        </div>
+        <div class="card-body p-4">
+            <form action="{{ BASE_URL }}/master_library/garments_items/create" method="POST">
+                {{ csrf_field() | raw }}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3 mb-md-0">
+                            <input class="form-control" id="item_code" name="item_code" type="text" placeholder="Enter item code" required maxlength="50" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" />
+                            <label for="item_code">Item Code (e.g. GITEM_01, GITEM_02)</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input class="form-control" id="item_name" name="item_name" type="text" placeholder="Enter item name" required maxlength="100" />
+                            <label for="item_name">Item Name (e.g. Crew Neck Tee)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="form-floating">
+                            <textarea class="form-control" id="description" name="description" placeholder="Enter description" style="height: 100px;"></textarea>
+                            <label for="description">Description</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <select class="form-select" id="status" name="status">
+                                <option value="active" selected>Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                            <label for="status">Status</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4 border border-light-subtle rounded-3">
+                    <div class="card-header bg-light py-3">
+                        <h6 class="mb-0 text-secondary"><i class="fas fa-tag me-2"></i>Associate Product Types</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row">
+                            {% for type in types %}
+                            <div class="col-md-4 col-sm-6 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="type_ids[]" id="type_{{ type.type_id }}" value="{{ type.type_id }}">
+                                    <label class="form-check-label" for="type_{{ type.type_id }}">
+                                        <strong>{{ type.type_code }}</strong> - {{ type.type_name }}
+                                    </label>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="col-12 text-muted">
+                                No product types available. Please create product types first.
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 mb-0">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ BASE_URL }}/master_library/garments_items" class="btn btn-light me-md-2 px-4 rounded-pill border">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 rounded-pill">Save Garments Item</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

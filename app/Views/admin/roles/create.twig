@@ -1,0 +1,84 @@
+{% extends "layouts/app.twig" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1>Create Role</h1>
+    </div>
+    <div class="col-md-6 text-end">
+        <a href="{{ BASE_URL }}/admin/roles" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form action="{{ BASE_URL }}/admin/roles?action=store" method="POST" id="createRoleForm">
+    {{ csrf_field() | raw }}
+            <div class="mb-3">
+                <label for="name" class="form-label">Role Name</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Permissions</label>
+                <div class="row">
+                    {% for permission in permissions %}
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ permission.permission_id }}" id="perm_{{ permission.permission_id }}">
+                            <label class="form-check-label" for="perm_{{ permission.permission_id }}">
+                                {{ permission.name }}
+                            </label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Create Role</button>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('createRoleForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    try {
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData);
+        
+        // Handle checkboxes
+        const permissions = [];
+        document.querySelectorAll('input[name="permissions[]"]:checked').forEach(cb => {
+            permissions.push(cb.value);
+        });
+        data.permissions = permissions;
+
+        const response = await fetch(this.action, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            alert('Role created successfully');
+            window.location.href = '{{ BASE_URL }}/admin/roles';
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        alert('An error occurred');
+        console.error(error);
+    }
+});
+</script>
+{% endblock %}

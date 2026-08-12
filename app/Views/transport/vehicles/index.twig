@@ -1,0 +1,39 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Vehicles{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Vehicle Management</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ BASE_URL }}/transport/vehicles/create" class="btn btn-sm btn-primary">
+                <i class="fas fa-plus"></i> New Vehicle
+            </a>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th>Number</th>
+                    <th>Type</th>
+                    <th>Capacity</th>
+                    <th>Driver</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in vehicles %}
+                <tr>
+                    <td>{{ v.registration_number }}</td>
+                    <td>{{ v.vehicle_type }}</td>
+                    <td>{{ v.total_seats }}</td>
+                    <td>{{ v.assigned_driver }}</td>
+                    <td><span class="badge bg-success">{{ v.status|capitalize }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

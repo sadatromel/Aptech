@@ -1,0 +1,283 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Add New Vehicle - RMG ERP{% endblock %}
+
+{% block content %}
+<style>
+    /* Custom Dark Theme for this page */
+    .vehicle-page-dark {
+        background-color: #0f172a; /* Slate 900 */
+        color: #e2e8f0; /* Slate 200 */
+        padding: 2rem;
+        border-radius: 8px;
+    }
+    .vehicle-card {
+        background-color: #1e293b; /* Slate 800 */
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    }
+    .vehicle-card-header {
+        background-color: transparent;
+        border-bottom: 1px solid #334155; /* Slate 700 */
+        padding: 1.5rem;
+    }
+    .vehicle-card-title {
+        color: #f8fafc; /* Slate 50 */
+        font-weight: 600;
+        margin: 0;
+    }
+    .form-label {
+        color: #cbd5e1; /* Slate 300 */
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    .form-control, .form-select {
+        background-color: #334155; /* Slate 700 */
+        border: 1px solid #475569; /* Slate 600 */
+        color: #f8fafc;
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+    }
+    .form-control:focus, .form-select:focus {
+        background-color: #334155;
+        border-color: #6366f1; /* Indigo 500 */
+        color: #f8fafc;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    }
+    .seat-preview-container {
+        border: 2px dashed #475569;
+        border-radius: 12px;
+        min-height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #0f172a;
+        position: relative;
+        overflow: hidden;
+    }
+    .seat-grid {
+        display: grid;
+        gap: 10px;
+        padding: 20px;
+        width: 100%;
+        justify-content: center;
+    }
+    .seat-item {
+        width: 40px;
+        height: 40px;
+        background-color: #10b981; /* Emerald 500 */
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 14px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .seat-item:hover {
+        transform: scale(1.1);
+    }
+    .seat-item.driver {
+        background-color: #6366f1; /* Indigo 500 */
+    }
+    .placeholder-text {
+        color: #64748b;
+        font-style: italic;
+    }
+    .btn-save {
+        background-color: #6366f1;
+        border: none;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+    }
+    .btn-save:hover {
+        background-color: #4f46e5;
+    }
+    .btn-cancel {
+        background-color: #475569;
+        border: none;
+        color: white;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        margin-right: 1rem;
+    }
+    .btn-cancel:hover {
+        background-color: #334155;
+    }
+</style>
+
+<div class="container-fluid vehicle-page-dark">
+    <div class="row">
+        <!-- Form Column -->
+        <div class="col-lg-8">
+            <h1 class="h3 mb-4 text-white">Add New Vehicle</h1>
+            <form action="{{ BASE_URL }}/vehicles?action=create" method="POST" id="vehicleForm">
+    {{ csrf_field() | raw }}
+                <div class="row">
+                    <!-- Left Side of Form -->
+                    <div class="col-md-6 mb-3">
+                        <label for="vehicle_number" class="form-label">Registration Number</label>
+                        <input type="text" class="form-control" id="vehicle_number" name="vehicle_number" placeholder="000123" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="year" class="form-label">Year</label>
+                        <input type="number" class="form-control" id="year" name="year" placeholder="Select year" min="1900" max="2100">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="make" class="form-label">Make</label>
+                        <input type="text" class="form-control" id="make" name="make">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="model" class="form-label">Model</label>
+                        <input type="text" class="form-control" id="model" name="model">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="vehicle_type_id" class="form-label">Vehicle Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="vehicle_type_id" name="vehicle_type_id" required>
+                            <option value="">Select Type</option>
+                            {% for type in vehicleTypes %}
+                                <option value="{{ type.vehicle_type_id }}">{{ type.type_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="capacity" class="form-label">Total Seats</label>
+                        <input type="number" class="form-control" id="capacity" name="capacity" min="1" max="100" value="4">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="assigned_driver" class="form-label">Assign Driver</label>
+                        <select class="form-select" id="assigned_driver" name="assigned_driver">
+                            <option value="">No Driver</option>
+                            {% for driver in drivers %}
+                                <option value="{{ driver.employee_id }}">{{ driver.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted" style="color: #64748b !important;">Only active drivers with valid licenses are shown</small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="tax_token" class="form-label">Tax Token</label>
+                        <input type="text" class="form-control" id="tax_token" name="token_number">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="last_registration_date" class="form-label">Last Registration Date</label>
+                        <input type="date" class="form-control" id="last_registration_date" name="last_registration_date">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="registration_due_date" class="form-label">Registration Due Date</label>
+                        <input type="date" class="form-control" id="registration_due_date" name="registration_due_date">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="last_token_renewal_date" class="form-label">Last Token Renewal Date</label>
+                        <input type="date" class="form-control" id="last_token_renewal_date" name="last_token_renewal_date">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="token_renewal_due_date" class="form-label">Token Renewal Due Date</label>
+                        <input type="date" class="form-control" id="token_renewal_due_date" name="token_renewal_due_date">
+                    </div>
+                    
+                    <!-- Hidden Status default -->
+                    <input type="hidden" name="status" value="1">
+                    <!-- License Plate derived from Reg Number or separate? User screenshot only shows Reg Number. 
+                         We'll use Reg Number for License Plate if not provided, or add hidden / JS sync -->
+                    <input type="hidden" id="license_plate" name="license_plate">
+                </div>
+            </form>
+        </div>
+
+        <!-- Preview Column -->
+        <div class="col-lg-4">
+            <h5 class="text-white mb-3">Seat Layout Preview</h5>
+            <div class="vehicle-card p-3">
+                <div class="seat-preview-container" id="seatPreview">
+                    <span class="placeholder-text">Enter seats to view layout</span>
+                </div>
+                <div class="mt-3 d-flex justify-content-between text-muted small">
+                    <div class="d-flex align-items-center"><div style="width:12px;height:12px;background:#10b981;border-radius:2px;margin-right:5px;"></div> Available</div>
+                    <div class="d-flex align-items-center"><div style="width:12px;height:12px;background:#ef4444;border-radius:2px;margin-right:5px;"></div> Occupied</div>
+                    <div class="d-flex align-items-center"><div style="width:12px;height:12px;background:#6366f1;border-radius:2px;margin-right:5px;"></div> Driver</div>
+                </div>
+            </div>
+            
+            <div class="mt-4 d-flex justify-content-end">
+                <a href="{{ BASE_URL }}/vehicles" class="btn btn-cancel">Cancel</a>
+                <button type="button" class="btn btn-save" onclick="submitForm()">Add Vehicle</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const capacityInput = document.getElementById('capacity');
+        const vehicleNumberInput = document.getElementById('vehicle_number');
+        const licensePlateInput = document.getElementById('license_plate');
+        
+        // Sync Reg Number to License Plate (since UI hides it)
+        vehicleNumberInput.addEventListener('input', function() {
+            licensePlateInput.value = this.value; // Simple sync
+        });
+
+        // Seat Preview Logic
+        function updateSeatLayout() {
+            const seats = parseInt(capacityInput.value) || 0;
+            const preview = document.getElementById('seatPreview');
+            
+            if (seats <= 0) {
+                preview.innerHTML = '<span class="placeholder-text">Enter seats to view layout</span>';
+                return;
+            }
+
+            preview.innerHTML = '';
+            
+            // Layout params
+            let cols = 4; // Default sedan/van
+            if (seats > 10) cols = 4; // Bus usually 2-2
+            
+            const grid = document.createElement('div');
+            grid.className = 'seat-grid';
+            grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            
+            // Driver Seat (Visual only)
+            const driverSeat = document.createElement('div');
+            driverSeat.className = 'seat-item driver';
+            driverSeat.innerHTML = '<i class="fas fa-steering-wheel"></i>';
+            driverSeat.title = "Driver";
+            // Place driver separately or in grid? Let's place at top
+            
+            // For simple grid, let's just loop
+            for (let i = 1; i <= seats; i++) {
+                const seat = document.createElement('div');
+                seat.className = 'seat-item';
+                seat.textContent = i;
+                grid.appendChild(seat);
+            }
+            
+            preview.appendChild(grid);
+        }
+
+        capacityInput.addEventListener('input', updateSeatLayout);
+        updateSeatLayout(); // Init
+    });
+
+    function submitForm() {
+        const form = document.getElementById('vehicleForm');
+        // Manual validation if needed
+        if (form.checkValidity()) {
+            // Ensure license plate is filled
+            document.getElementById('license_plate').value = document.getElementById('vehicle_number').value;
+            form.submit();
+        } else {
+            form.reportValidity();
+        }
+    }
+</script>
+{% endblock %}

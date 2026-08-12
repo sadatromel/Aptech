@@ -1,0 +1,191 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Edit Vendor | Procurement{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Edit Vendor</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/procurement/vendors">Vendors</a></li>
+        <li class="breadcrumb-item active">Edit — {{ vendor.vendor_name }}</li>
+    </ol>
+
+    <form action="{{ BASE_URL }}/procurement/vendors/edit/{{ vendor.vendor_id }}" method="POST">
+        {{ csrf_field() | raw }}
+
+        <div class="row g-4">
+            {# Left Column — Basic Info #}
+            <div class="col-lg-7">
+                <div class="card shadow-lg border-0 rounded-3 mb-4">
+                    <div class="card-header bg-transparent border-bottom py-3">
+                        <h5 class="mb-0 text-warning"><i class="fas fa-user-edit me-2"></i>Basic Information</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="vendor_name" name="vendor_name"
+                                           placeholder="e.g. Acme Fabrics" required maxlength="200"
+                                           value="{{ vendor.vendor_name }}" />
+                                    <label for="vendor_name">Vendor Name <span class="text-danger">*</span></label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control text-uppercase" id="vendor_code" name="vendor_code"
+                                           placeholder="e.g. VND-001" required maxlength="50"
+                                           oninput="this.value = this.value.toUpperCase()"
+                                           value="{{ vendor.vendor_code }}" />
+                                    <label for="vendor_code">Vendor Code <span class="text-danger">*</span></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="company_name" name="company_name"
+                                           placeholder="e.g. Acme Corp LLC" maxlength="200"
+                                           value="{{ vendor.company_name }}" />
+                                    <label for="company_name">Company Name</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="category" name="category"
+                                           placeholder="e.g. Fabric, Accessories" maxlength="100"
+                                           value="{{ vendor.category }}" />
+                                    <label for="category">Category</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="contact_person" name="contact_person"
+                                           placeholder="e.g. John Doe" maxlength="150"
+                                           value="{{ vendor.contact_person }}" />
+                                    <label for="contact_person">Contact Person</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="email" name="email"
+                                           placeholder="e.g. contact@acme.com" maxlength="200"
+                                           value="{{ vendor.email }}" />
+                                    <label for="email">Email Address</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="phone" name="phone"
+                                           placeholder="e.g. +8801800000000" maxlength="50"
+                                           value="{{ vendor.phone }}" />
+                                    <label for="phone">Phone Number</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="tax_id" name="tax_id"
+                                           placeholder="e.g. TX-9876543" maxlength="100"
+                                           value="{{ vendor.tax_id }}" />
+                                    <label for="tax_id">Tax ID / TIN</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-0">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="active" {{ vendor.status == 'active' ? 'selected' : '' }}>Active</option>
+                                        <option value="inactive" {{ vendor.status == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                                        <option value="blacklisted" {{ vendor.status == 'blacklisted' ? 'selected' : '' }}>Blacklisted</option>
+                                    </select>
+                                    <label for="status">Status <span class="text-danger">*</span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Right Column — Address & Terms #}
+            <div class="col-lg-5">
+                <div class="card shadow-lg border-0 rounded-3 mb-4">
+                    <div class="card-header bg-transparent border-bottom py-3">
+                        <h5 class="mb-0 text-secondary"><i class="fas fa-map-marker-alt me-2"></i>Address & Terms</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <div class="form-floating">
+                                <textarea class="form-control" id="address" name="address"
+                                          placeholder="Street address" style="height: 80px;">{{ vendor.address }}</textarea>
+                                <label for="address">Address</label>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="city" name="city"
+                                           placeholder="City" maxlength="100" value="{{ vendor.city }}" />
+                                    <label for="city">City</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="province" name="province"
+                                           placeholder="Province / Division" maxlength="100" value="{{ vendor.province }}" />
+                                    <label for="province">Province</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="postal_code" name="postal_code"
+                                           placeholder="e.g. 1207" maxlength="20" value="{{ vendor.postal_code }}" />
+                                    <label for="postal_code">Postal Code</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="country" name="country"
+                                           placeholder="e.g. Bangladesh" maxlength="100" value="{{ vendor.country }}" />
+                                    <label for="country">Country</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-0">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="payment_terms" name="payment_terms"
+                                           placeholder="e.g. Net 30" maxlength="100" value="{{ vendor.payment_terms }}" />
+                                    <label for="payment_terms">Payment Terms</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control" id="lead_time_days" name="lead_time_days"
+                                           placeholder="0" min="0" max="365" value="{{ vendor.lead_time_days|default(0) }}" />
+                                    <label for="lead_time_days">Lead Time (Days)</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Form Actions #}
+        <div class="d-flex justify-content-end gap-2 mb-4">
+            <a href="{{ BASE_URL }}/procurement/vendors" class="btn btn-light px-5 rounded-pill border">Cancel</a>
+            <button type="submit" class="btn btn-warning px-5 rounded-pill text-dark fw-semibold">
+                <i class="fas fa-save me-1"></i> Update Vendor
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

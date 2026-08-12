@@ -1,0 +1,140 @@
+{% extends "layouts/app.twig" %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4 p-4 rounded-3 text-white shadow-sm" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
+        <div>
+            <span class="badge bg-white text-success mb-2 font-monospace"><i class="fas fa-medal me-1"></i> WORKER INCENTIVE PROGRAM</span>
+            <h2 class="mb-1 font-weight-bold">Attendance Bonus Calculator</h2>
+            <p class="mb-0 opacity-75">RMG sector incentive logic: BDT bonus for 100% monthly attendance (0 unexcused absents, max 1 late punch).</p>
+        </div>
+        <div>
+            <a href="{{ BASE_URL }}/hr/rmg-compliance" class="btn btn-light rounded-pill px-4 font-weight-bold text-success shadow-sm"><i class="fas fa-arrow-left me-1"></i>Back to Compliance</a>
+        </div>
+    </div>
+
+    <!-- Filters Panel -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Target Month</label>
+                    <input type="month" class="form-control" name="month" value="{{ selectedMonth }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Statutory Bonus Amount (BDT)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">BDT</span>
+                        <input type="number" class="form-control" name="bonus_amount" value="{{ bonusAmount }}" step="50" min="0" required>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-calculator me-1"></i>Recalculate Eligibility
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Metrics -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-primary text-white h-100">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-white-50 small text-uppercase fw-bold mb-1">Eligible Payouts</div>
+                        <h2 class="fw-bold mb-0">{{ eligibleCount }} Workers</h2>
+                    </div>
+                    <div class="fs-1 opacity-50"><i class="fas fa-award"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-success text-white h-100">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-white-50 small text-uppercase fw-bold mb-1">Total Payout Required</div>
+                        <h2 class="fw-bold mb-0">BDT {{ (eligibleCount * bonusAmount)|number_format(2) }}</h2>
+                    </div>
+                    <div class="fs-1 opacity-50"><i class="fas fa-wallet"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small text-uppercase fw-bold mb-1">Checked Records</div>
+                        <h2 class="fw-bold mb-0 text-dark">{{ records|length }}</h2>
+                    </div>
+                    <div class="fs-1 text-muted opacity-25"><i class="fas fa-users"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Records Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 fw-bold text-primary"><i class="fas fa-tasks me-2"></i>Attendance Punctuality Sheet</h6>
+            <button class="btn btn-sm btn-outline-primary" onclick="window.print()">
+                <i class="fas fa-print me-1"></i>Print Report
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Employee Code</th>
+                            <th>Employee Name</th>
+                            <th>Designation & Dept</th>
+                            <th class="text-center">Presents</th>
+                            <th class="text-center">Absents</th>
+                            <th class="text-center">Lates</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-end">Bonus Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rec in records %}
+                        <tr>
+                            <td class="fw-bold">{{ rec.employee_code }}</td>
+                            <td>{{ rec.first_name }} {{ rec.last_name }}</td>
+                            <td>{{ rec.position_name }} <span class="text-muted small">({{ rec.department_name }})</span></td>
+                            <td class="text-center fw-semibold text-success">{{ rec.present_days|default(0) }}</td>
+                            <td class="text-center fw-semibold {% if rec.absent_days > 0 %}text-danger{% else %}text-muted{% endif %}">
+                                {{ rec.absent_days|default(0) }}
+                            </td>
+                            <td class="text-center fw-semibold {% if rec.late_days > 0 %}text-warning{% else %}text-muted{% endif %}">
+                                {{ rec.late_days|default(0) }}
+                            </td>
+                            <td class="text-center">
+                                {% if rec.is_eligible %}
+                                <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1">
+                                    <i class="fas fa-check-circle me-1"></i>Eligible
+                                </span>
+                                {% else %}
+                                <span class="badge bg-light text-muted rounded-pill px-3 py-1">
+                                    <i class="fas fa-times-circle me-1"></i>Ineligible
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end fw-bold text-dark">
+                                BDT {{ rec.bonus_amount|number_format(2) }}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">No attendance logs found for this period.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

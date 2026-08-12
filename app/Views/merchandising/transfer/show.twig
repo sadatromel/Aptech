@@ -1,0 +1,131 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Transfer Details #{{ transfer.transfer_id }} - RMG ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-exchange-alt"></i> Transfer Details #{{ transfer.transfer_id }}</h2>
+        <div>
+            <a href="{{ BASE_URL }}/merchandising/transfer/history" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to History
+            </a>
+            <a href="{{ BASE_URL }}/merchandising/transfer" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Transfer
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h5><i class="fas fa-minus-circle"></i> Source PO</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>PO Number:</strong></td>
+                            <td>{{ source_po.po_number }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Style:</strong></td>
+                            <td>{{ source_po.style_code }} - {{ source_po.style_name }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Buyer:</strong></td>
+                            <td>{{ source_po.buyer_name }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info">
+                    <h5><i class="fas fa-plus-circle"></i> Target PO</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>PO Number:</strong></td>
+                            <td>{{ target_po.po_number }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Style:</strong></td>
+                            <td>{{ target_po.style_code }} - {{ target_po.style_name }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Buyer:</strong></td>
+                            <td>{{ target_po.buyer_name }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5><i class="fas fa-list"></i> Transfer Details</h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <strong>Transfer Date:</strong> {{ transfer.transfer_date|date('M d, Y H:i:s') }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Transferred By:</strong> {{ transfer.getTransferredByUser().first_name }} {{ transfer.getTransferredByUser().last_name }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Total Quantity:</strong> <span class="badge bg-success">{{ total_quantity }}</span>
+                </div>
+            </div>
+            {% if transfer.notes %}
+            <div class="row mb-3">
+                <div class="col-12">
+                    <strong>Notes:</strong> {{ transfer.notes }}
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Color</th>
+                            <th>Size</th>
+                            <th>Inseam</th>
+                            <th>SKU Code</th>
+                            <th>Quantity Transferred</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for detail in details %}
+                        <tr>
+                            <td>{{ detail.color }}</td>
+                            <td>{{ detail.size }}</td>
+                            <td>{{ detail.inseam }}</td>
+                            <td>{{ detail.sku_code }}</td>
+                            <td>
+                                <span class="badge bg-primary">{{ detail.quantity_transferred }}</span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">No transfer details found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-primary">
+                            <td colspan="4" class="text-end"><strong>Total:</strong></td>
+                            <td><strong>{{ total_quantity }}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

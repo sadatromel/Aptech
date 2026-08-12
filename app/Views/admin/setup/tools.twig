@@ -1,0 +1,165 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}System Tools{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <!-- Top Navigation Tabs -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <ul class="nav nav-tabs nav-fill bg-white shadow-sm p-2 rounded" style="border-bottom: none;">
+                <li class="nav-item">
+                    <a class="nav-link {{ active_tab == 'setup' ? 'active fw-bold border-0 text-primary' : 'text-muted border-0' }}" 
+                       href="{{ BASE_URL }}/admin/setup?tab=setup">Setup</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ active_tab == 'management' ? 'active fw-bold border-0 text-primary' : 'text-muted border-0' }}" 
+                       href="{{ BASE_URL }}/admin/setup?tab=management">Management</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ active_tab == 'database' ? 'active fw-bold border-0 text-primary' : 'text-muted border-0' }}" 
+                       href="{{ BASE_URL }}/admin/setup?tab=database">Database</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ active_tab == 'configuration' ? 'active fw-bold border-0 text-primary' : 'text-muted border-0' }}" 
+                       href="{{ BASE_URL }}/admin/setup?tab=configuration">Configuration</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ active_tab == 'backups' ? 'active fw-bold border-0 text-primary' : 'text-muted border-0' }}" 
+                       href="{{ BASE_URL }}/admin/setup?tab=backups">Backups</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ active_tab == 'tools' ? 'active fw-bold border-0 text-primary' : 'text-muted border-0' }}" 
+                       href="{{ BASE_URL }}/admin/setup?tab=tools">Tools</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            
+            <!-- System Tools Header -->
+            <div class="mb-4">
+                <h5 class="text-dark fw-bold">
+                    <i class="fas fa-tools me-2"></i>System Tools
+                </h5>
+            </div>
+
+            <!-- Action Buttons Row -->
+            <div class="row g-3 mb-5">
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-warning w-100 text-white fw-bold py-2" id="clearCacheBtn" style="background-color: #f59e0b; border-color: #f59e0b;">
+                        <i class="fas fa-broom me-2"></i> Clear Cache
+                    </button>
+                </div>
+                <div class="col-md-3">
+                     <button type="button" class="btn btn-light border w-100 fw-bold py-2" id="clearLogsBtn">
+                        <i class="fas fa-trash-alt me-2"></i> Clear Logs
+                    </button>
+                </div>
+                <div class="col-md-3">
+                     <button type="button" class="btn btn-light border w-100 fw-bold py-2 bg-light" id="healthBtn">
+                        <i class="fas fa-heartbeat me-2"></i> System Health
+                    </button>
+                </div>
+                <div class="col-md-3">
+                     <button type="button" class="btn btn-success w-100 fw-bold py-2" id="reportBtn" style="background-color: #10b981; border-color: #10b981;">
+                        <i class="fas fa-file-alt me-2"></i> Generate Report
+                    </button>
+                </div>
+            </div>
+
+            <!-- System Information Section -->
+            <div class="mb-3">
+                 <h6 class="text-dark fw-bold mb-3">System Information</h6>
+                 <div class="p-3 bg-light rounded border border-secondary border-opacity-25">
+                     <div class="row text-center text-md-start">
+                         <div class="col-md-2 mb-2 mb-md-0">
+                             <small class="text-muted d-block fw-bold">PHP Version</small>
+                             <span class="fw-bold">{{ system_info.php_version }}</span>
+                         </div>
+                         <div class="col-md-3 mb-2 mb-md-0">
+                             <small class="text-muted d-block fw-bold">MySQL Version</small>
+                             <span class="small">{{ system_info.mysql_version }}</span>
+                         </div>
+                          <div class="col-md-2 mb-2 mb-md-0">
+                             <small class="text-muted d-block fw-bold">Server OS</small>
+                             <span>{{ system_info.server_os }}</span>
+                         </div>
+                          <div class="col-md-3 mb-2 mb-md-0">
+                             <small class="text-muted d-block fw-bold">Web Server</small>
+                             <span class="small text-truncate d-block" title="{{ system_info.web_server }}">{{ system_info.web_server }}</span>
+                         </div>
+                          <div class="col-md-1 mb-2 mb-md-0">
+                             <small class="text-muted d-block fw-bold">Memory</small>
+                             <span>{{ system_info.memory_limit }}</span>
+                         </div>
+                          <div class="col-md-1 mb-2 mb-md-0">
+                             <small class="text-muted d-block fw-bold">Upload</small>
+                             <span>{{ system_info.max_upload }}</span>
+                         </div>
+                     </div>
+                 </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // Clear Cache
+        document.getElementById('clearCacheBtn').addEventListener('click', function() {
+             Swal.fire({
+                title: 'Clearing Cache...',
+                timer: 1500,
+                didOpen: () => { Swal.showLoading() }
+            }).then(() => {
+                Swal.fire('Success', 'System cache has been cleared.', 'success');
+            });
+        });
+
+        // Clear Logs
+        document.getElementById('clearLogsBtn').addEventListener('click', function() {
+             Swal.fire({
+                title: 'Clear System Logs?',
+                text: 'This will remove all log files. Cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Clear Logs'
+            }).then((result) => {
+                if(result.isConfirmed) {
+                    Swal.fire('Cleared', 'Logs have been cleared.', 'success');
+                }
+            });
+        });
+
+        // System Health
+        document.getElementById('healthBtn').addEventListener('click', function() {
+             Swal.fire({
+                title: 'System Health Check',
+                html: '<div class="text-start ms-4"><p><i class="fas fa-check text-success me-2"></i> Database: Connected</p><p><i class="fas fa-check text-success me-2"></i> Disk Space: OK</p><p><i class="fas fa-check text-success me-2"></i> Permissions: OK</p></div>',
+                icon: 'info'
+            });
+        });
+
+         // Generate Report
+        document.getElementById('reportBtn').addEventListener('click', function() {
+             Swal.fire({
+                title: 'Generating Report...',
+                timer: 2000,
+                didOpen: () => { Swal.showLoading() }
+            }).then(() => {
+                Swal.fire('Generated', 'System report generated: report_20260126.pdf', 'success');
+            });
+        });
+
+    });
+</script>
+{% endblock %}

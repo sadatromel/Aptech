@@ -1,0 +1,141 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Employee Basic Information | HR Employee Information{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4 p-4 rounded-3 text-white shadow-sm" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);">
+        <div>
+            <span class="badge bg-white text-sky mb-2 font-monospace" style="color: #0369a1;"><i class="fas fa-id-card me-1"></i> MASTER EMPLOYEE DIRECTORY</span>
+            <h2 class="mb-1 font-weight-bold">Employee Basic Information</h2>
+            <p class="mb-0 opacity-75">Overview of primary employee profiles, department mapping, and active employment status.</p>
+        </div>
+        <div class="text-end d-none d-md-block">
+            <i class="fas fa-users-gear fa-3x opacity-50"></i>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
+                <div class="d-flex align-items-center">
+                    <div class="p-3 bg-sky-100 text-sky rounded-3 me-3" style="background-color: #e0f2fe; color: #0284c7;"><i class="fas fa-users fa-2x"></i></div>
+                    <div>
+                        <div class="text-muted small">Total Employees</div>
+                        <div class="h4 fw-bold mb-0">{{ employees|length }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
+                <div class="d-flex align-items-center">
+                    <div class="p-3 bg-emerald-100 text-emerald rounded-3 me-3" style="background-color: #d1fae5; color: #059669;"><i class="fas fa-user-check fa-2x"></i></div>
+                    <div>
+                        <div class="text-muted small">Active Registry</div>
+                        <div class="h4 fw-bold mb-0 text-success">{{ employees|length }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
+                <div class="d-flex align-items-center">
+                    <div class="p-3 bg-purple-100 text-purple rounded-3 me-3" style="background-color: #f3e8ff; color: #7e22ce;"><i class="fas fa-building fa-2x"></i></div>
+                    <div>
+                        <div class="text-muted small">Departments</div>
+                        <div class="h4 fw-bold mb-0">{{ departments|length }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
+                <div class="d-flex align-items-center">
+                    <div class="p-3 bg-amber-100 text-amber rounded-3 me-3" style="background-color: #fef3c7; color: #d97706;"><i class="fas fa-calendar-day fa-2x"></i></div>
+                    <div>
+                        <div class="text-muted small">System Date</div>
+                        <div class="h6 fw-bold mb-0">{{ "now"|date("d M Y") }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Table Card -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h5 class="mb-0 text-dark fw-bold"><i class="fas fa-address-book me-2 text-sky" style="color: #0284c7;"></i>Employee Basic Records</h5>
+            <div class="d-flex gap-2">
+                <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Filter employee..." style="max-width: 250px;" onkeyup="filterTable()">
+                <a href="{{ BASE_URL }}/hr/employees/create" class="btn btn-sky btn-sm text-white rounded-pill px-3" style="background-color: #0284c7;"><i class="fas fa-plus me-1"></i> Add Employee</a>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="basicTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Code</th>
+                            <th>Employee Name</th>
+                            <th>Designation</th>
+                            <th>Department</th>
+                            <th>Gender</th>
+                            <th>Phone</th>
+                            <th>Joining Date</th>
+                            <th>Basic Salary</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if employees is empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-4 text-muted">No employee profiles found.</td>
+                        </tr>
+                        {% else %}
+                        {% for emp in employees %}
+                        <tr>
+                            <td class="fw-bold font-monospace text-primary">{{ emp.employee_code }}</td>
+                            <td class="fw-semibold">
+                                <i class="fas fa-user-circle me-1 text-muted"></i>
+                                {{ emp.first_name }} {{ emp.last_name }}
+                            </td>
+                            <td><span class="badge bg-light text-dark border">{{ emp.position_name ?: 'Operator' }}</span></td>
+                            <td><span class="badge bg-info-subtle text-info border border-info-subtle">{{ emp.department_name ?: 'General' }}</span></td>
+                            <td>{{ emp.gender ?: 'Male' }}</td>
+                            <td><i class="fas fa-phone-alt me-1 text-muted small"></i>{{ emp.phone ?: 'N/A' }}</td>
+                            <td>{{ emp.hire_date }}</td>
+                            <td class="fw-bold text-success">৳ {{ emp.basic_salary|number_format(2) }}</td>
+                            <td>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function filterTable() {
+    let input = document.getElementById("searchInput");
+    let filter = input.value.toLowerCase();
+    let table = document.getElementById("basicTable");
+    let tr = table.getElementsByTagName("tr");
+
+    for (let i = 1; i < tr.length; i++) {
+        let text = tr[i].textContent || tr[i].innerText;
+        if (text.toLowerCase().indexOf(filter) > -1) {
+            tr[i].style.display = "";
+        } else {
+            tr[i].style.display = "none";
+        }
+    }
+}
+</script>
+{% endblock %}

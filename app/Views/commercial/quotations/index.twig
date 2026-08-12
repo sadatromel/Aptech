@@ -1,0 +1,47 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Quotations{% endblock %}
+
+{% block content %}
+
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Quotations</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ BASE_URL }}/commercial/quotations/create" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-plus"></i> New Quotation
+            </a>
+        </div>
+    </div>
+
+    <!-- Quotations Table -->
+    <div class="table-responsive">
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th>Quotation No</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Total Amount</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for quotation in quotations %}
+                <tr>
+                    <td>{{ quotation.quotation_no }}</td>
+                    <td>{{ quotation.quotation_date|date('Y-m-d') }}</td>
+                    <td>{{ quotation.customer_name }}</td>
+                    <td>{{ quotation.grand_total|number_format(2) }} {{ quotation.currency }}</td>
+                    <td><span class="badge bg-{{ quotation.status == 'draft' ? 'secondary' : (quotation.status == 'sent' ? 'primary' : (quotation.status == 'accepted' ? 'success' : 'warning')) }}">{{ quotation.status|capitalize }}</span></td>
+                    <td>
+                        <a href="{{ BASE_URL }}/commercial/quotations/show?id={{ quotation.quotation_id }}" class="btn btn-sm btn-info">View</a>
+                        <!-- Add Edit/Delete links -->
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+

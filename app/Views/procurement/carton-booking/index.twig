@@ -1,0 +1,371 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Carton Booking | Procurement{% endblock %}
+
+{% block content %}
+<style>
+    .glow-card {
+        transition: all 0.3s ease-in-out;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+    }
+    .glow-card:hover {
+        box-shadow: 0 14px 32px rgba(78, 115, 223, 0.12);
+    }
+    .metric-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+    }
+    .bg-light-primary { background: rgba(78, 115, 223, 0.12); }
+    .bg-light-warning { background: rgba(246, 194, 62, 0.12); }
+    .bg-light-success { background: rgba(28, 200, 138, 0.12); }
+    .bg-light-info { background: rgba(54, 185, 204, 0.12); }
+    
+    .text-gradient {
+        background: linear-gradient(135deg, #4e73df 0%, #36b9cc 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+</style>
+
+{# ── Flash alerts ── #}
+{% if app.session.flash('success_message') %}
+<div class="alert alert-success alert-dismissible fade show mx-2" role="alert">
+    <i class="fas fa-check-circle me-2"></i>{{ app.session.flash('success_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+{% if app.session.flash('error_message') %}
+<div class="alert alert-danger alert-dismissible fade show mx-2" role="alert">
+    <i class="fas fa-exclamation-circle me-2"></i>{{ app.session.flash('error_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4 page-header p-4 glow-card">
+        <div>
+            <h1 class="h3 fw-bold text-gradient mb-1">Carton Booking Manager</h1>
+            <p class="text-muted mb-0 small">Sourcing Orders · Volume (CBM) Calculator · Approval Workflows · Booking Slips</p>
+        </div>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newBookingModal">
+            <i class="fas fa-plus me-2"></i>New Booking
+        </button>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card glow-card p-3 border-0">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-muted fw-bold text-uppercase small mb-1">Total Bookings</h6>
+                        <h3 class="fw-bold mb-0">{{ stats.total }}</h3>
+                        <small class="text-primary">carton contracts</small>
+                    </div>
+                    <div class="metric-icon bg-light-primary text-primary"><i class="fas fa-box"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card glow-card p-3 border-0">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-muted fw-bold text-uppercase small mb-1">Pending Bookings</h6>
+                        <h3 class="fw-bold mb-0">{{ stats.pending }}</h3>
+                        <small class="text-warning">awaiting check</small>
+                    </div>
+                    <div class="metric-icon bg-light-warning text-warning"><i class="fas fa-clock"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card glow-card p-3 border-0">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-muted fw-bold text-uppercase small mb-1">Approved Bookings</h6>
+                        <h3 class="fw-bold mb-0">{{ stats.approved }}</h3>
+                        <small class="text-success">ready for vendor delivery</small>
+                    </div>
+                    <div class="metric-icon bg-light-success text-success"><i class="fas fa-check-circle"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card glow-card p-3 border-0">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-muted fw-bold text-uppercase small mb-1">Completed Booking</h6>
+                        <h3 class="fw-bold mb-0">{{ stats.completed }}</h3>
+                        <small class="text-info">cartons received</small>
+                    </div>
+                    <div class="metric-icon bg-light-info text-info"><i class="fas fa-truck-loading"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card glow-card border-0 p-3 mb-4">
+        <form class="row g-2" method="get">
+            <div class="col-md-4">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" class="form-control border-start-0 ps-0" name="search" placeholder="Search booking number..." value="{{ filters.search }}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select form-select-sm" name="status">
+                    <option value="">All Statuses</option>
+                    {% for status in dropdowns.statuses %}
+                        <option value="{{ status.value }}" {{ filters.status == status.value ? 'selected' }}>{{ status.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-secondary btn-sm w-100">Filter</button>
+            </div>
+            {% if filters.status or filters.search %}
+            <div class="col-md-2">
+                <a href="{{ BASE_URL }}/procurement/carton-booking" class="btn btn-outline-secondary btn-sm w-100">Reset</a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Bookings Table -->
+    <div class="card glow-card border-0 p-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Booking #</th>
+                        <th>Date</th>
+                        <th>PO / Style Reference</th>
+                        <th>Dimensions</th>
+                        <th>Unit CBM</th>
+                        <th>Total Volume</th>
+                        <th>Quantity</th>
+                        <th>Status</th>
+                        <th class="text-end no-print">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in bookings %}
+                        <tr>
+                            <td class="fw-bold font-monospace text-primary">{{ booking.booking_number }}</td>
+                            <td class="small text-muted">{{ booking.booking_date|date('M d, Y') }}</td>
+                            <td>
+                                {% if booking.buyer_name %}
+                                    <div class="text-primary fw-bold small mb-1"><i class="fas fa-user-tie me-1"></i>{{ booking.buyer_name }}</div>
+                                {% endif %}
+                                {% if booking.po_number %}
+                                    <div class="fw-bold text-dark">{{ booking.po_number }}</div>
+                                    <small class="text-muted">{{ booking.style_code }} – {{ booking.style_name }}</small>
+                                {% else %}
+                                    <span class="text-muted small">Generic Booking</span>
+                                {% endif %}
+                            </td>
+                            <td class="small">
+                                {{ booking.length }} x {{ booking.width }} x {{ booking.height }} <code>{{ booking.unit }}</code>
+                            </td>
+                            <td><code>{{ (booking.cbm_per_carton ?: 0)|number_format(4) }} CBM</code></td>
+                            <td class="fw-bold text-info"><code>{{ (booking.total_cbm ?: 0)|number_format(4) }} CBM</code></td>
+                            <td class="fw-bold">{{ booking.quantity|number_format(0) }} ctn</td>
+                            <td>
+                                {% set badgeClass = {
+                                    'pending': 'bg-warning text-dark',
+                                    'approved': 'bg-success text-white',
+                                    'completed': 'bg-info text-dark',
+                                    'cancelled': 'bg-danger text-white'
+                                }[booking.status] ?? 'bg-secondary text-white' %}
+                                <span class="badge {{ badgeClass }}">{{ booking.status|upper }}</span>
+                            </td>
+                            <td class="text-end no-print">
+                                <div class="btn-group btn-group-sm">
+                                    {% if booking.status == 'pending' %}
+                                    <form method="POST" action="{{ BASE_URL }}/procurement/carton-booking" style="display:inline;">
+                                        {{ csrf_field() | raw }}
+                                        <input type="hidden" name="action" value="update_status">
+                                        <input type="hidden" name="booking_id" value="{{ booking.id }}">
+                                        <input type="hidden" name="status" value="approved">
+                                        <button type="submit" class="btn btn-outline-success"><i class="fas fa-check"></i> Approve</button>
+                                    </form>
+                                    {% elseif booking.status == 'approved' %}
+                                    <form method="POST" action="{{ BASE_URL }}/procurement/carton-booking" style="display:inline;">
+                                        {{ csrf_field() | raw }}
+                                        <input type="hidden" name="action" value="update_status">
+                                        <input type="hidden" name="booking_id" value="{{ booking.id }}">
+                                        <input type="hidden" name="status" value="completed">
+                                        <button type="submit" class="btn btn-outline-info"><i class="fas fa-truck-loading"></i> Complete</button>
+                                    </form>
+                                    {% endif %}
+                                    <button class="btn btn-outline-danger" onclick="deleteBooking({{ booking.id }})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">No carton bookings scheduled. Click "New Booking" to begin.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- New Booking Modal -->
+<div class="modal fade" id="newBookingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ BASE_URL }}/procurement/carton-booking/store" method="POST" class="modal-content">
+            {{ csrf_field() | raw }}
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-box me-2"></i>New Carton Booking</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Booking Date</label>
+                    <input type="date" class="form-control form-control-sm" name="booking_date" required value="{{ 'now'|date('Y-m-d') }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Buyer Reference</label>
+                    <select class="form-select form-select-sm" name="buyer_id" required>
+                        <option value="">— Select Buyer —</option>
+                        {% for b in buyers %}
+                            <option value="{{ b.buyer_id }}">{{ b.buyer_name }} ({{ b.buyer_code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Production Order Reference</label>
+                    <select class="form-select form-select-sm" name="order_id" required>
+                        <option value="">— Select PO —</option>
+                        {% for o in orders %}<option value="{{ o.id }}">{{ o.po_number }} ({{ o.quantity }} pcs)</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Style Reference</label>
+                    <select class="form-select form-select-sm" name="style_id" required>
+                        <option value="">— Select Style —</option>
+                        {% for s in styles %}<option value="{{ s.style_id }}">{{ s.style_code }} – {{ s.style_name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-4">
+                        <label class="form-label fw-bold small">Length</label>
+                        <input type="number" step="0.01" class="form-control form-control-sm" name="length" id="length_input" placeholder="L" required oninput="updateCbmPreview()">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label fw-bold small">Width</label>
+                        <input type="number" step="0.01" class="form-control form-control-sm" name="width" id="width_input" placeholder="W" required oninput="updateCbmPreview()">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label fw-bold small">Height</label>
+                        <input type="number" step="0.01" class="form-control form-control-sm" name="height" id="height_input" placeholder="H" required oninput="updateCbmPreview()">
+                    </div>
+                </div>
+                <div class="row g-2 mb-3">
+                     <div class="col-6">
+                        <label class="form-label fw-bold small">Measurement Unit</label>
+                        <select class="form-select form-select-sm" name="unit" id="unit_input" onchange="updateCbmPreview()">
+                            <option value="cm">cm</option>
+                            <option value="in">inch</option>
+                            <option value="mm">mm</option>
+                        </select>
+                     </div>
+                     <div class="col-6">
+                        <label class="form-label fw-bold small">Quantity (Cartons)</label>
+                        <input type="number" class="form-control form-control-sm" name="quantity" id="qty_input" value="1" min="1" required oninput="updateCbmPreview()">
+                     </div>
+                </div>
+                
+                <div class="p-3 mb-3 rounded" style="background: #f8f9fa; border: 1px dashed #4e73df;">
+                    <div class="small text-muted" id="cbm_preview">Single CBM: <strong>0.0000</strong> | Total Booking Volume: <strong class="text-primary">0.0000 CBM</strong></div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Special Notes</label>
+                    <textarea class="form-control form-control-sm" name="notes" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create Booking</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ parent() }}
+<script>
+    function updateCbmPreview() {
+        const lengthInput = document.getElementById('length_input');
+        const widthInput = document.getElementById('width_input');
+        const heightInput = document.getElementById('height_input');
+        const unitInput = document.getElementById('unit_input');
+        const qtyInput = document.getElementById('qty_input');
+        const cbmPreview = document.getElementById('cbm_preview');
+
+        if (!lengthInput || !widthInput || !heightInput || !unitInput || !qtyInput || !cbmPreview) return;
+
+        const l = parseFloat(lengthInput.value) || 0;
+        const w = parseFloat(widthInput.value) || 0;
+        const h = parseFloat(heightInput.value) || 0;
+        const u = unitInput.value;
+        const q = parseInt(qtyInput.value) || 1;
+        
+        let cbm = 0;
+        if (u === 'cm') {
+            cbm = (l * w * h) / 1000000.0;
+        } else if (u === 'in') {
+            cbm = (l * w * h) / 61023.7;
+        } else if (u === 'mm') {
+            cbm = (l * w * h) / 1000000000.0;
+        }
+        
+        const totalCbm = cbm * q;
+        cbmPreview.innerHTML = `Single CBM: <strong>${cbm.toFixed(4)}</strong> | Total Booking Volume: <strong class="text-primary">${totalCbm.toFixed(4)} CBM</strong>`;
+    }
+
+    async function deleteBooking(id) {
+        if (!confirm('Are you sure you want to delete this booking?')) return;
+        
+        try {
+            const response = await fetch(`{{ BASE_URL }}/procurement/carton-booking/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                window.location.reload();
+            } else {
+                alert(result.message || 'Failed to delete booking');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred');
+        }
+    }
+</script>
+{% endblock %}

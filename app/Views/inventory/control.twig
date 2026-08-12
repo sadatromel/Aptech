@@ -1,0 +1,371 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Inventory Control & Reports{% endblock %}
+
+{% block styles %}
+<style>
+    .premium-glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05);
+        border-radius: var(--border-radius);
+    }
+    [data-theme="dark"] .premium-glass-card {
+        background: rgba(30, 41, 59, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    .nav-tabs .nav-link {
+        border: none;
+        color: #718096;
+        font-weight: 600;
+        padding: 12px 20px;
+    }
+    .nav-tabs .nav-link.active {
+        background: transparent;
+        color: var(--primary);
+        border-bottom: 3px solid var(--primary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 bg-transparent px-0">
+                <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard" class="text-decoration-none"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ BASE_URL }}/inventory/dashboard" class="text-decoration-none">Store & Inventory</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Control, Approvals & Reports</li>
+            </ol>
+        </nav>
+        <h4 class="mb-0 font-weight-bold">Control & Valuations</h4>
+    </div>
+
+    <!-- Alert Notifications -->
+    {% if session.success_message %}
+    <div class="alert alert-success alert-dismissible fade show premium-glass-card mb-4" role="alert">
+        <i class="fas fa-check-circle me-2"></i>{{ session.success_message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+    {% if session.error_message %}
+    <div class="alert alert-danger alert-dismissible fade show premium-glass-card mb-4" role="alert">
+        <i class="fas fa-times-circle me-2"></i>{{ session.error_message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <!-- Tabs Navigation -->
+    <div class="card border-0 premium-glass-card mb-4">
+        <div class="card-header bg-transparent border-0 p-0">
+            <ul class="nav nav-tabs border-bottom" id="controlTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" id="approvals-tab" data-bs-toggle="tab" data-bs-target="#approvalsContent" type="button" role="tab">
+                        <i class="fas fa-check-double me-2"></i>Pending Approvals
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="valuation-tab" data-bs-toggle="tab" data-bs-target="#valuationContent" type="button" role="tab">
+                        <i class="fas fa-wallet me-2"></i>Company Valuations
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="audit-tab" data-bs-toggle="tab" data-bs-target="#auditContent" type="button" role="tab">
+                        <i class="fas fa-calculator me-2"></i>Physical Count & Audits
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="barcode-tab" data-bs-toggle="tab" data-bs-target="#barcodeContent" type="button" role="tab">
+                        <i class="fas fa-barcode me-2"></i>Barcode Generator
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="analysis-tab" data-bs-toggle="tab" data-bs-target="#analysisContent" type="button" role="tab">
+                        <i class="fas fa-chart-line me-2"></i>ABC Inventory Analysis
+                    </button>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="card-body p-4">
+            <div class="tab-content" id="controlTabsContent">
+                <!-- Tab 1: Approvals Workflows -->
+                <div class="tab-pane fade show active" id="approvalsContent" role="tabpanel">
+                    <h5 class="font-weight-bold mb-4">Pending Transactions Awaiting Management Release</h5>
+                    
+                    <h6 class="font-weight-bold text-primary mb-3">1. Requisitions ({{ pendingRequisitions|length }})</h6>
+                    <div class="table-responsive mb-4">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Req No</th>
+                                    <th>Date</th>
+                                    <th>Department</th>
+                                    <th>Purpose</th>
+                                    <th>Requested By</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if pendingRequisitions is empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-3">No pending requisitions to approve.</td>
+                                </tr>
+                                {% else %}
+                                    {% for req in pendingRequisitions %}
+                                    <tr>
+                                        <td class="font-weight-bold">{{ req.requisition_no }}</td>
+                                        <td>{{ req.requisition_date }}</td>
+                                        <td>{{ req.department_name }}</td>
+                                        <td>{{ req.purpose }}</td>
+                                        <td>{{ req.requested_by_name }}</td>
+                                        <td class="text-center">
+                                            <form action="{{ BASE_URL }}/inventory/control/approval" method="POST" class="d-inline">
+                                                {{ csrf_field()|raw }}
+                                                <input type="hidden" name="type" value="requisition">
+                                                <input type="hidden" name="id" value="{{ req.requisition_id }}">
+                                                <input type="hidden" name="action" value="approve">
+                                                <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 me-1">Approve</button>
+                                            </form>
+                                            <form action="{{ BASE_URL }}/inventory/control/approval" method="POST" class="d-inline">
+                                                {{ csrf_field()|raw }}
+                                                <input type="hidden" name="type" value="requisition">
+                                                <input type="hidden" name="id" value="{{ req.requisition_id }}">
+                                                <input type="hidden" name="action" value="reject">
+                                                <button type="submit" class="btn btn-sm btn-danger rounded-pill px-3">Reject</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h6 class="font-weight-bold text-success mb-3">2. Stock Adjustments ({{ pendingAdjustments|length }})</h6>
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Adjustment No</th>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Reason</th>
+                                    <th>Location</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if pendingAdjustments is empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-3">No pending adjustments to approve.</td>
+                                </tr>
+                                {% else %}
+                                    {% for adj in pendingAdjustments %}
+                                    <tr>
+                                        <td class="font-weight-bold">{{ adj.adjustment_no }}</td>
+                                        <td>{{ adj.adjustment_date }}</td>
+                                        <td>{{ adj.adjustment_type|capitalize }}</td>
+                                        <td>{{ adj.reason|replace({'_': ' '})|capitalize }}</td>
+                                        <td>{{ adj.location_name }}</td>
+                                        <td class="text-center">
+                                            <form action="{{ BASE_URL }}/inventory/control/approval" method="POST" class="d-inline">
+                                                {{ csrf_field()|raw }}
+                                                <input type="hidden" name="type" value="adjustment">
+                                                <input type="hidden" name="id" value="{{ adj.adjustment_id }}">
+                                                <input type="hidden" name="action" value="approve">
+                                                <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 me-1">Approve</button>
+                                            </form>
+                                            <form action="{{ BASE_URL }}/inventory/control/approval" method="POST" class="d-inline">
+                                                {{ csrf_field()|raw }}
+                                                <input type="hidden" name="type" value="adjustment">
+                                                <input type="hidden" name="id" value="{{ adj.adjustment_id }}">
+                                                <input type="hidden" name="action" value="reject">
+                                                <button type="submit" class="btn btn-sm btn-danger rounded-pill px-3">Reject</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Valuation Reports -->
+                <div class="tab-pane fade" id="valuationContent" role="tabpanel">
+                    <h5 class="font-weight-bold mb-4">Multi-Company Consolidated Stock Valuation</h5>
+                    <div class="table-responsive mb-4">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Company / Manufacturing Unit</th>
+                                    <th class="text-end">Unique SKUs</th>
+                                    <th class="text-end">Total Stock Qty</th>
+                                    <th class="text-end">Weighted Average Valuation</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for val in companyValuations %}
+                                <tr>
+                                    <td class="font-weight-bold">{{ val.company_name }}</td>
+                                    <td class="text-end">{{ val.total_items }}</td>
+                                    <td class="text-end font-weight-bold">{{ val.total_qty|number_format }}</td>
+                                    <td class="text-end font-weight-bold text-success">${{ val.total_value|number_format(2) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <h6 class="font-weight-bold mb-3"><i class="fas fa-hourglass-half me-2"></i>Slow Moving & Aging Inventory Report</h6>
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Item Code</th>
+                                <th>Item Name</th>
+                                <th class="text-end">In Stock</th>
+                                <th class="text-end">Value</th>
+                                <th>Aging Period</th>
+                                <th>Status Alert</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for age in agingReport %}
+                            <tr>
+                                <td class="font-weight-bold text-primary">{{ age.item_code }}</td>
+                                <td>{{ age.item_name }}</td>
+                                <td class="text-end">{{ age.qty }}</td>
+                                <td class="text-end font-weight-bold text-success">${{ age.value|number_format(2) }}</td>
+                                <td><span class="badge bg-warning-light text-warning">{{ age.days_in_store }}</span></td>
+                                <td>
+                                    <span class="badge {% if age.status == 'Dead Stock' %}bg-danger{% else %}bg-secondary{% endif %} rounded-pill">{{ age.status }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Tab 3: Physical Count & Audits -->
+                <div class="tab-pane fade" id="auditContent" role="tabpanel">
+                    <h5 class="font-weight-bold mb-4">Inventory Verification Schedules</h5>
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Audit Title</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Target Warehouse</th>
+                                <th>Variance Found</th>
+                                <th>Audit Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for aud in audits %}
+                            <tr>
+                                <td class="font-weight-bold text-dark">{{ aud.title }}</td>
+                                <td>{{ aud.start_date }}</td>
+                                <td>{{ aud.end_date }}</td>
+                                <td>{{ aud.warehouse }}</td>
+                                <td class="font-weight-bold text-danger">{{ aud.variance_found }}</td>
+                                <td>
+                                    {% if aud.status == 'Completed' %}
+                                        <span class="badge bg-success-light text-success rounded-pill font-weight-bold">Completed</span>
+                                    {% else %}
+                                        <span class="badge bg-info-light text-info rounded-pill font-weight-bold">Scheduled</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Tab 4: Barcode Generator -->
+                <div class="tab-pane fade" id="barcodeContent" role="tabpanel">
+                    <div class="row justify-content-center">
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light p-4 rounded text-center">
+                                <h5 class="font-weight-bold mb-3"><i class="fas fa-print me-2"></i>Select SKU to Generate Barcode Tag</h5>
+                                <div class="mb-4">
+                                    <select class="form-select" id="barcodeItemSelect">
+                                        <option value="">-- Choose Item --</option>
+                                        {% for item in items %}
+                                        <option value="{{ item.item_id }}">{{ item.item_code }} - {{ item.item_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <button type="button" class="btn btn-primary rounded-pill px-5" onclick="printItemBarcode()">
+                                    Generate & View SVG Barcode Tag
+                                </button>
+                                
+                                <div class="mt-4 pt-3 border-top d-none" id="barcodePreviewArea">
+                                    <h6 class="font-weight-bold mb-3">Live Barcode Tag Preview</h6>
+                                    <iframe id="barcodeFrame" src="" style="width: 100%; height: 150px; border: none;"></iframe>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 5: ABC Turnover Analysis -->
+                <div class="tab-pane fade" id="analysisContent" role="tabpanel">
+                    <h5 class="font-weight-bold mb-4">ABC Classification Analysis Matrix</h5>
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Inventory Classification</th>
+                                    <th class="text-end">Items Count</th>
+                                    <th class="text-end">% of Total SKUs</th>
+                                    <th class="text-end">Valuation Impact</th>
+                                    <th class="text-end">% of Total Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for abc in abcAnalysis %}
+                                <tr>
+                                    <td class="font-weight-bold text-dark">{{ abc.class }}</td>
+                                    <td class="text-end">{{ abc.items_count }}</td>
+                                    <td class="text-end">{{ abc.percentage }}</td>
+                                    <td class="text-end font-weight-bold text-success">{{ abc.value }}</td>
+                                    <td class="text-end font-weight-bold text-primary">{{ abc.share }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="alert alert-info premium-glass-card mt-3" role="alert">
+                        <i class="fas fa-info-circle me-2"></i><strong>ABC Classification Rationale:</strong> Class A items compose 70% of inventory value but only 10% of items quantity (Tight control required). Class C items compose only 10% of value but are 70% of total physical stock (Loose safety controls).
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function printItemBarcode() {
+    const val = document.getElementById('barcodeItemSelect').value;
+    if (!val) {
+        alert("Please select an item first!");
+        return;
+    }
+    
+    const url = "{{ BASE_URL }}/inventory/control/barcode?item_id=" + val;
+    const preview = document.getElementById('barcodePreviewArea');
+    const frame = document.getElementById('barcodeFrame');
+    
+    $(preview).removeClass('d-none');
+    frame.src = url;
+}
+</script>
+{% endblock %}

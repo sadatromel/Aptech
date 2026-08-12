@@ -1,0 +1,81 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Commercial Reports Hub{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h3 mb-1 font-weight-bold text-gray-800">
+                <i class="fas fa-chart-line text-success me-2"></i>Commercial Reports Center
+            </h2>
+            <p class="text-muted small mb-0">Sales Quotation, Export Invoices, Commercial Contracts & Customer Balance Reports</p>
+        </div>
+        <a href="{{ BASE_URL }}/commercial/quotations" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i> Commercial Module
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary text-white rounded-circle p-3 me-3">
+                            <i class="fas fa-file-invoice-dollar fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title h6 mb-1 font-weight-bold">Sales Quotation Summary</h5>
+                            <span class="badge bg-light text-primary">Quotations</span>
+                        </div>
+                    </div>
+                    <p class="card-text small text-muted">Summary of issued quotations, approval status, buyer target prices, and conversion rates.</p>
+                </div>
+                <div class="card-footer bg-transparent border-0 pb-3">
+                    <a href="{{ BASE_URL }}/commercial/quotations" class="btn btn-sm btn-outline-primary w-100">Open Quotations Report</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-success text-white rounded-circle p-3 me-3">
+                            <i class="fas fa-file-contract fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title h6 mb-1 font-weight-bold">Commercial Sales Contracts</h5>
+                            <span class="badge bg-light text-success">Contracts</span>
+                        </div>
+                    </div>
+                    <p class="card-text small text-muted">Active Sales Contracts, Export L/C tracking, amendment history, and fulfillment values.</p>
+                </div>
+                <div class="card-footer bg-transparent border-0 pb-3">
+                    <a href="{{ BASE_URL }}/commercial/sales-contracts" class="btn btn-sm btn-outline-success w-100">Open Contracts Report</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-info text-white rounded-circle p-3 me-3">
+                            <i class="fas fa-file-invoice fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title h6 mb-1 font-weight-bold">Export Invoices & Collections</h5>
+                            <span class="badge bg-light text-info">Invoicing</span>
+                        </div>
+                    </div>
+                    <p class="card-text small text-muted">Commercial Invoice register, payment realization, outstanding dues, and buyer statement reports.</p>
+                </div>
+                <div class="card-footer bg-transparent border-0 pb-3">
+                    <a href="{{ BASE_URL }}/commercial/invoices" class="btn btn-sm btn-outline-info w-100">Open Invoices Report</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS `order_tna` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `po_id` INT(11) NOT NULL,
+  `style_id` INT(11) DEFAULT NULL,
+  `milestone_code` VARCHAR(50) NOT NULL,
+  `milestone_name` VARCHAR(150) NOT NULL,
+  `responsible_person` VARCHAR(100) DEFAULT NULL,
+  `target_date` DATE DEFAULT NULL,
+  `revised_date` DATE DEFAULT NULL,
+  `actual_date` DATE DEFAULT NULL,
+  `status` ENUM('pending', 'in_progress', 'completed', 'delayed') DEFAULT 'pending',
+  `remarks` TEXT DEFAULT NULL,
+  `updated_by` INT(11) DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_tna_po_id` (`po_id`),
+  KEY `idx_tna_style_id` (`style_id`),
+  KEY `idx_tna_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -1,0 +1,92 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Create Production Plan{% endblock %}
+
+{% block content %}
+    <div class="pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Create Production Plan</h1>
+    </div>
+
+    <form action="{{ BASE_URL }}/production/planning/store" method="POST" id="createPlanForm">
+    {{ csrf_field() | raw }}
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Plan Code</label>
+                <input type="text" class="form-control" name="plan_code" placeholder="PLAN-202X-001" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Style</label>
+                <select class="form-select" name="style_id" required>
+                    <option value="">Select Style</option>
+                    {% for style in styles %}
+                    <option value="{{ style.style_id }}">{{ style.style_code }} - {{ style.style_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-md-6">
+                 <label class="form-label">Production Line</label>
+                 <select class="form-select" name="line_id" required>
+                     <option value="">Select Line</option>
+                     {% for line in lines %}
+                     <option value="{{ line.line_id }}">{{ line.line_name }}</option>
+                     {% endfor %}
+                 </select>
+            </div>
+            <div class="col-md-6">
+                 <label class="form-label">Link Order (Optional)</label>
+                 <select class="form-select" name="order_id">
+                     <option value="">Select Order</option>
+                     {% for order in orders %}
+                     <option value="{{ order.id }}">{{ order.order_number }}</option>
+                     {% endfor %}
+                 </select>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label class="form-label">Start Date</label>
+                <input type="date" class="form-control" name="start_date" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">End Date</label>
+                <input type="date" class="form-control" name="end_date" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Target Quantity</label>
+                <input type="number" class="form-control" name="target_quantity" required>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Create Plan</button>
+    </form>
+
+<script>
+document.getElementById('createPlanForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    
+    try {
+        const response = await fetch('{{ BASE_URL }}/production/planning/store', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            window.location.href = '{{ BASE_URL }}/production/planning';
+        } else {
+            alert('Error: ' + (result.message || 'Unknown error'));
+        }
+    } catch(err) {
+        console.error(err);
+        alert('System error occurred');
+    }
+});
+</script>
+{% endblock %}

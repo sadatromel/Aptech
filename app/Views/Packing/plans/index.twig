@@ -1,0 +1,311 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Packing Plans{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Page Header -->
+    <div class="col-12 mb-4">
+        <div class="page-header d-flex justify-content-between align-items-center p-4 bg-white rounded shadow-sm">
+            <div class="page-title">
+                <h1 class="h3 text-primary fw-bold mb-1">Packing Plans</h1>
+                <p class="text-muted mb-0">Manage packing operations and size distribution</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPlanModal">
+                    <i class="fas fa-plus me-2"></i>New Packing Plan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="col-12 mb-4">
+        <div class="stats-grid">
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.total_plans }}</h3>
+                <p class="text-muted mb-0">Total Plans</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.active_plans }}</h3>
+                <p class="text-muted mb-0">Active Plans</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.completed_plans }}</h3>
+                <p class="text-muted mb-0">Completed Plans</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.total_packed|number_format }}</h3>
+                <p class="text-muted mb-0">Total Packed</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plans Table -->
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fas fa-box-open me-2"></i>Packing Plans</span>
+                <input type="text" class="form-control form-control-sm w-auto" id="searchInput" placeholder="Search plans...">
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="plansTable">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="p-3 border-0">Plan Number</th>
+                                <th class="p-3 border-0">Order/Style</th>
+                                <th class="p-3 border-0">Packing Date</th>
+                                <th class="p-3 border-0">Target Quantity</th>
+                                <th class="p-3 border-0">Progress</th>
+                                <th class="p-3 border-0">Sizes</th>
+                                <th class="p-3 border-0">Status</th>
+                                <th class="p-3 border-0">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for plan in plans %}
+                            {% set progress = plan.completion_rate %}
+                            {% set progress_class = progress >= 95 ? 'bg-success' : (progress >= 75 ? 'bg-warning' : 'bg-danger') %}
+                            <tr>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ plan.plan_number }}</div>
+                                    <div class="small text-muted">{{ plan.packing_line }} Line</div>
+                                </td>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ plan.order_number }}</div>
+                                    <div class="small text-muted">{{ plan.style_code }} - {{ plan.style_name }}</div>
+                                </td>
+                                <td class="p-3">{{ plan.packing_date|date('M j, Y') }}</td>
+                                <td class="p-3">
+                                    {{ plan.actual_quantity|number_format }} / {{ plan.target_quantity|number_format }}
+                                    <div class="progress mt-1" style="height: 6px;">
+                                        <div class="progress-bar {{ progress_class }}" role="progressbar" style="width: {{ progress }}%"></div>
+                                    </div>
+                                </td>
+                                <td class="p-3">{{ progress|number_format(1) }}%</td>
+                                <td class="p-3">
+                                    {{ plan.size_count }} sizes
+                                    <div class="small text-muted">{{ plan.supervisor_name }}</div>
+                                </td>
+                                <td class="p-3">
+                                    <span class="badge rounded-pill bg-{{ plan.status == 'completed' ? 'success' : (plan.status == 'in_progress' ? 'info' : (plan.status == 'cancelled' ? 'danger' : 'secondary')) }}">
+                                        {{ plan.status|replace({'_': ' '})|title }}
+                                    </span>
+                                </td>
+                                <td class="p-3">
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-outline-info" onclick="viewPlan({{ plan.plan_id }})">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="updateStatus({{ plan.plan_id }})">
+                                            <i class="fas fa-tasks"></i>
+                                        </button>
+                                        <form action="/packing/plans/{{ plan.plan_id }}/delete" method="POST" onsubmit="return confirm('Delete this plan?')" style="display:inline;">
+    {{ csrf_field() | raw }}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center p-4 text-muted">No packing plans found. Add your first packing plan to get started.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Packing Plan Modal -->
+<div class="modal fade" id="addPlanModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <form action="/packing/plans" method="POST" class="modal-content">
+    {{ csrf_field() | raw }}
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">New Packing Plan</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Plan Number</label>
+                        <input type="text" class="form-control" name="plan_number" value="PP-{{ 'now'|date('Y-m-d') }}-001" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Order *</label>
+                        <select class="form-select" name="order_id" required onchange="updateStyleFromOrder()">
+                            <option value="">Select Order</option>
+                            {% for order in orders %}
+                            <option value="{{ order.order_id }}" data-style="{{ order.style_code }}">{{ order.order_number }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Style</label>
+                        <select class="form-select" name="style_id" required>
+                            <option value="">Select Style</option>
+                            {% for style in styles %}
+                            <option value="{{ style.style_id }}">{{ style.style_code }} - {{ style.style_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Packing Date *</label>
+                        <input type="date" class="form-control" name="packing_date" value="{{ 'now'|date('Y-m-d') }}" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Target Quantity *</label>
+                        <input type="number" class="form-control" name="target_quantity" min="1" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Packing Line</label>
+                        <input type="text" class="form-control" name="packing_line" placeholder="e.g., Line A">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Supervisor</label>
+                        <select class="form-select" name="supervisor_id">
+                            <option value="">Select Supervisor</option>
+                            {% for supervisor in supervisors %}
+                            <option value="{{ supervisor.employee_id }}">{{ supervisor.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                     <h6>Size Breakdown</h6>
+                     <div id="sizesContainer">
+                        <div class="row g-2 mb-2 size-row">
+                            <div class="col-md-4">
+                                <label class="form-label text-muted small">Size Name</label>
+                                <input type="text" class="form-control" name="sizes[0][size_name]" placeholder="e.g., S, M, L" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label text-muted small">Quantity</label>
+                                <input type="number" class="form-control" name="sizes[0][quantity]" min="0" required>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-outline-danger btn-sm mb-1" onclick="this.closest('.size-row').remove()">×</button>
+                            </div>
+                        </div>
+                     </div>
+                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addSize()">+ Add Size</button>
+                </div>
+
+                <div class="mt-3">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-control" name="notes" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Create Plan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Update Status Modal -->
+<div class="modal fade" id="updateStatusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="" method="POST" class="modal-content" id="updateStatusForm">
+    {{ csrf_field() | raw }}
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Update Plan Status</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Status *</label>
+                    <select class="form-select" name="status" id="updateStatusSelect" required>
+                        <option value="planned">Planned</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Actual Quantity</label>
+                    <input type="number" class="form-control" name="actual_quantity" id="updateActualQty" min="0">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Completion Date</label>
+                    <input type="date" class="form-control" name="completion_date" id="updateCompletionDate">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let sizeIndex = 1;
+
+function addSize() {
+    const html = `
+    <div class="row g-2 mb-2 size-row">
+        <div class="col-md-4">
+            <input type="text" class="form-control" name="sizes[${sizeIndex}][size_name]" placeholder="e.g., S, M, L" required>
+        </div>
+        <div class="col-md-4">
+            <input type="number" class="form-control" name="sizes[${sizeIndex}][quantity]" min="0" required>
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.size-row').remove()">×</button>
+        </div>
+    </div>`;
+    document.getElementById('sizesContainer').insertAdjacentHTML('beforeend', html);
+    sizeIndex++;
+}
+
+document.getElementById('searchInput').addEventListener('keyup', function(e) {
+    const term = e.target.value.toLowerCase();
+    document.querySelectorAll('#plansTable tbody tr').forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+    });
+});
+
+function updateStyleFromOrder() {
+    const orderSelect = document.querySelector('select[name="order_id"]');
+    const styleSelect = document.querySelector('select[name="style_id"]');
+    const selectedOption = orderSelect.options[orderSelect.selectedIndex];
+    const styleCode = selectedOption.getAttribute('data-style');
+    
+    for (let option of styleSelect.options) {
+        if (option.text.includes(styleCode)) {
+            styleSelect.value = option.value;
+            break;
+        }
+    }
+}
+
+function updateStatus(id) {
+    fetch(`/packing/plans/${id}/data`)
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('updateStatusForm').action = `/packing/plans/${id}/status`;
+            document.getElementById('updateStatusSelect').value = data.status;
+            document.getElementById('updateActualQty').value = data.actual_quantity;
+            document.getElementById('updateCompletionDate').value = data.completion_date;
+            new bootstrap.Modal(document.getElementById('updateStatusModal')).show();
+        });
+}
+
+function viewPlan(id) {
+    fetch(`/packing/plans/${id}/data`).then(r => r.json()).then(d => {
+        console.log("Viewing Plan", d);
+        alert(`Plan: ${d.plan_number}\nOrder: ${d.order_number}\nStatus: ${d.status}`);
+    });
+}
+</script>
+{% endblock %}

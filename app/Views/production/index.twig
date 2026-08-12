@@ -1,0 +1,1398 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Production Control Center{% endblock %}
+
+{% block content %}
+<!-- Custom Style Block for Premium UI Aesthetics -->
+<style>
+    .glow-card {
+        transition: all 0.3s ease-in-out;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03);
+    }
+    .glow-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(78, 115, 223, 0.15);
+    }
+    .nav-pills .nav-link {
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 600;
+        color: #5a5c69;
+        transition: all 0.3s ease;
+    }
+    .nav-pills .nav-link.active {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: #fff !important;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.35);
+    }
+    .metric-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    .text-gradient {
+        background: linear-gradient(135deg, #4e73df 0%, #36b9cc 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+</style>
+
+<div class="row">
+    <!-- Header -->
+    <div class="col-12 mb-4">
+        <div class="page-header d-flex justify-content-between align-items-center p-4 glow-card">
+            <div>
+                <h1 class="h3 fw-bold text-gradient mb-1">Production Control Center</h1>
+                <p class="text-muted mb-0">Enterprise Resource & Manufacturing Execution (MES) Suite</p>
+            </div>
+            <div class="d-flex gap-2">
+                <span class="badge bg-success p-2 rounded d-flex align-items-center gap-1">
+                    <span class="spinner-grow spinner-grow-sm text-white" role="status"></span>
+                    Live Connected
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Navigation Tabs -->
+    <div class="col-12 mb-4">
+        <ul class="nav nav-pills gap-2 p-2 glow-card justify-content-start" id="productionTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link {% if activeTab == 'dashboard' %}active{% endif %}" href="{{ BASE_URL }}/production/dashboard"><i class="fas fa-chart-pie me-2"></i>Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if activeTab == 'planning' %}active{% endif %}" href="{{ BASE_URL }}/production/planning"><i class="fas fa-calendar-alt"></i> Production Planning</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if activeTab == 'capacity' %}active{% endif %}" href="{{ BASE_URL }}/production/capacity"><i class="fas fa-chart-line"></i> Capacity Planning</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if activeTab == 'line-planning' %}active{% endif %}" href="{{ BASE_URL }}/production/line-planning"><i class="fas fa-tasks"></i> Line Planning</a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link {% if activeTab == 'mrp' %}active{% endif %}" href="{{ BASE_URL }}/production/mrp"><i class="fas fa-cubes"></i> Material Planning (MRP)</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if activeTab == 'wip' %}active{% endif %}" href="{{ BASE_URL }}/production/wip"><i class="fas fa-hourglass-half"></i> WIP Management</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if activeTab == 'monitoring' %}active{% endif %}" href="{{ BASE_URL }}/production/monitoring"><i class="fas fa-desktop"></i> Production Monitoring</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if activeTab == 'reports' %}active{% endif %}" href="{{ BASE_URL }}/production/reports"><i class="fas fa-file-invoice-dollar"></i> Reports</a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Tab Contents -->
+    <div class="col-12">
+        <div class="tab-content" id="productionTabsContent">
+            
+            <!-- 1. DASHBOARD -->
+            <div class="tab-pane fade show active" role="tabpanel">
+                {% if activeTab == 'dashboard' %}
+                <!-- Dashboard Grid -->
+                <div class="row g-4">
+                    <!-- KPI metrics -->
+                    <div class="col-md-3">
+                        <div class="card glow-card p-3 border-0">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h6 class="text-muted fw-bold text-uppercase small">Factory Efficiency</h6>
+                                    <h3 class="fw-bold mb-0">84.2%</h3>
+                                    <span class="text-success small fw-bold"><i class="fas fa-arrow-up"></i> +2.4%</span>
+                                </div>
+                                <div class="metric-icon bg-light-primary text-primary">
+                                    <i class="fas fa-tachometer-alt"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card glow-card p-3 border-0">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h6 class="text-muted fw-bold text-uppercase small">Total Active Lines</h6>
+                                    <h3 class="fw-bold mb-0">12 / 14</h3>
+                                    <span class="text-primary small fw-bold"><i class="fas fa-cog"></i> 2 in Changeover</span>
+                                </div>
+                                <div class="metric-icon bg-light-info text-info">
+                                    <i class="fas fa-stream"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card glow-card p-3 border-0">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h6 class="text-muted fw-bold text-uppercase small">Daily Production</h6>
+                                    <h3 class="fw-bold mb-0">24,580</h3>
+                                    <span class="text-success small fw-bold"><i class="fas fa-check"></i> Target: 25k</span>
+                                </div>
+                                <div class="metric-icon bg-light-success text-success">
+                                    <i class="fas fa-tshirt"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card glow-card p-3 border-0">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h6 class="text-muted fw-bold text-uppercase small">WIP Inventory</h6>
+                                    <h3 class="fw-bold mb-0">89,450 pcs</h3>
+                                    <span class="text-danger small fw-bold"><i class="fas fa-arrow-up"></i> High Bottleneck</span>
+                                </div>
+                                <div class="metric-icon bg-light-warning text-warning">
+                                    <i class="fas fa-hourglass-half"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart section -->
+                    <div class="col-md-8">
+                        <div class="card glow-card border-0 p-4">
+                            <h5 class="fw-bold text-primary mb-3">Daily Target vs Achievement (By Line)</h5>
+                            <canvas id="targetVsAchChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card glow-card border-0 p-4">
+                            <h5 class="fw-bold text-primary mb-3">WIP Distribution</h5>
+                            <canvas id="wipDistributionChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                <script>
+                    document.addEventListener("DOMContentLoaded", function() {
+                        new Chart(document.getElementById('targetVsAchChart'), {
+                            type: 'bar',
+                            data: {
+                                labels: ['Line 1', 'Line 2', 'Line 3', 'Line 4', 'Line 5', 'Line 6', 'Line 7'],
+                                datasets: [
+                                    { label: 'Target', data: [3000, 3000, 3000, 4000, 4000, 2500, 3500], backgroundColor: 'rgba(78, 115, 223, 0.2)', borderColor: '#4e73df', borderWidth: 1 },
+                                    { label: 'Actual', data: [2850, 3100, 2900, 3800, 4200, 2400, 3100], backgroundColor: '#4e73df' }
+                                ]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false }
+                        });
+
+                        new Chart(document.getElementById('wipDistributionChart'), {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['Cutting WIP', 'Sewing Input WIP', 'Sewing Output WIP', 'Finishing WIP'],
+                                datasets: [{
+                                    data: [15000, 34000, 25000, 15450],
+                                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e']
+                                }]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false }
+                        });
+                    });
+                </script>
+                {% endif %}
+
+                <!-- 2. PLANNING & FASTREACT INTERACTIVE GANTT SCHEDULER -->
+                {% if activeTab == 'planning' or activeTab == 'line-planning' %}
+                <!-- Custom CSS for FastReact Drag & Drop Gantt Chart -->
+                <style>
+                    .fastreact-board {
+                        border-radius: 16px;
+                        background: #ffffff;
+                        border: 1px solid #cbd5e1;
+                        background: #ffffff;
+                        user-select: none;
+                    }
+                    .fastreact-table {
+                        border-collapse: collapse;
+                        width: auto;
+                    }
+                    .fastreact-header-cell {
+                        background: #f1f5f9;
+                        border-bottom: 2px solid #cbd5e1;
+                        border-right: 1px solid #cbd5e1;
+                        padding: 8px 0;
+                        width: 45px;
+                        min-width: 45px;
+                        font-size: 11px;
+                        font-weight: 700;
+                        text-align: center;
+                        color: #475569;
+                    }
+                    .fastreact-header-cell.weekend {
+                        background: #e2e8f0;
+                        color: #64748b;
+                    }
+                    .fastreact-line-col {
+                        width: 240px;
+                        min-width: 240px;
+                        position: sticky;
+                        left: 0;
+                        z-index: 15;
+                        background: #f8fafc;
+                        border-right: 2px solid #cbd5e1;
+                        border-bottom: 1px solid #e2e8f0;
+                        padding: 12px 14px;
+                    }
+                    .fastreact-row {
+                        height: 75px;
+                        border-bottom: 1px solid #e2e8f0;
+                    }
+                    .fastreact-row.drop-hover {
+                        background: rgba(78, 115, 223, 0.12) !important;
+                    }
+                    .fastreact-cell {
+                        border-right: 1px solid #e2e8f0;
+                        height: 100%;
+                        transition: background-color 0.15s ease;
+                    }
+                    .fastreact-cell.weekend {
+                        background: #f8fafc;
+                    }
+                    .fastreact-cell.cell-drop-target {
+                        background: rgba(16, 185, 129, 0.25) !important;
+                    }
+                    
+                    /* Draggable Production Order Strip */
+                    .fastreact-strip {
+                        position: absolute;
+                        height: 54px;
+                        top: 10px;
+                        border-radius: 10px;
+                        color: #ffffff;
+                        font-size: 11px;
+                        font-weight: 600;
+                        padding: 6px 10px;
+                        box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+                        cursor: grab;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        z-index: 10;
+                        transition: box-shadow 0.2s ease, transform 0.1s ease;
+                        user-select: none;
+                    }
+                    .fastreact-strip:hover {
+                        box-shadow: 0 8px 22px rgba(0,0,0,0.28);
+                        transform: translateY(-2px);
+                    }
+                    .fastreact-strip.dragging-strip {
+                        opacity: 0.5;
+                        cursor: grabbing;
+                    }
+
+                    /* Strip colours by type/status */
+                    .strip-blue   { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-left: 5px solid #60a5fa; }
+                    .strip-green  { background: linear-gradient(135deg, #10b981 0%, #047857 100%); border-left: 5px solid #34d399; }
+                    .strip-orange { background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%); border-left: 5px solid #fbbf24; }
+                    .strip-purple { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); border-left: 5px solid #a78bfa; }
+                    .strip-teal   { background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%); border-left: 5px solid #2dd4bf; }
+                    .strip-red    { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); border-left: 5px solid #f87171; }
+                    
+                    .fastreact-cell.today-col {
+                        background: rgba(99,102,241,0.08);
+                        border-left: 2px solid #6366f1;
+                    }
+                    .today-line-marker {
+                        position: absolute;
+                        top: 0;
+                        bottom: 0;
+                        width: 2px;
+                        background: #6366f1;
+                        z-index: 20;
+                        pointer-events: none;
+                    }
+                    .today-line-marker::before {
+                        content: 'TODAY';
+                        position: absolute;
+                        top: -18px;
+                        left: -18px;
+                        background: #6366f1;
+                        color: #fff;
+                        font-size: 9px;
+                        font-weight: 700;
+                        padding: 2px 5px;
+                        border-radius: 4px;
+                        white-space: nowrap;
+                    }
+                    .gantt-handle {
+                        position: absolute;
+                        top: 0;
+                        bottom: 0;
+                        width: 14px;
+                        cursor: ew-resize;
+                        background: rgba(255,255,255,0.4);
+                        opacity: 0;
+                        transition: opacity 0.2s ease;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        z-index: 12;
+                    }
+                    .fastreact-strip:hover .gantt-handle { opacity: 1; }
+                    .gantt-handle-left { left: 0; border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
+                    .gantt-handle-right { right: 0; border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
+                    .gantt-handle::after {
+                        content: "⋮";
+                        color: #ffffff;
+                        font-size: 13px;
+                        font-weight: bold;
+                    }
+
+                    /* Unallocated Orders Tray */
+                    .unallocated-tray {
+                        background: #f8fafc;
+                        border: 1px dashed #cbd5e1;
+                        border-radius: 12px;
+                        padding: 14px;
+                    }
+                </style>
+
+                <!-- FastReact Interactive Board Card -->
+                <div class="fastreact-board mb-4">
+                    <!-- Board Toolbar Header -->
+                    <div class="fastreact-toolbar d-flex justify-content-between align-items-center flex-wrap gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div>
+                                <h4 class="fw-bold mb-0 text-white"><i class="fas fa-project-diagram text-info me-2"></i>FastReact MES Scheduler</h4>
+                                <small class="text-white-50">Interactive Production Line &amp; Order Gantt Drag/Trim Board</small>
+                            </div>
+                            <!-- Dynamic Month/Year badge with Prev/Next navigation -->
+                            <div class="d-flex align-items-center gap-1">
+                                <a href="?tab=line-planning&month={{ ganttPrevMonth }}&year={{ ganttPrevYear }}"
+                                   class="btn btn-sm btn-outline-light rounded-circle" title="Previous Month">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                                <div class="badge bg-primary px-3 py-2 rounded-pill fs-6">
+                                    <i class="fas fa-calendar-alt me-1"></i>
+                                    <span id="currentMonthYear">{{ ganttMonthName }} {{ ganttYear }}</span>
+                                </div>
+                                <a href="?tab=line-planning&month={{ ganttNextMonth }}&year={{ ganttNextYear }}"
+                                   class="btn btn-sm btn-outline-light rounded-circle" title="Next Month">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <button id="saveGanttBtn" class="btn btn-success btn-sm rounded-pill px-3 shadow-sm" onclick="saveFastReactGantt()">
+                                <i class="fas fa-save me-1"></i> Save Schedule
+                            </button>
+                            <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#createPlanModal">
+                                <i class="fas fa-plus me-1"></i> Add Order Strip
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Unallocated Orders Pool Tray -->
+                    <div class="p-3 bg-light border-bottom">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold text-dark small text-uppercase">
+                                <i class="fas fa-boxes text-warning me-1"></i>Unallocated Orders Bank (Drag Order Tile onto Sewing Line)
+                            </span>
+                            <span class="badge bg-secondary rounded-pill" id="unallocatedCount">
+                                {% set pending = unallocatedOrders|length %}
+                                {{ pending }} Order{{ pending != 1 ? 's' : '' }} Pending
+                            </span>
+                        </div>
+                        <div class="d-flex gap-2 overflow-auto py-1" id="unallocatedTray">
+                            {% set stripColors = ['strip-orange', 'strip-purple', 'strip-blue', 'strip-green', 'strip-teal'] %}
+                            {% for order in unallocatedOrders %}
+                            {% set colorClass = stripColors[loop.index0 % stripColors|length] %}
+                            <div class="fastreact-strip {{ colorClass }} position-relative"
+                                 id="unallocated-tile-{{ order.po_id }}"
+                                 style="width: 220px; position: static; cursor: grab;"
+                                 draggable="true"
+                                 data-po-id="{{ order.po_id }}"
+                                 data-po="{{ order.po_number }}"
+                                 data-style="{{ order.style_name|default('N/A') }}"
+                                 data-qty="{{ order.quantity }}"
+                                 data-buyer="{{ order.buyer_name|default('N/A') }}">
+                                <div>
+                                    <div class="fw-bold text-truncate" style="max-width: 150px;">{{ order.po_number }} • {{ order.style_name|default('Style')|slice(0,12) }}</div>
+                                    <small class="opacity-90">{{ order.buyer_name|default('N/A') }} • {{ order.quantity|number_format }} Pcs</small>
+                                </div>
+                                <span class="badge bg-dark ms-2">Unscheduled</span>
+                            </div>
+                            {% else %}
+                            <span class="text-muted small py-1 no-pending-msg"><i class="fas fa-check-circle text-success me-1"></i>All orders allocated to sewing lines!</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Timeline Grid Container -->
+                    {% set ganttColWidth = 45 %}
+                    {% set ganttTotalWidth = ganttDaysInMonth * ganttColWidth %}
+                    <div class="fastreact-grid-container" id="ganttScrollContainer">
+                        <table class="fastreact-table">
+                            <thead>
+                                <tr>
+                                    <th class="fastreact-line-col">
+                                        <span class="text-uppercase text-muted fw-bold small">Sewing Line</span>
+                                    </th>
+                                    <th colspan="{{ ganttDaysInMonth }}" class="p-0 border-0">
+                                        <div class="d-flex" style="width: {{ ganttTotalWidth }}px;">
+                                            {% for d in 1..ganttDaysInMonth %}
+                                            <div class="fastreact-header-cell {% if d in ganttWeekendDays %}weekend{% endif %} {% if d == todayMarkerDay %}today-col{% endif %}" style="width: {{ ganttColWidth }}px; min-width: {{ ganttColWidth }}px;">
+                                                <div>{{ ganttMonthName|slice(0,3) }}</div>
+                                                <div class="fs-6 text-dark fw-bold">{{ d }}</div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for line in lines %}
+                                <tr class="fastreact-row" data-line-id="{{ line.production_line_id }}">
+                                    <!-- Sticky Left Line Name Column -->
+                                    <td class="fastreact-line-col">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div>
+                                                <h6 class="fw-bold text-dark mb-0">{{ line.line_name }}</h6>
+                                                <small class="text-muted">{{ line.line_type|default('Sewing') }} &bull; Cap: {{ line.capacity_per_day|default(800)|number_format }}/day</small>
+                                            </div>
+                                            {% set lineLoading = 0 %}
+                                            {% for plan in plans %}
+                                                {% if plan.line_id == line.production_line_id %}
+                                                    {% set lineLoading = lineLoading + plan.quantity %}
+                                                {% endif %}
+                                            {% endfor %}
+                                            {% set loadPct = line.capacity_per_day > 0 ? ((lineLoading / (line.capacity_per_day * ganttDaysInMonth)) * 100)|round : 0 %}
+                                            <div class="text-end">
+                                                <span class="badge {% if loadPct > 90 %}bg-danger{% elseif loadPct > 70 %}bg-warning text-dark{% else %}bg-success{% endif %} px-2 py-1">
+                                                    {{ loadPct }}%
+                                                </span>
+                                                <div class="small text-muted" style="font-size:10px;">loaded</div>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <!-- Dynamic Day Timeline Cells -->
+                                    <td colspan="{{ ganttDaysInMonth }}" class="p-0 border-0 position-relative">
+                                        <div class="fastreact-line-timeline position-relative" style="height: 75px; width: {{ ganttTotalWidth }}px;">
+                                            <!-- Grid Cells Background -->
+                                            <div class="d-flex h-100">
+                                                {% for d in 1..ganttDaysInMonth %}
+                                                <div class="fastreact-cell {% if d in ganttWeekendDays %}weekend{% endif %} {% if d == todayMarkerDay %}today-col{% endif %}"
+                                                     data-day="{{ d }}"
+                                                     data-line-id="{{ line.production_line_id }}"
+                                                     style="width: {{ ganttColWidth }}px; min-width: {{ ganttColWidth }}px; height: 100%;"></div>
+                                                {% endfor %}
+                                            </div>
+
+                                            {# Today vertical line marker #}
+                                            {% if todayMarkerDay %}
+                                            <div class="today-line-marker" style="left: {{ (todayMarkerDay - 1) * ganttColWidth + (ganttColWidth / 2) }}px;"></div>
+                                            {% endif %}
+
+                                            <!-- Render Production Plan Strips for this line -->
+                                            {% for plan in plans %}
+                                                {% if plan.line_id == line.production_line_id %}
+                                                {% set startDay = plan.start_date ? plan.start_date|date('j') : 1 %}
+                                                {% set endDay   = plan.end_date   ? plan.end_date|date('j')   : (startDay + 6) %}
+                                                {% if endDay <= startDay %}{% set endDay = startDay + 5 %}{% endif %}
+                                                {% if endDay > ganttDaysInMonth %}{% set endDay = ganttDaysInMonth %}{% endif %}
+                                                {% set duration   = endDay - startDay + 1 %}
+                                                {% set leftPos    = (startDay - 1) * ganttColWidth %}
+                                                {% set stripWidth = duration * ganttColWidth %}
+                                                {# Color by status #}
+                                                {% if plan.status == 'in_progress' %}
+                                                    {% set colorClass = 'strip-green' %}
+                                                {% elseif plan.status == 'completed' %}
+                                                    {% set colorClass = 'strip-teal' %}
+                                                {% else %}
+                                                    {% set colorClass = ['strip-blue','strip-purple','strip-orange','strip-teal'][loop.index0 % 4] %}
+                                                {% endif %}
+
+                                                <div class="fastreact-strip {{ colorClass }}"
+                                                     id="strip-{{ plan.id }}"
+                                                     draggable="true"
+                                                     data-plan-id="{{ plan.id }}"
+                                                     data-line-id="{{ plan.line_id }}"
+                                                     data-po-id="{{ plan.po_id }}"
+                                                     data-start-day="{{ startDay }}"
+                                                     data-end-day="{{ endDay }}"
+                                                     data-qty="{{ plan.quantity|round }}"
+                                                     data-po="{{ plan.order_number }}"
+                                                     data-style="{{ plan.style_name }}"
+                                                     data-buyer="{{ plan.buyer_name }}"
+                                                     data-status="{{ plan.status }}"
+                                                     style="left: {{ leftPos }}px; width: {{ stripWidth }}px;"
+                                                     title="{{ plan.order_number }} | {{ plan.buyer_name }} | {{ plan.style_name }} | Qty: {{ plan.quantity|number_format }} Pcs">
+
+                                                    <!-- Left Trim Handle -->
+                                                    <div class="gantt-handle gantt-handle-left" onmousedown="initGanttTrim(event, '{{ plan.id }}', 'left')"></div>
+
+                                                    <div class="text-truncate px-2">
+                                                        <div class="fw-bold strip-title">{{ plan.order_number }} &bull; {{ plan.style_name|default('Style') }}</div>
+                                                        <small class="opacity-90 strip-sub text-truncate">{{ plan.buyer_name|default('Buyer') }} &bull; {{ plan.quantity|number_format }} Pcs (<span class="strip-rate">{{ (plan.quantity / (duration > 0 ? duration : 1))|round|number_format }}</span> pcs/day)</small>
+                                                    </div>
+
+                                                    <span class="badge bg-light text-dark shadow-sm d-none d-lg-inline-block me-2 strip-days-badge">{{ duration }} Days</span>
+
+                                                    <!-- Right Trim Handle -->
+                                                    <div class="gantt-handle gantt-handle-right" onmousedown="initGanttTrim(event, '{{ plan.id }}', 'right')"></div>
+                                                </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="{{ ganttDaysInMonth + 1 }}" class="text-center text-muted py-4">
+                                        <i class="fas fa-exclamation-circle me-2"></i>No active sewing lines configured.
+                                        <a href="{{ BASE_URL }}/settings/lines" class="ms-2">Add Lines &rarr;</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- FastReact HTML5 Drag-and-Drop & Edge Trim JS Engine -->
+                <script>
+                let draggedStripData = null;
+                let draggedStripElem = null;
+                let activeTrimStrip = null;
+                let activeTrimMode = null;
+                let trimStartX = 0;
+                let trimInitialLeft = 0;
+                let trimInitialWidth = 0;
+
+                document.addEventListener("DOMContentLoaded", function() {
+                    initFastReactBoard();
+                    updateUnallocatedCount();
+                });
+
+                function updateUnallocatedCount() {
+                    const tray = document.getElementById('unallocatedTray');
+                    const badge = document.getElementById('unallocatedCount');
+                    if (!tray || !badge) return;
+                    const remaining = tray.querySelectorAll('.fastreact-strip').length;
+                    if (remaining > 0) {
+                        badge.innerText = `${remaining} Order${remaining > 1 ? 's' : ''} Pending`;
+                        badge.className = "badge bg-secondary rounded-pill";
+                    } else {
+                        badge.innerText = `0 Orders Pending`;
+                        badge.className = "badge bg-success rounded-pill";
+                        if (!tray.querySelector('.no-pending-msg')) {
+                            tray.innerHTML = '<span class="text-muted small py-1 no-pending-msg"><i class="fas fa-check-circle text-success me-1"></i>All orders allocated to sewing lines!</span>';
+                        }
+                    }
+                }
+
+                function initFastReactBoard() {
+                    // 1. Setup HTML5 Drag and Drop for Strips
+                    const strips = document.querySelectorAll(".fastreact-strip");
+                    const cells = document.querySelectorAll(".fastreact-cell");
+
+                    strips.forEach(strip => {
+                        strip.addEventListener("dragstart", function(e) {
+                            if (!strip.id) {
+                                strip.id = 'unallocated-' + Math.random().toString(36).substr(2, 9);
+                            }
+                            draggedStripElem = strip;
+                            draggedStripData = {
+                                elementId: strip.id,
+                                planId: strip.dataset.planId || null,
+                                poId: strip.dataset.poId || null,
+                                po: strip.dataset.po || 'PO-NEW',
+                                style: strip.dataset.style || 'Style',
+                                buyer: strip.dataset.buyer || 'Buyer',
+                                qty: parseInt(strip.dataset.qty) || 3000,
+                                duration: (parseInt(strip.dataset.endDay) - parseInt(strip.dataset.startDay) + 1) || 5,
+                                originLineId: strip.dataset.lineId
+                            };
+                            strip.classList.add("dragging-strip");
+                            e.dataTransfer.setData("text/plain", strip.id);
+                        });
+
+                        strip.addEventListener("dragend", function() {
+                            strip.classList.remove("dragging-strip");
+                            draggedStripData = null;
+                            draggedStripElem = null;
+                        });
+
+                        // Double Click to Edit Strip
+                        strip.addEventListener("dblclick", function(e) {
+                            e.stopPropagation();
+                            openEditStripModal(strip);
+                        });
+                    });
+
+                    // 2. Setup Drop Targets on Day Cells
+                    cells.forEach(cell => {
+                        cell.addEventListener("dragover", function(e) {
+                            e.preventDefault();
+                            cell.classList.add("cell-drop-target");
+                        });
+
+                        cell.addEventListener("dragleave", function() {
+                            cell.classList.remove("cell-drop-target");
+                        });
+
+                        cell.addEventListener("drop", function(e) {
+                            e.preventDefault();
+                            cell.classList.remove("cell-drop-target");
+                            if (!draggedStripData) return;
+
+                            const targetLineId = cell.dataset.lineId;
+                            const targetStartDay = parseInt(cell.dataset.day);
+                            const duration = draggedStripData.duration || 5;
+                            const targetEndDay = targetStartDay + duration - 1;
+                            const newLeft = (targetStartDay - 1) * 45;
+                            const newWidth = duration * 45;
+
+                            let stripElem = draggedStripElem || (draggedStripData.elementId ? document.getElementById(draggedStripData.elementId) : null);
+                            
+                            // If coming from Unallocated Tray or missing planId, create timeline strip and remove tile from Unallocated Tray
+                            if (!stripElem || !stripElem.dataset.planId || stripElem.closest('#unallocatedTray')) {
+                                const newPlanId = 'temp-' + Date.now();
+                                const container = cell.closest('.fastreact-line-timeline');
+                                const poIdAttr = draggedStripData.poId ? `data-po-id="${draggedStripData.poId}"` : '';
+                                const html = `
+                                    <div class="fastreact-strip strip-orange" id="strip-${newPlanId}" draggable="true"
+                                         data-plan-id="${newPlanId}" data-line-id="${targetLineId}"
+                                         data-start-day="${targetStartDay}" data-end-day="${targetEndDay}"
+                                         data-qty="${draggedStripData.qty}" data-po="${draggedStripData.po}"
+                                         data-style="${draggedStripData.style}" data-buyer="${draggedStripData.buyer}"
+                                         ${poIdAttr}
+                                         style="left: ${newLeft}px; width: ${newWidth}px;">
+                                        <div class="gantt-handle gantt-handle-left" onmousedown="initGanttTrim(event, '${newPlanId}', 'left')"></div>
+                                        <div class="text-truncate px-2">
+                                            <div class="fw-bold strip-title">${draggedStripData.po} • ${draggedStripData.style}</div>
+                                            <small class="opacity-90 strip-sub">${draggedStripData.buyer} • ${draggedStripData.qty.toLocaleString()} Pcs (<span class="strip-rate">${Math.round(draggedStripData.qty / duration).toLocaleString()}</span> pcs/day)</small>
+                                        </div>
+                                        <span class="badge bg-light text-dark shadow-sm strip-days-badge">${duration} Days</span>
+                                        <div class="gantt-handle gantt-handle-right" onmousedown="initGanttTrim(event, '${newPlanId}', 'right')"></div>
+                                    </div>`;
+                                container.insertAdjacentHTML('beforeend', html);
+                                const createdStrip = document.getElementById('strip-' + newPlanId);
+                                attachSingleStripDrag(createdStrip);
+
+                                createdStrip.addEventListener("dblclick", function(evt) {
+                                    evt.stopPropagation();
+                                    openEditStripModal(createdStrip);
+                                });
+
+                                // Remove tile from unallocated tray
+                                if (stripElem && stripElem.closest('#unallocatedTray')) {
+                                    stripElem.remove();
+                                } else if (draggedStripData.elementId) {
+                                    const el = document.getElementById(draggedStripData.elementId);
+                                    if (el && el.closest('#unallocatedTray')) el.remove();
+                                }
+                                updateUnallocatedCount();
+                            } else {
+                                // Move existing strip on timeline
+                                const targetContainer = cell.closest('.fastreact-line-timeline');
+                                targetContainer.appendChild(stripElem);
+                                stripElem.style.left = newLeft + 'px';
+                                stripElem.dataset.lineId = targetLineId;
+                                stripElem.dataset.startDay = targetStartDay;
+                                stripElem.dataset.endDay = targetEndDay;
+                            }
+                        });
+                    });
+                }
+
+                function attachSingleStripDrag(strip) {
+                    strip.addEventListener("dragstart", function(e) {
+                        draggedStripElem = strip;
+                        draggedStripData = {
+                            elementId:    strip.id,
+                            planId:       strip.dataset.planId  || null,
+                            poId:         strip.dataset.poId    || null,
+                            po:           strip.dataset.po      || 'PO-NEW',
+                            style:        strip.dataset.style   || 'Style',
+                            buyer:        strip.dataset.buyer   || 'Buyer',
+                            qty:          parseInt(strip.dataset.qty) || 3000,
+                            duration:     (parseInt(strip.dataset.endDay) - parseInt(strip.dataset.startDay) + 1) || 5,
+                            originLineId: strip.dataset.lineId
+                        };
+                        strip.classList.add("dragging-strip");
+                        e.dataTransfer.setData("text/plain", strip.id);
+                    });
+                    strip.addEventListener("dragend", function() {
+                        strip.classList.remove("dragging-strip");
+                        draggedStripData = null;
+                        draggedStripElem = null;
+                    });
+                }
+
+                // 3. Edge Trimming Engine
+                function initGanttTrim(e, planId, mode) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    activeTrimStrip = document.getElementById('strip-' + planId);
+                    if (!activeTrimStrip) return;
+
+                    activeTrimMode = mode;
+                    trimStartX = e.clientX;
+                    trimInitialLeft = parseInt(activeTrimStrip.style.left) || 0;
+                    trimInitialWidth = parseInt(activeTrimStrip.style.width) || 180;
+
+                    document.addEventListener('mousemove', handleGanttTrimMove);
+                    document.addEventListener('mouseup', stopGanttTrim);
+                }
+
+                function handleGanttTrimMove(e) {
+                    if (!activeTrimStrip || !activeTrimMode) return;
+                    const deltaX = e.clientX - trimStartX;
+                    const colWidth = 45;
+
+                    if (activeTrimMode === 'right') {
+                        let newWidth = trimInitialWidth + deltaX;
+                        if (newWidth < colWidth) newWidth = colWidth;
+                        activeTrimStrip.style.width = newWidth + 'px';
+                        
+                        const durationDays = Math.max(1, Math.round(newWidth / colWidth));
+                        const startDay = parseInt(activeTrimStrip.dataset.startDay) || 1;
+                        activeTrimStrip.dataset.endDay = startDay + durationDays - 1;
+
+                        updateStripBadgeText(activeTrimStrip, durationDays);
+                    } else if (activeTrimMode === 'left') {
+                        let newLeft = trimInitialLeft + deltaX;
+                        let newWidth = trimInitialWidth - deltaX;
+                        if (newWidth < colWidth) {
+                            newWidth = colWidth;
+                            newLeft = trimInitialLeft + trimInitialWidth - colWidth;
+                        }
+                        if (newLeft < 0) newLeft = 0;
+
+                        activeTrimStrip.style.left = newLeft + 'px';
+                        activeTrimStrip.style.width = newWidth + 'px';
+
+                        const durationDays = Math.max(1, Math.round(newWidth / colWidth));
+                        const startDay = Math.round(newLeft / colWidth) + 1;
+                        activeTrimStrip.dataset.startDay = startDay;
+                        activeTrimStrip.dataset.endDay = startDay + durationDays - 1;
+
+                        updateStripBadgeText(activeTrimStrip, durationDays);
+                    }
+                }
+
+                function stopGanttTrim() {
+                    if (!activeTrimStrip) return;
+                    const colWidth = 45;
+                    const snappedWidth = Math.max(1, Math.round(parseInt(activeTrimStrip.style.width) / colWidth)) * colWidth;
+                    const snappedLeft = Math.round(parseInt(activeTrimStrip.style.left) / colWidth) * colWidth;
+
+                    activeTrimStrip.style.width = snappedWidth + 'px';
+                    activeTrimStrip.style.left = snappedLeft + 'px';
+
+                    document.removeEventListener('mousemove', handleGanttTrimMove);
+                    document.removeEventListener('mouseup', stopGanttTrim);
+                    activeTrimStrip = null;
+                    activeTrimMode = null;
+                }
+
+                function updateStripBadgeText(strip, durationDays) {
+                    const qty = parseInt(strip.dataset.qty) || 3000;
+                    const rate = Math.round(qty / (durationDays > 0 ? durationDays : 1));
+                    const daysBadge = strip.querySelector('.strip-days-badge');
+                    const rateSpan = strip.querySelector('.strip-rate');
+                    if (daysBadge) daysBadge.innerText = durationDays + ' Days';
+                    if (rateSpan) rateSpan.innerText = rate.toLocaleString();
+                }
+
+                function saveFastReactGantt() {
+                    const saveBtn = document.getElementById("saveGanttBtn");
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving Schedule...';
+
+                    const strips = document.querySelectorAll(".fastreact-strip[data-plan-id]");
+                    const payloadPlans = [];
+
+                    strips.forEach(s => {
+                        const planId   = s.dataset.planId;
+                        const lineId   = s.dataset.lineId;
+                        const startDay = parseInt(s.dataset.startDay) || 1;
+                        const endDay   = parseInt(s.dataset.endDay)   || 7;
+
+                        // Dynamic year/month injected from server
+                        const ganttYear  = {{ ganttYear }};
+                        const ganttMonth = String({{ ganttMonth }}).padStart(2, '0');
+                        const startDateStr = `${ganttYear}-${ganttMonth}-${String(startDay).padStart(2,'0')}`;
+                        const endDateStr   = `${ganttYear}-${ganttMonth}-${String(endDay).padStart(2,'0')}`;
+
+                        payloadPlans.push({
+                            id:         planId,
+                            line_id:    lineId,
+                            start_date: startDateStr,
+                            end_date:   endDateStr,
+                            quantity:   parseInt(s.dataset.qty) || 3000,
+                            po_id:      s.dataset.poId   || null,
+                            po:         s.dataset.po     || '',
+                            style:      s.dataset.style  || '',
+                            buyer:      s.dataset.buyer  || ''
+                        });
+                    });
+
+                    let postUrl = window.location.href;
+                    if (postUrl.indexOf('action=') === -1) {
+                        postUrl += (postUrl.indexOf('?') === -1 ? '?' : '&') + 'action=save_gantt_plan';
+                    }
+
+                    fetch(postUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            action: 'save_gantt_plan',
+                            plans: payloadPlans
+                        })
+                    })
+                    .then(res => {
+                        if (!res.ok) throw new Error("HTTP " + res.status);
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (data && data.success) {
+                            saveBtn.disabled = false;
+                            saveBtn.className = "btn btn-success btn-sm rounded-pill px-3 shadow-sm";
+                            saveBtn.innerHTML = '<i class="fas fa-check-circle me-1"></i> Schedule Saved!';
+                            setTimeout(() => { location.reload(); }, 800);
+                        } else {
+                            alert("Failed to save: " + (data ? data.message : "Unknown error"));
+                            saveBtn.disabled = false;
+                            saveBtn.className = "btn btn-success btn-sm rounded-pill px-3 shadow-sm";
+                            saveBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save Schedule';
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Save error:", err);
+                        alert("Error saving schedule. Please check server logs.");
+                        saveBtn.disabled = false;
+                        saveBtn.className = "btn btn-success btn-sm rounded-pill px-3 shadow-sm";
+                        saveBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save Schedule';
+                    });
+                }
+                let currentEditingStripElem = null;
+
+                function openEditStripModal(strip) {
+                    currentEditingStripElem = strip;
+                    document.getElementById('edit_strip_po').value = strip.dataset.po || 'PO-100234';
+                    document.getElementById('edit_strip_style').value = strip.dataset.style || 'Style';
+                    document.getElementById('edit_strip_buyer').value = strip.dataset.buyer || 'Buyer';
+                    document.getElementById('edit_strip_qty').value = strip.dataset.qty || '3000';
+                    document.getElementById('edit_strip_start').value = strip.dataset.startDay || '1';
+                    
+                    const duration = parseInt(strip.dataset.endDay) - parseInt(strip.dataset.startDay) + 1;
+                    document.getElementById('edit_strip_duration').value = duration > 0 ? duration : 5;
+                    
+                    if (document.getElementById('edit_strip_line')) {
+                        document.getElementById('edit_strip_line').value = strip.dataset.lineId || '';
+                    }
+
+                    const editModal = new bootstrap.Modal(document.getElementById('editStripModal'));
+                    editModal.show();
+                }
+
+                function saveEditedStrip() {
+                    if (!currentEditingStripElem) return;
+
+                    const po = document.getElementById('edit_strip_po').value;
+                    const style = document.getElementById('edit_strip_style').value;
+                    const buyer = document.getElementById('edit_strip_buyer').value;
+                    const qty = parseInt(document.getElementById('edit_strip_qty').value) || 3000;
+                    const startDay = parseInt(document.getElementById('edit_strip_start').value) || 1;
+                    const duration = parseInt(document.getElementById('edit_strip_duration').value) || 5;
+                    const endDay = startDay + duration - 1;
+                    const lineId = document.getElementById('edit_strip_line').value;
+
+                    currentEditingStripElem.dataset.po = po;
+                    currentEditingStripElem.dataset.style = style;
+                    currentEditingStripElem.dataset.buyer = buyer;
+                    currentEditingStripElem.dataset.qty = qty;
+                    currentEditingStripElem.dataset.startDay = startDay;
+                    currentEditingStripElem.dataset.endDay = endDay;
+
+                    // Reposition strip
+                    const newLeft = (startDay - 1) * 45;
+                    const newWidth = duration * 45;
+                    currentEditingStripElem.style.left = newLeft + 'px';
+                    currentEditingStripElem.style.width = newWidth + 'px';
+
+                    // Move to new line timeline if line changed
+                    if (lineId && lineId !== currentEditingStripElem.dataset.lineId) {
+                        const targetRow = document.querySelector(`.fastreact-row[data-line-id="${lineId}"]`);
+                        if (targetRow) {
+                            const targetContainer = targetRow.querySelector('.fastreact-line-timeline');
+                            if (targetContainer) {
+                                targetContainer.appendChild(currentEditingStripElem);
+                                currentEditingStripElem.dataset.lineId = lineId;
+                            }
+                        }
+                    }
+
+                    updateStripBadgeText(currentEditingStripElem, duration);
+
+                    const titleElem = currentEditingStripElem.querySelector('.strip-title');
+                    const subElem = currentEditingStripElem.querySelector('.strip-sub');
+                    if (titleElem) titleElem.innerText = `${po} • ${style}`;
+                    if (subElem) subElem.innerHTML = `${buyer} • ${qty.toLocaleString()} Pcs (<span class="strip-rate">${Math.round(qty/duration).toLocaleString()}</span> pcs/day)`;
+
+                    const bsModal = bootstrap.Modal.getInstance(document.getElementById('editStripModal'));
+                    if (bsModal) bsModal.hide();
+                }
+
+                function removeCurrentStrip() {
+                    if (!currentEditingStripElem) return;
+                    const stripToRemove = currentEditingStripElem;
+                    const planId = stripToRemove.dataset.planId;
+
+                    // Close modal first
+                    const bsModal = bootstrap.Modal.getInstance(document.getElementById('editStripModal'));
+                    if (bsModal) bsModal.hide();
+
+                    // If it's a real DB plan (numeric id), soft-delete via API
+                    if (planId && /^\d+$/.test(planId)) {
+                        let postUrl = window.location.href;
+                        if (postUrl.indexOf('action=') === -1) {
+                            postUrl += (postUrl.indexOf('?') === -1 ? '?' : '&') + 'action=delete_plan';
+                        }
+                        fetch(postUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                            body: JSON.stringify({ action: 'delete_plan', plan_id: parseInt(planId) })
+                        }).then(r => r.json()).then(data => {
+                            if (data && data.success) {
+                                stripToRemove.remove();
+                                currentEditingStripElem = null;
+                                // Re-add the PO tile back to unallocated tray if po_id present
+                                updateUnallocatedCount();
+                            } else {
+                                alert('Failed to remove strip: ' + (data ? data.message : 'Unknown error'));
+                            }
+                        }).catch(() => {
+                            // Remove from DOM anyway on network error
+                            stripToRemove.remove();
+                            currentEditingStripElem = null;
+                        });
+                    } else {
+                        // Temp strip (not yet saved) — just remove from DOM
+                        stripToRemove.remove();
+                        currentEditingStripElem = null;
+                        updateUnallocatedCount();
+                    }
+                }
+
+                function splitCurrentStrip() {
+                    if (!currentEditingStripElem) return;
+                    const currentQty = parseInt(currentEditingStripElem.dataset.qty) || 3000;
+                    const currentStart = parseInt(currentEditingStripElem.dataset.startDay) || 1;
+                    const currentEnd = parseInt(currentEditingStripElem.dataset.endDay) || 7;
+                    const duration = Math.max(1, currentEnd - currentStart + 1);
+
+                    const splitQtyInput = prompt(`Split Order Strip\n\nEnter quantity for the 1st part (Total Order Qty: ${currentQty.toLocaleString()} pcs):`, Math.round(currentQty / 2));
+                    if (!splitQtyInput) return;
+
+                    const splitQty = parseInt(splitQtyInput);
+                    if (isNaN(splitQty) || splitQty <= 0 || splitQty >= currentQty) {
+                        alert("Please enter a valid split quantity that is greater than 0 and less than the total quantity (" + currentQty + ").");
+                        return;
+                    }
+
+                    const remQty = currentQty - splitQty;
+                    const halfDuration = Math.max(1, Math.floor(duration / 2));
+                    const newEnd1 = currentStart + halfDuration - 1;
+                    const newStart2 = newEnd1 + 1;
+                    const duration2 = Math.max(1, duration - halfDuration);
+                    const endDay2 = newStart2 + duration2 - 1;
+
+                    const po = currentEditingStripElem.dataset.po || 'PO';
+                    const style = currentEditingStripElem.dataset.style || 'Style';
+                    const buyer = currentEditingStripElem.dataset.buyer || 'Buyer';
+
+                    // 1. Update original strip (Part A)
+                    currentEditingStripElem.dataset.qty = splitQty;
+                    currentEditingStripElem.dataset.endDay = newEnd1;
+                    const colWidth = 45;
+                    const newWidth1 = halfDuration * colWidth;
+                    currentEditingStripElem.style.width = newWidth1 + 'px';
+                    updateStripBadgeText(currentEditingStripElem, halfDuration);
+
+                    const titleElem = currentEditingStripElem.querySelector('.strip-title');
+                    const subElem = currentEditingStripElem.querySelector('.strip-sub');
+                    if (titleElem) titleElem.innerText = `${po} (A) • ${style}`;
+                    if (subElem) subElem.innerHTML = `${buyer} • ${splitQty.toLocaleString()} Pcs (<span class="strip-rate">${Math.round(splitQty/halfDuration).toLocaleString()}</span> pcs/day)`;
+
+                    // 2. Create second strip (Part B)
+                    const newPlanId = 'split-' + Date.now();
+                    const lineId = currentEditingStripElem.dataset.lineId;
+                    const left2 = (newStart2 - 1) * colWidth;
+                    const width2 = duration2 * colWidth;
+
+                    const container = currentEditingStripElem.closest('.fastreact-line-timeline');
+                    const html = `
+                        <div class="fastreact-strip strip-purple" id="strip-${newPlanId}" draggable="true"
+                             data-plan-id="${newPlanId}" data-line-id="${lineId}"
+                             data-start-day="${newStart2}" data-end-day="${endDay2}"
+                             data-qty="${remQty}" data-po="${po} (B)"
+                             data-style="${style}" data-buyer="${buyer}"
+                             style="left: ${left2}px; width: ${width2}px;"
+                             title="PO: ${po} (B) | Buyer: ${buyer} | Style: ${style} | Qty: ${remQty.toLocaleString()} Pcs">
+                            <div class="gantt-handle gantt-handle-left" onmousedown="initGanttTrim(event, '${newPlanId}', 'left')"></div>
+                            <div class="text-truncate px-2">
+                                <div class="fw-bold strip-title">${po} (B) • ${style}</div>
+                                <small class="opacity-90 strip-sub">${buyer} • ${remQty.toLocaleString()} Pcs (<span class="strip-rate">${Math.round(remQty/duration2).toLocaleString()}</span> pcs/day)</small>
+                            </div>
+                            <span class="badge bg-light text-dark shadow-sm strip-days-badge">${duration2} Days</span>
+                            <div class="gantt-handle gantt-handle-right" onmousedown="initGanttTrim(event, '${newPlanId}', 'right')"></div>
+                        </div>`;
+                    container.insertAdjacentHTML('beforeend', html);
+                    const createdStrip = document.getElementById('strip-' + newPlanId);
+                    attachSingleStripDrag(createdStrip);
+                    createdStrip.addEventListener("dblclick", function(e) {
+                        e.stopPropagation();
+                        openEditStripModal(createdStrip);
+                    });
+
+                    const bsModal = bootstrap.Modal.getInstance(document.getElementById('editStripModal'));
+                    if (bsModal) bsModal.hide();
+                }
+                </script>
+
+                <!-- Create Plan Modal -->
+                <div class="modal fade" id="createPlanModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <form method="POST" action="{{ BASE_URL }}/production/line-planning?month={{ ganttMonth }}&year={{ ganttYear }}" class="modal-content">
+                            {{ csrf_field() | raw }}
+                            <input type="hidden" name="action" value="create_plan">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title"><i class="fas fa-plus-circle me-1"></i>New Production Order Strip &mdash; {{ ganttMonthName }} {{ ganttYear }}</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Select Production Order (Unallocated)</label>
+                                    <select class="form-select" name="order_id" required>
+                                        {% for o in orders %}
+                                        <option value="{{ o.po_id }}">{{ o.order_number }} &mdash; {{ o.style_name }} ({{ o.quantity|number_format }} pcs){% if o.due_date %} | Due: {{ o.due_date }}{% endif %}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Production Sewing Line</label>
+                                    <select class="form-select" name="line_id" required>
+                                        {% for l in lines %}
+                                        <option value="{{ l.production_line_id }}">{{ l.line_name }} &mdash; {{ l.line_type|default('General') }} (Cap: {{ l.capacity_per_day|default(800)|number_format }}/day)</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Planned Qty (Pcs)</label>
+                                        <input type="number" class="form-control" name="quantity" value="3000" min="1" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Duration (Days)</label>
+                                        <input type="number" class="form-control" name="duration_days" value="7" min="1" max="31" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Start Date ({{ ganttMonthName }} {{ ganttYear }})</label>
+                                    <input type="date" class="form-control" name="planned_date"
+                                           value="{{ ganttYear }}-{{ ganttMonth < 10 ? '0'~ganttMonth : ganttMonth }}-01"
+                                           min="{{ ganttYear }}-{{ ganttMonth < 10 ? '0'~ganttMonth : ganttMonth }}-01"
+                                           max="{{ ganttYear }}-{{ ganttMonth < 10 ? '0'~ganttMonth : ganttMonth }}-{{ ganttDaysInMonth }}" required>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Add Strip to Gantt</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Edit Strip Modal (Double Click Triggered) -->
+                <div class="modal fade" id="editStripModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                            <div class="modal-header bg-dark text-white">
+                                <h5 class="modal-title fw-bold"><i class="fas fa-edit text-warning me-2"></i>FastReact Order Strip Editor</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body p-4">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small text-muted text-uppercase">PO Number</label>
+                                        <input type="text" class="form-control" id="edit_strip_po" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small text-muted text-uppercase">Style Name</label>
+                                        <input type="text" class="form-control" id="edit_strip_style" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small text-muted text-uppercase">Buyer Name</label>
+                                        <input type="text" class="form-control" id="edit_strip_buyer">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small text-muted text-uppercase">Planned Quantity (Pcs)</label>
+                                        <input type="number" class="form-control" id="edit_strip_qty" required>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label fw-bold small text-muted text-uppercase">Assigned Sewing Line</label>
+                                        <select class="form-select" id="edit_strip_line">
+                                            {% for l in lines %}
+                                            <option value="{{ l.production_line_id }}">{{ l.line_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small text-muted text-uppercase">Start Day ({{ ganttMonthName }})</label>
+                                        <input type="number" class="form-control" id="edit_strip_start" min="1" max="{{ ganttDaysInMonth }}" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small text-muted text-uppercase">Duration (Days)</label>
+                                        <input type="number" class="form-control" id="edit_strip_duration" min="1" max="31" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer bg-light">
+                                <button type="button" class="btn btn-outline-danger me-auto" onclick="removeCurrentStrip()">
+                                    <i class="fas fa-trash-alt me-1"></i> Remove Strip
+                                </button>
+                                <button type="button" class="btn btn-outline-warning" onclick="splitCurrentStrip()">
+                                    <i class="fas fa-cut me-1"></i> Split Strip
+                                </button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary" onclick="saveEditedStrip()">
+                                    <i class="fas fa-check me-1"></i> Update Strip
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- 3. CAPACITY PLANNING -->
+                {% if activeTab == 'capacity' %}
+                <div class="card glow-card border-0 p-4">
+                    <h5 class="fw-bold text-primary mb-3">Capacity vs Loading Forecast</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="p-3 bg-light rounded border text-center">
+                                <h6 class="fw-bold">Total Available Capacity (Hrs)</h6>
+                                <h2 class="text-primary fw-bold">48,000 hrs</h2>
+                                <p class="text-muted small">Based on 14 lines, 8 hrs/day, 26 days</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="p-3 bg-light rounded border text-center">
+                                <h6 class="fw-bold">Booked Capacity (Hrs)</h6>
+                                <h2 class="text-warning fw-bold">39,400 hrs</h2>
+                                <p class="text-muted small">Allocated to current approved Orders</p>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <h6 class="fw-bold">Line-wise Capacity Load</h6>
+                            <div class="progress mb-3" style="height: 25px;">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: 82%">Line 1: 82% Booked</div>
+                            </div>
+                            <div class="progress mb-3" style="height: 25px;">
+                                <div class="progress-bar bg-warning text-dark" role="progressbar" style="width: 95%">Line 2: 95% Booked</div>
+                            </div>
+                            <div class="progress mb-3" style="height: 25px;">
+                                <div class="progress-bar bg-danger" role="progressbar" style="width: 105%">Line 3: 105% Overloaded</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- 4. LINE PLANNING -->
+                {% if activeTab == 'line-planning' %}
+                <div class="card glow-card border-0 p-4">
+                    <h5 class="fw-bold text-primary mb-3">Line Balancing Simulator</h5>
+                    <p class="text-muted">Interactively adjust operation times to balance production output and eliminate bottlenecks.</p>
+                    <div class="p-3 bg-light rounded border">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Select Operation: Front Panel Stitching</label>
+                            <input type="range" class="form-range" min="10" max="60" value="25" id="op1Range" oninput="updateBalance()">
+                            <small class="text-muted">Target time per piece: <span id="op1Val">25</span> seconds</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Select Operation: Back Pocket Attaching</label>
+                            <input type="range" class="form-range" min="10" max="60" value="45" id="op2Range" oninput="updateBalance()">
+                            <small class="text-muted">Target time per piece: <span id="op2Val">45</span> seconds</small>
+                        </div>
+                        <div class="alert alert-warning d-flex align-items-center gap-2">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>Current Bottleneck: <strong>Back Pocket Attaching</strong> holds the cycle time at 45 seconds (Daily yield capacity: 640 pcs).</span>
+                        </div>
+                    </div>
+                    <script>
+                        function updateBalance() {
+                            document.getElementById('op1Val').innerText = document.getElementById('op1Range').value;
+                            document.getElementById('op2Val').innerText = document.getElementById('op2Range').value;
+                        }
+                    </script>
+                </div>
+                {% endif %}
+
+
+
+                <!-- 6. MRP -->
+                {% if activeTab == 'mrp' %}
+                <div class="card glow-card border-0 p-4">
+                    <h5 class="fw-bold text-primary mb-3">Bill of Materials (BOM) & Material Requirements</h5>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Select Style to Explode BOM</label>
+                        <select class="form-select w-auto">
+                            {% for s in styles %}
+                            <option value="{{ s.style_id }}">{{ s.style_code }} - {{ s.style_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- BOM Interactive Tree -->
+                    <div class="p-3 bg-light rounded border">
+                        <h6 class="fw-bold mb-3"><i class="fas fa-folder-open text-warning me-2"></i>Garment Item: Woven Cotton Trouser</h6>
+                        <ul class="list-unstyled ps-4">
+                            <li class="mb-2"><i class="fas fa-cut text-muted me-2"></i><strong>Shell Fabric:</strong> 100% Cotton Twill - 1.25 Yds per unit (Required: 12,500 Yds / Available: 14,000 Yds)</li>
+                            <li class="mb-2"><i class="fas fa-compress text-muted me-2"></i><strong>Pocketing Fabric:</strong> TC Blend - 0.2 Yds per unit (Required: 2,000 Yds / Available: 1,800 Yds <span class="badge bg-danger">Shortage: 200 Yds</span>)</li>
+                            <li class="mb-2"><i class="fas fa-bullseye text-muted me-2"></i><strong>Accessories:</strong>
+                                <ul class="list-unstyled ps-4 mt-1">
+                                    <li><i class="fas fa-circle text-muted me-1"></i> Shank Button - 1 pc per unit</li>
+                                    <li><i class="fas fa-stream text-muted me-1"></i> Metal Zipper (7 inch) - 1 pc per unit</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- 7. WIP MANAGEMENT -->
+                {% if activeTab == 'wip' %}
+                <div class="card glow-card border-0 p-4">
+                    <h5 class="fw-bold text-primary mb-3">WIP Age Analysis & Monitoring</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Style Name</th>
+                                    <th>Cutting Output (A)</th>
+                                    <th>Sewing Input (B)</th>
+                                    <th>Sewing Output (C)</th>
+                                    <th>WIP in Sewing (B - C)</th>
+                                    <th>Status Alert</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Slim Denim Jeans</strong></td>
+                                    <td>15,000 pcs</td>
+                                    <td>14,500 pcs</td>
+                                    <td>12,000 pcs</td>
+                                    <td class="text-danger fw-bold">2,500 pcs</td>
+                                    <td><span class="badge bg-warning text-dark">High Pile-up</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Cotton Polo Shirt</strong></td>
+                                    <td>8,000 pcs</td>
+                                    <td>8,000 pcs</td>
+                                    <td>7,850 pcs</td>
+                                    <td class="text-success fw-bold">150 pcs</td>
+                                    <td><span class="badge bg-success">Healthy Flow</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- 8. MONITORING -->
+                {% if activeTab == 'monitoring' %}
+                <div class="card glow-card border-0 p-4">
+                    <h5 class="fw-bold text-primary mb-3">Live Hourly Production Monitor</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered text-center align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Line Name</th>
+                                    <th>08:00-09:00</th>
+                                    <th>09:00-10:00</th>
+                                    <th>10:00-11:00</th>
+                                    <th>11:00-12:00</th>
+                                    <th>13:00-14:00</th>
+                                    <th>Cumulative</th>
+                                    <th>Target</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold">Line 1</td>
+                                    <td class="bg-light-success text-success fw-bold">120</td>
+                                    <td class="bg-light-success text-success fw-bold">130</td>
+                                    <td class="bg-light-danger text-danger fw-bold">95</td>
+                                    <td class="bg-light-success text-success fw-bold">125</td>
+                                    <td class="bg-light-success text-success fw-bold">140</td>
+                                    <td class="fw-bold">610</td>
+                                    <td>625</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Line 2</td>
+                                    <td class="bg-light-success text-success fw-bold">110</td>
+                                    <td class="bg-light-success text-success fw-bold">115</td>
+                                    <td class="bg-light-success text-success fw-bold">120</td>
+                                    <td class="bg-light-success text-success fw-bold">115</td>
+                                    <td class="bg-light-danger text-danger fw-bold">85</td>
+                                    <td class="fw-bold">545</td>
+                                    <td>550</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- 9. REPORTS -->
+                {% if activeTab == 'reports' %}
+                <div class="card glow-card border-0 p-4">
+                    <h5 class="fw-bold text-primary mb-3">Manufacturing Intelligence Reports</h5>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Report Type</label>
+                            <select class="form-select">
+                                <option>Daily Production Report</option>
+                                <option>Style-wise WIP Statement</option>
+                                <option>Line Efficiency Summary</option>
+                                <option>Material Shortage Alert Log</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Date Range</label>
+                            <input type="date" class="form-control" value="{{ 'now'|date('Y-m-d') }}">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button class="btn btn-primary w-100"><i class="fas fa-file-pdf me-2"></i>Generate PDF Report</button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

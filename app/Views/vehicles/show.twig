@@ -1,0 +1,65 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Vehicle Details - RMG ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Vehicle Details: {{ vehicle.vehicle_number }}</h1>
+        <div>
+            <a href="{{ BASE_URL }}/vehicles" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left me-1"></i> Back to List
+            </a>
+            <a href="{{ BASE_URL }}/vehicles?action=edit&id={{ vehicle.vehicle_id }}" class="btn btn-primary">
+                <i class="fas fa-edit me-1"></i> Edit
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Information</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th style="width: 40%">Vehicle Number:</th>
+                            <td>{{ vehicle.vehicle_number }}</td>
+                        </tr>
+                        <tr>
+                            <th>License Plate:</th>
+                            <td>{{ vehicle.license_plate }}</td>
+                        </tr>
+                        <tr>
+                            <th>Type:</th>
+                            <td>{{ vehicle.vehicle_type }}</td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td>
+                                <span class="badge badge-{{ vehicle.status == 1 ? 'success' : (vehicle.status == 2 ? 'warning' : 'secondary') }}">
+                                    {{ vehicle.status_name }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Make / Model:</th>
+                            <td>{{ vehicle.make }} / {{ vehicle.model }}</td>
+                        </tr>
+                        <tr>
+                            <th>Year:</th>
+                            <td>{{ vehicle.year }}</td>
+                        </tr>
+                        <tr>
+                            <th>Capacity:</th>
+                            <td>{{ vehicle.capacity }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

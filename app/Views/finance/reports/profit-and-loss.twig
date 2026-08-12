@@ -1,0 +1,202 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Profit & Loss Statement{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Income Statement (Profit & Loss)</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/finance/reports">Financial Reports</a></li>
+        <li class="breadcrumb-item active">Income Statement</li>
+    </ol>
+
+    <!-- Filter Bar & Print Header -->
+    <div class="card mb-4 border-0 shadow-sm print-hide">
+        <div class="card-body bg-light">
+            <form method="GET" action="{{ BASE_URL }}/finance/reports/profit-and-loss" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-primary mb-1">From Date</label>
+                    <input type="date" class="form-control form-control-sm" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-primary mb-1">To Date</label>
+                    <input type="date" class="form-control form-control-sm" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-4 d-flex">
+                    <button type="submit" class="btn btn-primary btn-sm me-2 flex-grow-1"><i class="fas fa-filter me-1"></i> Generate Statement</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()"><i class="fas fa-print me-1"></i> Print</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Financial KPI Summary Cards -->
+    {% set total_income = 0 %}
+    {% set total_cogs = 0 %}
+    {% set total_opex = 0 %}
+
+    {% for row in data %}
+        {% set amt = row.net_amount|abs %}
+        {% if row.account_type == 'Income' or row.account_type == 'Revenue' %}
+            {% set total_income = total_income + amt %}
+        {% elseif row.account_type == 'Expense' %}
+            {% if row.account_code starts with '5' %}
+                {% set total_cogs = total_cogs + amt %}
+            {% else %}
+                {% set total_opex = total_opex + amt %}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+
+    {% set total_expense = total_cogs + total_opex %}
+    {% set gross_profit = total_income - total_cogs %}
+    {% set net_profit = total_income - total_expense %}
+    {% set gross_margin = (total_income > 0) ? (gross_profit / total_income * 100) : 0 %}
+    {% set net_margin = (total_income > 0) ? (net_profit / total_income * 100) : 0 %}
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-primary text-white p-3">
+                <div class="small text-uppercase fw-bold text-white-50">Total Revenues</div>
+                <div class="fs-4 fw-bold mt-1">${{ total_income|number_format(2) }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-secondary text-white p-3">
+                <div class="small text-uppercase fw-bold text-white-50">Gross Profit (COGS)</div>
+                <div class="fs-4 fw-bold mt-1">${{ gross_profit|number_format(2) }}</div>
+                <div class="small text-white-50 mt-1">Margin: {{ gross_margin|number_format(1) }}%</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-danger text-white p-3">
+                <div class="small text-uppercase fw-bold text-white-50">Total Expenses</div>
+                <div class="fs-4 fw-bold mt-1">${{ total_expense|number_format(2) }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm {{ net_profit >= 0 ? 'bg-success' : 'bg-danger' }} text-white p-3">
+                <div class="small text-uppercase fw-bold text-white-50">Net Profit / Margin</div>
+                <div class="fs-4 fw-bold mt-1">${{ net_profit|number_format(2) }}</div>
+                <div class="small text-white-50 mt-1">Net Margin: {{ net_margin|number_format(1) }}%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Consolidated Multi-Step Income Statement -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-header text-center bg-white border-bottom py-4">
+            <h3 class="mb-1 font-weight-bold">CONSOLIDATED STATEMENT OF PROFIT OR LOSS</h3>
+            <p class="text-muted mb-0">For the period starting <strong>{{ date_from|date('F j, Y') }}</strong> to <strong>{{ date_to|date('F j, Y') }}</strong></p>
+        </div>
+        <div class="card-body p-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle border mb-0">
+                    <thead class="table-light">
+                        <tr class="text-uppercase text-muted small">
+                            <th>Account Code</th>
+                            <th>Financial Line Item Description</th>
+                            <th>Category</th>
+                            <th class="text-end">Amount ($)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 1. OPERATING REVENUES -->
+                        <tr class="table-secondary fw-bold">
+                            <td colspan="4" class="text-uppercase text-success"><i class="fas fa-arrow-circle-down me-2"></i>1. Operating Revenues</td>
+                        </tr>
+                        {% set has_income = false %}
+                        {% for row in data %}
+                            {% if row.account_type == 'Income' or row.account_type == 'Revenue' %}
+                                {% set has_income = true %}
+                                <tr>
+                                    <td class="fw-bold text-primary ps-4">{{ row.account_code }}</td>
+                                    <td class="fw-bold">{{ row.account_name }}</td>
+                                    <td><span class="badge bg-success text-white">Revenue</span></td>
+                                    <td class="text-end fw-bold text-success">${{ row.net_amount|abs|number_format(2) }}</td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                        {% if not has_income %}
+                            <tr><td colspan="4" class="text-muted ps-4">No revenues recorded for this period.</td></tr>
+                        {% endif %}
+                        <tr class="fw-bold bg-light">
+                            <td colspan="3" class="text-end text-uppercase">Total Operating Revenue</td>
+                            <td class="text-end text-success fs-6">${{ total_income|number_format(2) }}</td>
+                        </tr>
+
+                        <!-- 2. COST OF GOODS SOLD (COGS) -->
+                        <tr class="table-secondary fw-bold">
+                            <td colspan="4" class="text-uppercase text-danger"><i class="fas fa-minus-circle me-2"></i>2. Cost of Goods Sold & Direct Production Costs</td>
+                        </tr>
+                        {% set has_cogs = false %}
+                        {% for row in data %}
+                            {% if row.account_type == 'Expense' and row.account_code starts with '5' %}
+                                {% set has_cogs = true %}
+                                <tr>
+                                    <td class="fw-bold text-primary ps-4">{{ row.account_code }}</td>
+                                    <td>{{ row.account_name }}</td>
+                                    <td><span class="badge bg-warning text-dark">COGS / Direct Cost</span></td>
+                                    <td class="text-end fw-bold text-danger">${{ row.net_amount|abs|number_format(2) }}</td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                        {% if not has_cogs %}
+                            <tr><td colspan="4" class="text-muted ps-4">No direct production costs recorded.</td></tr>
+                        {% endif %}
+                        <tr class="fw-bold bg-light">
+                            <td colspan="3" class="text-end text-uppercase">Total Direct Production Costs (COGS)</td>
+                            <td class="text-end text-danger">${{ total_cogs|number_format(2) }}</td>
+                        </tr>
+
+                        <!-- GROSS PROFIT -->
+                        <tr class="table-warning fw-bold fs-6">
+                            <td colspan="3" class="text-uppercase">Gross Operating Profit (Gross Margin)</td>
+                            <td class="text-end text-dark">${{ gross_profit|number_format(2) }}</td>
+                        </tr>
+
+                        <!-- 3. OPERATING & ADMIN EXPENSES -->
+                        <tr class="table-secondary fw-bold">
+                            <td colspan="4" class="text-uppercase text-danger"><i class="fas fa-minus-circle me-2"></i>3. Operating, Utilities & Administrative Expenses (OPEX)</td>
+                        </tr>
+                        {% set has_opex = false %}
+                        {% for row in data %}
+                            {% if row.account_type == 'Expense' and not (row.account_code starts with '5') %}
+                                {% set has_opex = true %}
+                                <tr>
+                                    <td class="fw-bold text-primary ps-4">{{ row.account_code }}</td>
+                                    <td>{{ row.account_name }}</td>
+                                    <td><span class="badge bg-danger text-white">OPEX / Admin</span></td>
+                                    <td class="text-end fw-bold text-danger">${{ row.net_amount|abs|number_format(2) }}</td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                        {% if not has_opex %}
+                            <tr><td colspan="4" class="text-muted ps-4">No operating expenses recorded.</td></tr>
+                        {% endif %}
+                        <tr class="fw-bold bg-light">
+                            <td colspan="3" class="text-end text-uppercase">Total Operating & Admin Expenses</td>
+                            <td class="text-end text-danger">${{ total_opex|number_format(2) }}</td>
+                        </tr>
+
+                        <!-- NET PROFIT SUMMARY -->
+                        <tr class="{{ net_profit >= 0 ? 'table-success' : 'table-danger' }} fw-bold fs-5">
+                            <td colspan="3" class="text-uppercase">Net Profit / (Loss) for the Period</td>
+                            <td class="text-end {{ net_profit >= 0 ? 'text-success' : 'text-danger' }}">${{ net_profit|number_format(2) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .print-hide, .navbar, .sb-sidenav { display: none !important; }
+    #layoutSidenav_content { margin-left: 0 !important; top: 0 !important; }
+    .card { border: none !important; }
+}
+</style>
+{% endblock %}

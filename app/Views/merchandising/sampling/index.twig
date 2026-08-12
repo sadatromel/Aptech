@@ -1,0 +1,705 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Merchandising • Sampling{% endblock %}
+
+{% block styles %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+    .ts-control { border-radius: 0.375rem !important; box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important; border: 1px solid #dee2e6; padding: 0.375rem 0.75rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid merchandising-sampling">
+    <div class="container-fluid px-4">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mt-4 mb-3">
+            <div>
+                <h1 class="h3 mb-1">Sampling & Approvals</h1>
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ BASE_URL }}/merchandising">Merchandising</a></li>
+                    <li class="breadcrumb-item active">Sampling</li>
+                </ol>
+            </div>
+            <div class="d-flex gap-2 text-nowrap mt-3 mt-md-0">
+                <button class="btn btn-outline-secondary rounded-pill px-4" id="exportSamplingCsv">
+                    <i class="fas fa-file-export me-1"></i> Export CSV
+                </button>
+                <button class="btn btn-primary rounded-pill px-4" id="btnNewRequisition">
+                    <i class="fas fa-plus me-1"></i> New Requisition
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Offcanvas Requisition Form -->
+    <div class="offcanvas offcanvas-end shadow" tabindex="-1" id="requisitionOffcanvas" style="width: 500px;">
+        <div class="offcanvas-header border-bottom py-3">
+            <h5 class="offcanvas-title fw-bold" id="formTitle"><i class="fas fa-plus-circle me-2 text-primary"></i>New Sample Requisition</h5>
+            <div class="d-flex align-items-center">
+                <button type="button" class="btn btn-sm btn-link text-decoration-none d-none me-2" id="btnResetForm">Reset</button>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+        </div>
+        <div class="offcanvas-body">
+            <form id="sampleForm">
+                <input type="hidden" name="sample_id" id="sampleId">
+                <div id="sampleAlert" class="alert d-none"></div>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Buyer <span class="text-danger">*</span></label>
+                        <select class="form-select shadow-sm" id="buyer_id" required autocomplete="off">
+                            <option value="">— Select Buyer —</option>
+                            {% for buyer in buyers %}
+                                <option value="{{ buyer.buyer_id }}">{{ buyer.buyer_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Style <span class="text-danger">*</span></label>
+                        <select class="form-select shadow-sm" name="style_id" id="style_id" required autocomplete="off">
+                            <option value="">Select style</option>
+                            {% for style in styles %}
+                                <option value="{{ style.style_id }}" data-buyer="{{ style.buyer_id }}">{{ style.style_code }} • {{ style.style_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Sample Type <span class="text-danger">*</span></label>
+                        <select class="form-select shadow-sm" name="sample_type" id="sample_type" required>
+                            <option value="">Select</option>
+                            {% for type in sample_types %}
+                                <option value="{{ type.value }}">{{ type.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-12 px-2 mt-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase mb-2">Size & Quantity <span class="text-danger">*</span></label>
+                        <div class="border rounded p-2 shadow-sm bg-body-tertiary" style="max-height: 200px; overflow-y: auto;">
+                            <table class="table table-sm table-borderless mb-0" id="sizeBreakdownTable">
+                                <thead>
+                                    <tr>
+                                        <th class="small py-1 text-muted text-uppercase">Size</th>
+                                        <th class="small py-1 text-muted text-uppercase" style="width: 80px;">Qty</th>
+                                        <th class="small py-1" style="width: 40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sizeBreakdownBody">
+                                    <tr>
+                                        <td><input type="text" class="form-control form-control-sm" name="sizes[]" placeholder="Size" required></td>
+                                        <td><input type="number" class="form-control form-control-sm item-qty" name="qtys[]" min="1" value="1" required></td>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" class="pt-2">
+                                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1" id="btnAddSizeRow">
+                                                <i class="fas fa-plus small me-1"></i>Add
+                                            </button>
+                                            <div class="float-end d-flex align-items-center">
+                                                <span class="small fw-bold text-muted me-2">TOTAL</span>
+                                                <input type="number" class="form-control form-control-sm bg-transparent fw-bold text-center border-0 shadow-sm text-primary" id="totalQtyDisplay" value="1" readonly style="width: 60px;">
+                                                <input type="hidden" name="quantity" id="quantity" value="1">
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Request Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control shadow-sm" name="request_date" id="request_date" value="{{ 'now'|date('Y-m-d') }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Due Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control shadow-sm" name="due_date" id="due_date" value="{{ '+7 days'|date('Y-m-d') }}" required>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label small fw-bold">Status <span class="text-danger">*</span></label>
+                        <select class="form-select shadow-sm" name="status" id="status" required>
+                            {% for status in statuses %}
+                                <option value="{{ status.value }}" {{ status.value == 'requested' ? 'selected' }}>{{ status.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-12 mt-4">
+                        <div class="card border-0 bg-transparent border-light shadow-sm">
+                            <div class="card-body p-3 border rounded">
+                                <label class="form-label small fw-bold text-muted text-uppercase mb-3">Material Readiness</label>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <div class="form-check form-switch custom-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" name="shell_fabric_available" id="shell_fabric_available" value="1">
+                                            <label class="form-check-label small pt-1 ms-1" for="shell_fabric_available">Shell Fabric</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-check form-switch custom-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" name="pocketing_available" id="pocketing_available" value="1">
+                                            <label class="form-check-label small pt-1 ms-1" for="pocketing_available">Pocketing</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-check form-switch custom-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" name="lining_interlining_available" id="lining_interlining_available" value="1">
+                                            <label class="form-check-label small pt-1 ms-1" for="lining_interlining_available">Lining</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-check form-switch custom-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" name="sewing_accessories_available" id="sewing_accessories_available" value="1">
+                                            <label class="form-check-label small pt-1 ms-1" for="sewing_accessories_available">Sewing Acc.</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-check form-switch custom-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch" name="finishing_accessories_available" id="finishing_accessories_available" value="1">
+                                            <label class="form-check-label small pt-1 ms-1" for="finishing_accessories_available">Finishing Acc.</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label class="form-label small fw-bold">Notes</label>
+                        <textarea class="form-control shadow-sm" name="notes" id="notes" rows="2" placeholder="Additional instructions..."></textarea>
+                    </div>
+                    
+                    <div class="col-12 mt-4 pt-3 border-top pb-4">
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill shadow-sm py-2" id="sampleSubmitBtn">
+                            <i class="fas fa-save me-2"></i>Save Requisition
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="row g-3 mb-4 mx-3">
+        <div class="col-md-3">
+            <div class="stat-card text-center p-4 text-white rounded-4 shadow" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); position: relative; overflow: hidden;">
+                <i class="fas fa-layer-group position-absolute text-white" style="font-size: 3.5rem; opacity: 0.15; right: 25px; top: 50%; transform: translateY(-50%);"></i>
+                <p class="label mb-1 fw-bold text-white-50 text-uppercase tracking-wide" style="font-size:0.75rem;">Total Samples</p>
+                <h2 class="mb-0 fw-black display-6">{{ stats.total }}</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center p-4 text-dark rounded-4 shadow" style="background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%); position: relative; overflow: hidden;">
+                <i class="fas fa-clock position-absolute text-white" style="font-size: 3.5rem; opacity: 0.25; right: 25px; top: 50%; transform: translateY(-50%);"></i>
+                <p class="label mb-1 fw-bold text-dark text-uppercase tracking-wide opacity-75" style="font-size:0.75rem;">Pending / In Progress</p>
+                <h2 class="mb-0 fw-black display-6">{{ stats.pending }}</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center p-4 text-white rounded-4 shadow" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); position: relative; overflow: hidden;">
+                <i class="fas fa-check-circle position-absolute text-white" style="font-size: 3.5rem; opacity: 0.15; right: 25px; top: 50%; transform: translateY(-50%);"></i>
+                <p class="label mb-1 fw-bold text-white-50 text-uppercase tracking-wide" style="font-size:0.75rem;">Approved</p>
+                <h2 class="mb-0 fw-black display-6">{{ stats.approved }}</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center p-4 text-white rounded-4 shadow" style="background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); position: relative; overflow: hidden;">
+                <i class="fas fa-times-circle position-absolute text-white" style="font-size: 3.5rem; opacity: 0.15; right: 25px; top: 50%; transform: translateY(-50%);"></i>
+                <p class="label mb-1 fw-bold text-white-50 text-uppercase tracking-wide" style="font-size:0.75rem;">Rejected</p>
+                <h2 class="mb-0 fw-black display-6">{{ stats.rejected }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters & Search -->
+<div class="card shadow-sm border-0 rounded-3 mb-4 mx-4">
+    <div class="card-body">
+        <form method="get" action="{{ BASE_URL }}/merchandising/sampling">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label small fw-bold text-muted mb-1" for="sample_type_filter">Sample Type</label>
+                        <select class="form-select shadow-sm" name="sample_type" id="sample_type_filter">
+                            <option value="">All Types</option>
+                            <option value="proto" {% if filters.sample_type == 'proto' %}selected{% endif %}>Proto</option>
+                            <option value="fit" {% if filters.sample_type == 'fit' %}selected{% endif %}>Fit</option>
+                            <option value="photo" {% if filters.sample_type == 'photo' %}selected{% endif %}>Photo</option>
+                            <option value="size_set" {% if filters.sample_type == 'size_set' %}selected{% endif %}>Size Set</option>
+                            <option value="pre_production" {% if filters.sample_type == 'pre_production' %}selected{% endif %}>Pre-Production</option>
+                            <option value="top_of_production" {% if filters.sample_type == 'top_of_production' %}selected{% endif %}>Top of Production</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label small fw-bold text-muted mb-1" for="status_filter">Status</label>
+                        <select class="form-select shadow-sm" name="status" id="status_filter">
+                            <option value="">All Statuses</option>
+                            <option value="requested" {% if filters.status == 'requested' %}selected{% endif %}>Requested</option>
+                            <option value="in_progress" {% if filters.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                            <option value="sent_for_approval" {% if filters.status == 'sent_for_approval' %}selected{% endif %}>Sent for Approval</option>
+                            <option value="approved" {% if filters.status == 'approved' %}selected{% endif %}>Approved</option>
+                            <option value="rejected" {% if filters.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                            <option value="approved_with_comments" {% if filters.status == 'approved_with_comments' %}selected{% endif %}>Approved w/ Comments</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label small fw-bold text-muted mb-1" for="search">Keywords</label>
+                        <input type="text" class="form-control shadow-sm" name="search" id="search" value="{{ filters.search }}" placeholder="Search by Order No or Style Name">
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end pb-1">
+                    <button type="submit" class="btn btn-secondary rounded-pill w-100 shadow-sm">
+                        <i class="fas fa-search me-1"></i> Filter
+                    </button>
+                    {% if has_filters %}
+                        <a href="{{ BASE_URL }}/merchandising/sampling" class="btn btn-link ms-1">Clear</a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Samples List -->
+<div class="card shadow-lg border-0 rounded-3 mb-4 mx-4">
+    <div class="card-header bg-transparent border-bottom py-3">
+        <div class="h5 mb-0 text-primary"><i class="fas fa-list me-2"></i>Samples Directory</div>
+    </div>
+        <div class="card-body">
+            <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="samplingTable">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Req No.</th>
+                        <th>Style</th>
+                        <th>Sample Type</th>
+                        <th>Sizes</th>
+                        <th>Requested Date</th>
+                        <th>Target Date</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                    <tbody>
+                        {% for sample in samples %}
+                            <tr data-sample='{{ sample|json_encode|raw }}'>
+                                <td class="ps-4">
+                                    <div class="fw-bold text-primary">{{ sample.requisition_no ?: '—' }}</div>
+                                </td>
+                                <td>
+                                    <div class="fw-bold">{{ sample.style_code }}</div>
+                                    <small class="text-muted">{{ sample.style_name }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary text-capitalize">{{ sample.sample_type }}</span>
+                                </td>
+                                <td>
+                                    <div class="small fw-bold">{{ sample.sample_size ?: '—' }}</div>
+                                    <small class="text-muted">Total: {{ sample.quantity }}</small>
+                                </td>
+                                <td>{{ sample.request_date|date('M d, Y') }}</td>
+                                <td>
+                                    {{ sample.due_date|date('M d, Y') }}
+                                    {% if sample.is_overdue %}
+                                        <div class="text-danger small">Overdue</div>
+                                    {% elseif sample.days_left is not null and sample.days_left <= 3 and sample.days_left >= 0 %}
+                                        <div class="text-warning small">{{ sample.days_left }} day{{ sample.days_left == 1 ? '' : 's' }} left</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ sample.status == 'approved' ? 'success' : (sample.status == 'rejected' ? 'danger' : (sample.status == 'in_progress' ? 'info text-dark' : 'warning text-dark')) }} text-uppercase">
+                                        {{ sample.status|replace({'_': ' '}) }}
+                                    </span>
+                                    <div class="mt-1 d-flex gap-1 flex-wrap" style="font-size: 0.70rem;">
+                                        <span class="badge {{ sample.shell_fabric_available ? 'bg-success bg-opacity-25 text-success border border-success' : 'bg-light text-muted border' }}" title="{{ sample.shell_fabric_available ? 'Shell Fabric Ready' : 'Shell Fabric Pending' }}"><i class="fas fa-{{ sample.shell_fabric_available ? 'check-circle' : 'clock' }} me-1"></i>Shell</span>
+                                        <span class="badge {{ sample.pocketing_available ? 'bg-success bg-opacity-25 text-success border border-success' : 'bg-light text-muted border' }}" title="{{ sample.pocketing_available ? 'Pocketing Ready' : 'Pocketing Pending' }}"><i class="fas fa-{{ sample.pocketing_available ? 'check-circle' : 'clock' }} me-1"></i>Pock.</span>
+                                        <span class="badge {{ sample.lining_interlining_available ? 'bg-success bg-opacity-25 text-success border border-success' : 'bg-light text-muted border' }}" title="{{ sample.lining_interlining_available ? 'Lining Ready' : 'Lining Pending' }}"><i class="fas fa-{{ sample.lining_interlining_available ? 'check-circle' : 'clock' }} me-1"></i>Lining</span>
+                                        <span class="badge {{ sample.sewing_accessories_available ? 'bg-success bg-opacity-25 text-success border border-success' : 'bg-light text-muted border' }}" title="{{ sample.sewing_accessories_available ? 'Sewing Acc Ready' : 'Sewing Acc Pending' }}"><i class="fas fa-{{ sample.sewing_accessories_available ? 'check-circle' : 'clock' }} me-1"></i>S.Acc</span>
+                                        <span class="badge {{ sample.finishing_accessories_available ? 'bg-success bg-opacity-25 text-success border border-success' : 'bg-light text-muted border' }}" title="{{ sample.finishing_accessories_available ? 'Finishing Acc Ready' : 'Finishing Acc Pending' }}"><i class="fas fa-{{ sample.finishing_accessories_available ? 'check-circle' : 'clock' }} me-1"></i>F.Acc</span>
+                                    </div>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary rounded-circle" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                            <li><a class="dropdown-item" href="#" onclick="viewSample({{ sample.sample_id }}); return false;"><i class="fas fa-eye me-2 text-primary"></i>View Details</a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="editSample({{ sample.sample_id }}); return false;"><i class="fas fa-edit me-2 text-info"></i>Edit / Update Status</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-danger" href="#" onclick="deleteSample({{ sample.sample_id }}); return false;"><i class="fas fa-trash me-2"></i>Delete</a></li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-5">No sample requests found.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Sample Modal (Keep this as details can be long) -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sample Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6 border-end">
+                         <dl class="row mb-0" id="viewDetails"></dl>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="fw-bold small mb-2">Size Breakdown</label>
+                        <div id="viewSizeBreakdown"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ parent() }}
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const sampleForm = document.getElementById('sampleForm');
+        const sampleAlert = document.getElementById('sampleAlert');
+        const formTitle = document.getElementById('formTitle');
+        const sampleSubmitBtn = document.getElementById('sampleSubmitBtn');
+        const btnResetForm = document.getElementById('btnResetForm');
+        const requisitionOffcanvasEl = document.getElementById('requisitionOffcanvas');
+        const requisitionOffcanvas = requisitionOffcanvasEl ? new bootstrap.Offcanvas(requisitionOffcanvasEl) : null;
+        const btnNewRequisition = document.getElementById('btnNewRequisition');
+        const btnAddSizeRow = document.getElementById('btnAddSizeRow');
+        const sizeBreakdownBody = document.getElementById('sizeBreakdownBody');
+        const totalQtyDisplay = document.getElementById('totalQtyDisplay');
+                const quantityInput = document.getElementById('quantity');
+        
+        // --- TomSelect & Cascade Logic ---
+        const buyerSelectEl = document.getElementById('buyer_id');
+        const styleSelectEl = document.getElementById('style_id');
+        
+        // Save original style options
+        const originalStyleOptions = Array.from(styleSelectEl.options).slice(1).map(opt => ({
+            value: opt.value,
+            text: opt.textContent,
+            buyerId: opt.dataset.buyer
+        }));
+
+        let buyerTom = new TomSelect(buyerSelectEl, {
+            create: false,
+            sortField: { field: "text", direction: "asc" }
+        });
+
+        let styleTom = new TomSelect(styleSelectEl, {
+            create: false,
+            sortField: { field: "text", direction: "asc" },
+            searchField: ['text']
+        });
+
+        buyerTom.on('change', function(value) {
+            styleTom.clear();
+            styleTom.clearOptions();
+            
+            originalStyleOptions.forEach(opt => {
+                if (!value || opt.buyerId === value) {
+                    styleTom.addOption(opt);
+                }
+            });
+            styleTom.refreshOptions(false);
+        });
+
+        const viewModalEl = document.getElementById('viewModal');
+        const viewModal = viewModalEl ? bootstrap.Modal.getOrCreateInstance(viewModalEl) : null;
+
+        function showAlert(message, type = 'danger') {
+            sampleAlert.className = `alert alert-${type}`;
+            sampleAlert.textContent = message;
+            sampleAlert.classList.remove('d-none');
+        }
+
+        function hideAlert() {
+            sampleAlert.classList.add('d-none');
+        }
+
+        function calculateTotalQty() {
+            let total = 0;
+            sizeBreakdownBody.querySelectorAll('.item-qty').forEach(input => {
+                total += parseInt(input.value) || 0;
+            });
+            totalQtyDisplay.value = total;
+            quantityInput.value = total;
+        }
+
+        function addSizeRow(size = '', qty = 1) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="form-control form-control-sm" name="sizes[]" value="${size}" placeholder="Size" required></td>
+                <td><input type="number" class="form-control form-control-sm item-qty" name="qtys[]" min="1" value="${qty}" required></td>
+                <td class="text-end"><button type="button" class="btn btn-sm btn-link text-danger p-0 btn-remove-row"><i class="fas fa-times"></i></button></td>
+            `;
+            sizeBreakdownBody.appendChild(tr);
+            
+            tr.querySelector('.item-qty').addEventListener('input', calculateTotalQty);
+            tr.querySelector('.btn-remove-row').addEventListener('click', () => {
+                tr.remove();
+                calculateTotalQty();
+            });
+            calculateTotalQty();
+        }
+
+        btnAddSizeRow.addEventListener('click', () => addSizeRow());
+
+        // Initial row setup for new entries
+        sizeBreakdownBody.querySelectorAll('.item-qty').forEach(input => {
+            input.addEventListener('input', calculateTotalQty);
+        });
+
+        function resetForm() {
+            sampleForm.reset();
+            sampleForm.sample_id.value = '';
+            buyerTom.setValue('', true);
+            
+            styleTom.clearOptions();
+            originalStyleOptions.forEach(opt => styleTom.addOption(opt));
+            styleTom.setValue('', true);
+            styleTom.refreshOptions(false);
+            sampleForm.shell_fabric_available.checked = false;
+            sampleForm.pocketing_available.checked = false;
+            sampleForm.lining_interlining_available.checked = false;
+            sampleForm.sewing_accessories_available.checked = false;
+            sampleForm.finishing_accessories_available.checked = false;
+            sizeBreakdownBody.innerHTML = `
+                <tr>
+                    <td><input type="text" class="form-control form-control-sm" name="sizes[]" placeholder="Size" required></td>
+                    <td><input type="number" class="form-control form-control-sm item-qty" name="qtys[]" min="1" value="1" required></td>
+                    <td></td>
+                </tr>
+            `;
+            sizeBreakdownBody.querySelector('.item-qty').addEventListener('input', calculateTotalQty);
+            calculateTotalQty();
+            formTitle.innerHTML = '<i class="fas fa-plus-circle me-2 text-primary"></i>New Sample Requisition';
+            sampleSubmitBtn.innerHTML = '<i class="fas fa-save me-1"></i>Save';
+            btnResetForm.classList.add('d-none');
+            hideAlert();
+        }
+
+        btnNewRequisition?.addEventListener('click', () => {
+            resetForm();
+            requisitionOffcanvas?.show();
+        });
+
+        btnResetForm?.addEventListener('click', resetForm);
+
+        window.editSample = function(sampleId) {
+            const row = document.querySelector(`tr[data-sample*='"sample_id":${sampleId}']`);
+            if (!row) return;
+            const sample = JSON.parse(row.dataset.sample);
+            
+            sampleForm.sample_id.value = sample.sample_id;
+            
+            // Find the style to determine buyer
+            const styleOpt = originalStyleOptions.find(o => o.value == sample.style_id);
+            if (styleOpt && styleOpt.buyerId) {
+                buyerTom.setValue(styleOpt.buyerId, true); // true = silent (no event)
+                
+                // Repopulate styles silently
+                styleTom.clearOptions();
+                originalStyleOptions.forEach(opt => {
+                    if (opt.buyerId === styleOpt.buyerId) styleTom.addOption(opt);
+                });
+            } else {
+                buyerTom.setValue('', true);
+            }
+            
+            styleTom.setValue(sample.style_id, true);
+            sampleForm.sample_type.value = sample.sample_type;
+            sampleForm.status.value = sample.status;
+            sampleForm.request_date.value = sample.request_date;
+            sampleForm.due_date.value = sample.due_date;
+            sampleForm.shell_fabric_available.checked = !!sample.shell_fabric_available;
+            sampleForm.pocketing_available.checked = !!sample.pocketing_available;
+            sampleForm.lining_interlining_available.checked = !!sample.lining_interlining_available;
+            sampleForm.sewing_accessories_available.checked = !!sample.sewing_accessories_available;
+            sampleForm.finishing_accessories_available.checked = !!sample.finishing_accessories_available;
+            sampleForm.notes.value = sample.notes || '';
+
+            // Render breakdown rows
+            sizeBreakdownBody.innerHTML = '';
+            if (sample.breakdown && sample.breakdown.length > 0) {
+                sample.breakdown.forEach((item, index) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><input type="text" class="form-control form-control-sm" name="sizes[]" value="${item.size}" placeholder="Size" required></td>
+                        <td><input type="number" class="form-control form-control-sm item-qty" name="qtys[]" min="1" value="${item.qty}" required></td>
+                        <td class="text-end">
+                            ${index > 0 ? `<button type="button" class="btn btn-sm btn-link text-danger p-0 btn-remove-row"><i class="fas fa-times"></i></button>` : ''}
+                        </td>
+                    `;
+                    sizeBreakdownBody.appendChild(tr);
+                    tr.querySelector('.item-qty').addEventListener('input', calculateTotalQty);
+                    if (index > 0) {
+                        tr.querySelector('.btn-remove-row').addEventListener('click', () => {
+                            tr.remove();
+                            calculateTotalQty();
+                        });
+                    }
+                });
+            } else {
+                addSizeRow(sample.sample_size, sample.quantity);
+            }
+            calculateTotalQty();
+
+            formTitle.innerHTML = `<i class="fas fa-edit me-2 text-info"></i>Edit Requisition: ${sample.requisition_no}`;
+            sampleSubmitBtn.innerHTML = '<i class="fas fa-save me-1"></i>Update';
+            btnResetForm.classList.remove('d-none');
+            
+            requisitionOffcanvas?.show();
+            hideAlert();
+        };
+
+        window.viewSample = async function(sampleId) {
+            try {
+                const response = await fetch(`${BASE_URL}/merchandising/sampling/${sampleId}`);
+                if (!response.ok) throw new Error('Unable to load sample');
+                const { data } = await response.json();
+                renderSampleDetails(data);
+                viewModal?.show();
+            } catch (error) {
+                alert('Unable to load sample details.');
+            }
+        };
+
+        function renderSampleDetails(sample) {
+            const container = document.getElementById('viewDetails');
+            const breakdownContainer = document.getElementById('viewSizeBreakdown');
+            container.innerHTML = '';
+            breakdownContainer.innerHTML = '';
+
+            const meta = {
+                'Req No.': sample.requisition_no || '—',
+                'Style': `${sample.style_code || ''} • ${sample.style_name || ''}`,
+                'Sample Type': sample.sample_type,
+                'Status': (sample.status || '').replace('_', ' ').toUpperCase(),
+                'Request Date': sample.request_date,
+                'Due Date': sample.due_date,
+                'Materials': `<span class="badge ${sample.shell_fabric_available ? 'bg-success' : 'bg-secondary'} me-1">Shell</span> <span class="badge ${sample.pocketing_available ? 'bg-success' : 'bg-secondary'} me-1">Pock.</span> <span class="badge ${sample.lining_interlining_available ? 'bg-success' : 'bg-secondary'} me-1">Lining</span> <span class="badge ${sample.sewing_accessories_available ? 'bg-success' : 'bg-secondary'} me-1">S.Acc</span> <span class="badge ${sample.finishing_accessories_available ? 'bg-success' : 'bg-secondary'}">F.Acc</span>`,
+                'Total Qty': sample.quantity,
+                'Notes': sample.notes || '—'
+            };
+            Object.entries(meta).forEach(([label, value]) => {
+                container.insertAdjacentHTML('beforeend', `<dt class="col-4 small text-muted">${label}</dt><dd class="col-8 small">${value}</dd>`);
+            });
+
+            if (sample.breakdown && sample.breakdown.length > 0) {
+                let tableHtml = `<table class="table table-sm table-bordered mt-2">
+                    <thead class="table-light"><tr><th class="small">Size</th><th class="small text-center">Qty</th></tr></thead>
+                    <tbody>`;
+                sample.breakdown.forEach(item => {
+                    tableHtml += `<tr><td class="small">${item.size}</td><td class="small text-center">${item.qty}</td></tr>`;
+                });
+                tableHtml += `</tbody></table>`;
+                breakdownContainer.innerHTML = tableHtml;
+            } else {
+                breakdownContainer.innerHTML = `<div class="alert alert-light border small text-center">No size breakdown available</div>`;
+            }
+        }
+
+        sampleForm?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            hideAlert();
+            
+            const formData = new FormData(sampleForm);
+            const payload = Object.fromEntries(formData.entries());
+            
+            // Extract size breakdown
+            const sizes = formData.getAll('sizes[]');
+            const qtys = formData.getAll('qtys[]');
+            payload.size_breakdown = sizes.map((size, index) => ({
+                size: size,
+                qty: parseInt(qtys[index]) || 0
+            })).filter(item => item.size.trim() !== '');
+
+            const isEdit = Boolean(payload.sample_id);
+            const endpoint = isEdit ? `${BASE_URL}/merchandising/sampling/${payload.sample_id}` : `${BASE_URL}/merchandising/sampling`;
+            const method = isEdit ? 'PUT' : 'POST';
+            
+            sampleSubmitBtn.disabled = true;
+            sampleSubmitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+
+            try {
+                const response = await fetch(endpoint, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (!response.ok) throw data;
+                location.reload();
+            } catch (error) {
+                showAlert(error?.message || 'Unable to save sample.');
+                sampleSubmitBtn.disabled = false;
+                sampleSubmitBtn.innerHTML = '<i class="fas fa-save me-1"></i>Save';
+            }
+        });
+
+        window.deleteSample = async function(sampleId) {
+            const row = document.querySelector(`tr[data-sample*='"sample_id":${sampleId}']`);
+            const sample = row ? JSON.parse(row.dataset.sample) : { style_code: 'this request' };
+            
+            if (!confirm(`Are you sure you want to delete the sample request for ${sample.style_code}?`)) return;
+            
+            try {
+                const response = await fetch(`${BASE_URL}/merchandising/sampling/${sampleId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    throw new Error('Deletion failed');
+                }
+            } catch (error) {
+                alert('Failed to delete sample requisition.');
+            }
+        };
+
+        document.getElementById('exportSamplingCsv')?.addEventListener('click', () => {
+            const rows = [['Req No', 'Style', 'Sample Type', 'Sample Size', 'Quantity', 'Request Date', 'Due Date', 'Status', 'Notes']];
+            document.querySelectorAll('#samplingTable tbody tr').forEach(tr => {
+                if (tr.querySelector('td[colspan]')) return;
+                const sample = JSON.parse(tr.dataset.sample);
+                rows.push([
+                    sample.requisition_no || '',
+                    `${sample.style_code} - ${sample.style_name}`,
+                    sample.sample_type,
+                    sample.sample_size || '',
+                    sample.quantity,
+                    sample.request_date,
+                    sample.due_date,
+                    sample.status,
+                    sample.notes || ''
+                ]);
+            });
+            const csv = rows.map(r => r.map(col => `"${String(col).replace(/"/g, '""')}"`).join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `sampling_export_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        });
+    });
+</script>
+{% endblock %}

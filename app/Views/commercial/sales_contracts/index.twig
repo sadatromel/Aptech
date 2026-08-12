@@ -1,0 +1,165 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Commercial • Sales Contracts{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Sales Contracts</h1>
+            <p class="text-muted">Manage your commercial sales contracts and linked production orders.</p>
+        </div>
+        <a href="{{ BASE_URL }}/commercial/sales-contracts/create" class="btn btn-primary rounded-pill px-4 shadow-sm">
+            <i class="fas fa-plus me-2"></i>New Sales Contract
+        </a>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 bg-primary-soft p-3 rounded-3 me-3">
+                            <i class="fas fa-file-contract text-primary fa-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small mb-1">Total Contracts</div>
+                            <div class="h4 fw-bold mb-0 text-dark">{{ contracts|length }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 bg-success-soft p-3 rounded-3 me-3">
+                            <i class="fas fa-check-double text-success fa-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small mb-1">Total Value</div>
+                            {% set totalValue = 0 %}
+                            {% for c in contracts %}{% set totalValue = totalValue + c.total_amount %}{% endfor %}
+                            <div class="h4 fw-bold mb-0 text-dark">${{ totalValue|number_format(0) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 bg-info-soft p-3 rounded-3 me-3">
+                            <i class="fas fa-boxes text-info fa-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small mb-1">Total Items</div>
+                            {% set totalItems = 0 %}
+                            {% for c in contracts %}{% set totalItems = totalItems + c.total_items %}{% endfor %}
+                            <div class="h4 fw-bold mb-0 text-dark">{{ totalItems }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4 overflow-hidden">
+        <div class="card-header bg-white py-3 border-0">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h5 class="mb-0 fw-bold">Recent Contracts</h5>
+                </div>
+                <div class="col-auto">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" class="form-control bg-light border-start-0" placeholder="Search contracts...">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Contract Details</th>
+                            <th>Customer</th>
+                            <th>Validity</th>
+                            <th>Terms</th>
+                            <th class="text-center">Items</th>
+                            <th class="text-end">Value</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for contract in contracts %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold text-dark">{{ contract.contract_no }}</div>
+                                    <small class="text-muted">ID: #{{ contract.so_id }}</small>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ contract.customer_name }}</div>
+                                    <small class="text-muted">{{ contract.customer_code }}</small>
+                                </td>
+                                <td>
+                                    <div class="small">
+                                        <span class="text-muted">From:</span> {{ contract.contract_date|date('d M Y') }}<br>
+                                        <span class="text-muted">Until:</span> {{ contract.valid_until ? contract.valid_until|date('d M Y') : 'N/A' }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="small">
+                                        <span class="badge bg-light text-dark border"><i class="fas fa-ship me-1 text-muted"></i>{{ contract.shipping_terms ?: 'N/A' }}</span><br>
+                                        <span class="badge bg-light text-dark border mt-1"><i class="fas fa-money-bill-wave me-1 text-muted"></i>{{ contract.payment_terms ?: 'N/A' }}</span>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-primary rounded-pill">{{ contract.total_items }}</span>
+                                </td>
+                                <td class="text-end fw-bold text-primary">
+                                    {{ contract.currency }} {{ contract.total_amount|number_format(2) }}
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge rounded-pill bg-{{ contract.status == 'approved' ? 'success' : (contract.status == 'pending' ? 'warning text-dark' : 'secondary') }}">
+                                        {{ contract.status|capitalize }}
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="d-flex justify-content-end">
+                                        <a href="{{ BASE_URL }}/commercial/sales-contracts/{{ contract.so_id }}" class="btn btn-icon btn-sm btn-outline-info rounded-circle me-1" title="View"><i class="fas fa-eye"></i></a>
+                                        <a href="{{ BASE_URL }}/commercial/sales-contracts/{{ contract.so_id }}/edit" class="btn btn-icon btn-sm btn-outline-primary rounded-circle" title="Edit"><i class="fas fa-edit"></i></a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="fas fa-file-invoice-dollar fa-4x mb-3 opacity-25"></i>
+                                    <h5 class="fw-normal">No sales contracts found</h5>
+                                    <p class="mb-4">Start by creating your first commercial sales contract.</p>
+                                    <a href="{{ BASE_URL }}/commercial/sales-contracts/create" class="btn btn-primary rounded-pill px-4">
+                                        <i class="fas fa-plus me-2"></i>Create New Contract
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-primary-soft { background-color: rgba(13, 110, 253, 0.1); }
+    .bg-success-soft { background-color: rgba(25, 135, 84, 0.1); }
+    .bg-info-soft { background-color: rgba(13, 202, 240, 0.1); }
+    .btn-icon { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+</style>
+{% endblock %}

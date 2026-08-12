@@ -1,0 +1,588 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Leave Delete | HR Module{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mt-2 mb-4 p-4 rounded-3 text-white shadow-sm" style="background: linear-gradient(135deg, #be123c 0%, #e11d48 100%);">
+        <div>
+            <span class="badge bg-white mb-2 font-monospace fw-bold" style="color: #be123c;"><i class="fas fa-calendar-minus me-1"></i> LEAVE REVOCATION & DELETION</span>
+            <h2 class="mb-1 font-weight-bold">Leave Delete</h2>
+            <p class="mb-0 opacity-75">Search employee leaves by organizational parameters and revoke/delete single or multiple leave entries.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ BASE_URL }}/hr/leave" class="btn btn-light rounded-pill px-4 font-weight-bold shadow-sm" style="color: #be123c;"><i class="fas fa-list me-1"></i> Leave Register</a>
+        </div>
+    </div>
+
+    <!-- Alert Notifications -->
+    {% if flash_success %}
+        <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2 fs-5 align-middle"></i>
+            <span>{{ flash_success }}</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+
+    {% if flash_error %}
+        <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2 fs-5 align-middle"></i>
+            <span>{{ flash_error }}</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+
+    <!-- Summary Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-4 border-primary">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="small text-muted font-weight-bold text-uppercase">Total System Leaves</div>
+                        <div class="h3 font-weight-bold text-primary my-1">{{ stats.total_all|default(0) }}</div>
+                        <div class="small text-muted"><i class="fas fa-database me-1"></i> All Time Records</div>
+                    </div>
+                    <div class="p-3 bg-primary-subtle text-primary rounded-circle"><i class="fas fa-folder-open fa-2x"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-4 border-danger">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="small text-muted font-weight-bold text-uppercase">Matching Criteria</div>
+                        <div class="h3 font-weight-bold text-danger my-1">{{ stats.filtered|default(0) }}</div>
+                        <div class="small text-muted"><i class="fas fa-filter me-1"></i> Found by Current Search</div>
+                    </div>
+                    <div class="p-3 bg-danger-subtle text-danger rounded-circle"><i class="fas fa-search me-1 fa-2x"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-4 border-success">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="small text-muted font-weight-bold text-uppercase">Approved Leaves</div>
+                        <div class="h3 font-weight-bold text-success my-1">{{ stats.approved|default(0) }}</div>
+                        <div class="small text-success"><i class="fas fa-check-circle me-1"></i> Active Sanctioned</div>
+                    </div>
+                    <div class="p-3 bg-success-subtle text-success rounded-circle"><i class="fas fa-calendar-check fa-2x"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-4 border-warning">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="small text-muted font-weight-bold text-uppercase">Pending Leaves</div>
+                        <div class="h3 font-weight-bold text-warning my-1">{{ stats.pending|default(0) }}</div>
+                        <div class="small text-warning"><i class="fas fa-clock me-1"></i> Awaiting Action</div>
+                    </div>
+                    <div class="p-3 bg-warning-subtle text-warning rounded-circle"><i class="fas fa-hourglass-half fa-2x"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filter Form Form Card (Matching Reference Layout) -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-danger fw-bold"><i class="fas fa-id-card me-2"></i>Leave Delete Filter Parameters</h5>
+            <span class="badge bg-light text-muted border">Employee & Organization Criteria</span>
+        </div>
+        <div class="card-body p-4">
+            <form id="leaveDeleteFilterForm" method="GET" action="{{ BASE_URL }}/hr/leave-delete">
+                
+                <!-- Fieldset Box 1: Employee & Org Details -->
+                <div class="border rounded-3 p-3 mb-4 bg-light-subtle">
+                    <legend class="float-none w-auto px-2 fs-6 fw-bold text-primary mb-2">
+                        <i class="fas fa-user-gear me-1"></i> Employee & Unit Information
+                    </legend>
+
+                    <div class="row g-3">
+                        <!-- Row 1: Emp Code, Emp ID, Emp Name -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-primary">Emp Code <span class="text-muted fw-normal">(Browse or Write)</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="fas fa-barcode text-muted"></i></span>
+                                <input type="text" class="form-control font-monospace" id="filter_emp_code" name="emp_code" value="{{ filters.emp_code }}" placeholder="Type or select code..." list="employee_codes_list" autocomplete="off">
+                                <datalist id="employee_codes_list">
+                                    {% for emp in employees %}
+                                        <option value="{{ emp.employee_code }}">{{ emp.first_name }} {{ emp.last_name }} ({{ emp.department_name|default('N/A') }})</option>
+                                    {% endfor %}
+                                </datalist>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-primary">Emp ID <span class="text-muted fw-normal">(Browse or Write)</span></label>
+                            <select class="form-select" id="filter_emp_id" name="emp_id">
+                                <option value="">-- Browse or Select --</option>
+                                {% for emp in employees %}
+                                    <option value="{{ emp.employee_id }}" {{ filters.emp_id == emp.employee_id ? 'selected' : '' }}>
+                                        #{{ emp.employee_id }} - {{ emp.employee_code }} ({{ emp.first_name }} {{ emp.last_name }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-secondary">Emp Name</label>
+                            <input type="text" class="form-control bg-light" id="filter_emp_name" readonly placeholder="Auto-populated on selection">
+                        </div>
+
+                        <!-- Row 2: Category, Company, Location -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-dark">Category</label>
+                            <select class="form-select" name="category">
+                                <option value="">-- Select --</option>
+                                {% for cat in categories %}
+                                    <option value="{{ cat }}">{{ cat }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-dark">Company</label>
+                            <select class="form-select" name="company">
+                                <option value="">-- Select --</option>
+                                {% for comp in companies %}
+                                    <option value="{{ comp.factory_id }}">{{ comp.factory_name }} ({{ comp.factory_code }})</option>
+                                {% else %}
+                                    <option value="1">Aptech Caswier Ltd.</option>
+                                    <option value="2">Big Boss Corporation Ltd.</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-dark">Location</label>
+                            <select class="form-select" name="location">
+                                <option value="">-- Select --</option>
+                                {% for loc in locations %}
+                                    <option value="{{ loc }}" {{ loop.first ? 'selected' : '' }}>{{ loc }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Row 3: Division, Department, Section -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-dark">Division</label>
+                            <select class="form-select" name="division">
+                                <option value="">-- Select --</option>
+                                {% for div in divisions %}
+                                    <option value="{{ div }}">{{ div }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-dark">Department</label>
+                            <select class="form-select" id="filter_department" name="department_id">
+                                <option value="">-- Select --</option>
+                                {% for dept in departments %}
+                                    <option value="{{ dept.department_id }}" {{ filters.department_id == dept.department_id ? 'selected' : '' }}>
+                                        {{ dept.department_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-dark">Section</label>
+                            <select class="form-select" id="filter_section" name="section_id">
+                                <option value="">-- Select --</option>
+                                {% for sec in sections %}
+                                    <option value="{{ sec.section_id }}" {{ filters.section_id == sec.section_id ? 'selected' : '' }}>
+                                        {{ sec.section_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Row 4: Subsection, Designation -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Subsection</label>
+                            <select class="form-select" name="subsection">
+                                <option value="">-- Select --</option>
+                                {% for sub in subsections %}
+                                    <option value="{{ sub }}">{{ sub }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Designation</label>
+                            <select class="form-select" id="filter_position" name="position_id">
+                                <option value="">-- Select --</option>
+                                {% for pos in positions %}
+                                    <option value="{{ pos.position_id }}" {{ filters.position_id == pos.position_id ? 'selected' : '' }}>
+                                        {{ pos.position_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fieldset Box 2: Leave Type & Date Deletion Parameters -->
+                <div class="border rounded-3 p-3 bg-white">
+                    <legend class="float-none w-auto px-2 fs-6 fw-bold text-danger mb-3">
+                        <i class="fas fa-calendar-minus me-1"></i> Leave Specification & Deletion Criteria
+                    </legend>
+
+                    <div class="row g-3 align-items-end">
+                        <!-- Leave Type Dropdown -->
+                        <div class="col-lg-3 col-md-6">
+                            <label class="form-label fw-bold small text-danger">Leave Type</label>
+                            <select class="form-select border-danger-subtle fw-semibold" name="leave_type">
+                                <option value="--Select--">--Select--</option>
+                                {% for lt in leaveTypes %}
+                                    <option value="{{ lt }}" {{ filters.leave_type == lt ? 'selected' : '' }}>{{ lt }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Application Date Range -->
+                        <div class="col-lg-3 col-md-6">
+                            <label class="form-label fw-bold small text-dark">Application Date Range</label>
+                            <div class="input-group">
+                                <input type="date" class="form-control" name="app_from" value="{{ filters.app_from }}" placeholder="From">
+                                <span class="input-group-text bg-light">to</span>
+                                <input type="date" class="form-control" name="app_to" value="{{ filters.app_to }}" placeholder="To">
+                            </div>
+                        </div>
+
+                        <!-- Target Delete Date Range -->
+                        <div class="col-lg-3 col-md-6">
+                            <label class="form-label fw-bold small text-dark">Delete Date Range</label>
+                            <div class="input-group">
+                                <input type="date" class="form-control" name="del_from" value="{{ filters.del_from }}" placeholder="From">
+                                <span class="input-group-text bg-light">to</span>
+                                <input type="date" class="form-control" name="del_to" value="{{ filters.del_to }}" placeholder="To">
+                            </div>
+                        </div>
+
+                        <!-- Audit Remarks -->
+                        <div class="col-lg-3 col-md-6">
+                            <label class="form-label fw-bold small text-dark">Deletion Remarks</label>
+                            <input type="text" class="form-control" id="form_remarks" name="remarks" placeholder="Audit note for deletion...">
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-2 border-top">
+                        <a href="{{ BASE_URL }}/hr/leave-delete" class="btn btn-outline-secondary rounded-pill px-4 font-weight-bold">
+                            <i class="fas fa-undo me-1"></i> Reset Filters
+                        </a>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 font-weight-bold shadow-sm">
+                            <i class="fas fa-filter me-1"></i> Search Leaves
+                        </button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- Data Table Card for Leave Records -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-danger fw-bold">
+                <i class="fas fa-table me-2"></i>Matching Leave Records <span class="badge bg-danger-subtle text-danger ms-2 rounded-pill px-3">{{ leaves|length }} Found</span>
+            </h5>
+            <div>
+                <button type="button" id="btnBulkDelete" class="btn btn-danger rounded-pill px-4 font-weight-bold shadow-sm" disabled>
+                    <i class="fas fa-trash-alt me-1"></i> Delete Selected (<span id="selectedCount">0</span>)
+                </button>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            <form id="bulkDeleteForm" method="POST" action="{{ BASE_URL }}/hr/leave-delete">
+                {{ csrf_field() | raw }}
+                <input type="hidden" name="remarks" id="bulk_remarks_hidden" value="">
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center" style="width: 40px;">
+                                    <input type="checkbox" class="form-check-input" id="checkAllLeaves">
+                                </th>
+                                <th>Employee Details</th>
+                                <th>Department & Sec</th>
+                                <th>Leave Type</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Applied Date</th>
+                                <th>Status</th>
+                                <th>Reason</th>
+                                <th class="text-end px-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for leave in leaves %}
+                            <tr>
+                                <td class="text-center">
+                                    <input type="checkbox" class="form-check-input leave-checkbox" name="leave_ids[]" value="{{ leave.id }}">
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle me-2 bg-danger-subtle text-danger fw-bold rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; min-width: 36px;">
+                                            {{ leave.first_name|first }}{{ leave.last_name|first }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ leave.first_name }} {{ leave.last_name }}</div>
+                                            <span class="badge bg-light text-dark border font-monospace">{{ leave.employee_code }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ leave.department_name|default('N/A') }}</div>
+                                    <small class="text-muted">{{ leave.section_name|default(leave.position_name|default('General')) }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-danger-subtle text-danger fw-bold px-2 py-1 rounded">
+                                        <i class="fas fa-calendar-day me-1"></i>{{ leave.leave_type }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark"><i class="far fa-calendar me-1 text-muted"></i>{{ leave.start_date|date("M j, Y") }}</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark"><i class="far fa-calendar me-1 text-muted"></i>{{ leave.end_date|date("M j, Y") }}</div>
+                                </td>
+                                <td>
+                                    <small class="text-muted"><i class="fas fa-clock me-1 text-muted"></i>{{ leave.created_at|date("M j, Y H:i") }}</small>
+                                </td>
+                                <td>
+                                    {% if leave.status == 'Approved' %}
+                                        <span class="badge bg-success rounded-pill px-3 py-1"><i class="fas fa-check-circle me-1"></i>Approved</span>
+                                    {% elseif leave.status == 'Pending' %}
+                                        <span class="badge bg-warning text-dark rounded-pill px-3 py-1"><i class="fas fa-clock me-1"></i>Pending</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary rounded-pill px-3 py-1">{{ leave.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted d-inline-block text-truncate" style="max-width: 160px;" title="{{ leave.reason }}">
+                                        {{ leave.reason|default('No reason specified') }}
+                                    </small>
+                                </td>
+                                <td class="text-end px-4">
+                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold btn-single-delete" data-id="{{ leave.id }}" data-code="{{ leave.employee_code }}" data-name="{{ leave.first_name }} {{ leave.last_name }}" data-type="{{ leave.leave_type }}">
+                                        <i class="fas fa-trash-alt me-1"></i> Delete
+                                    </button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="10" class="text-center py-5 text-muted">
+                                    <div class="mb-2"><i class="fas fa-inbox fa-3x opacity-25"></i></div>
+                                    <h6 class="fw-bold">No Leave Applications Found</h6>
+                                    <p class="small mb-0 opacity-75">Adjust search criteria above or select a different employee code / date range.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Single Delete Modal -->
+<div class="modal fade" id="singleDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold"><i class="fas fa-exclamation-triangle me-2"></i>Confirm Leave Deletion</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ BASE_URL }}/hr/leave-delete">
+                {{ csrf_field() | raw }}
+                <input type="hidden" name="leave_id" id="singleDeleteLeaveId">
+                <div class="modal-body p-4">
+                    <p class="mb-3 fs-6">Are you sure you want to permanently delete this employee leave record?</p>
+                    
+                    <div class="p-3 bg-light rounded border mb-3">
+                        <div class="row g-2 small">
+                            <div class="col-6"><strong>Employee:</strong> <span id="modalEmpName"></span></div>
+                            <div class="col-6"><strong>Emp Code:</strong> <span id="modalEmpCode"></span></div>
+                            <div class="col-12"><strong>Leave Type:</strong> <span id="modalLeaveType" class="badge bg-danger-subtle text-danger"></span></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Reason / Audit Remark (Optional)</label>
+                        <input type="text" class="form-control" name="remarks" placeholder="Enter reason for deleting this leave record...">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold"><i class="fas fa-trash-alt me-1"></i> Delete Leave</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Delete Confirmation Modal -->
+<div class="modal fade" id="bulkDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold"><i class="fas fa-dumpster me-2"></i>Bulk Leave Deletion</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="p-3 bg-danger-subtle text-danger rounded-circle d-inline-block mb-3">
+                    <i class="fas fa-trash-alt fa-3x"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Delete <span id="bulkModalCount">0</span> Selected Leave Records?</h5>
+                <p class="text-muted small mb-0">This action will remove the selected leave entries permanently from the database register.</p>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="btnConfirmBulkDelete" class="btn btn-danger rounded-pill px-4 fw-bold"><i class="fas fa-check-circle me-1"></i> Yes, Delete All Selected</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const baseUrl = "{{ BASE_URL }}";
+
+    // Auto-populate employee name and details on Code or ID selection
+    const empCodeInput = document.getElementById('filter_emp_code');
+    const empIdSelect = document.getElementById('filter_emp_id');
+    const empNameInput = document.getElementById('filter_emp_name');
+    const departmentSelect = document.getElementById('filter_department');
+    const sectionSelect = document.getElementById('filter_section');
+    const positionSelect = document.getElementById('filter_position');
+
+    function fetchEmpDetails(code, id) {
+        if (!code && !id) {
+            empNameInput.value = '';
+            return;
+        }
+
+        let url = `${baseUrl}/api/hr/employee-details?`;
+        if (code) url += `code=${encodeURIComponent(code)}`;
+        else if (id) url += `id=${encodeURIComponent(id)}`;
+
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.employee) {
+                    empNameInput.value = data.employee.name;
+                    if (data.employee.code && !empCodeInput.value) {
+                        empCodeInput.value = data.employee.code;
+                    }
+                    if (data.employee.id && (!empIdSelect.value || empIdSelect.value != data.employee.id)) {
+                        empIdSelect.value = data.employee.id;
+                    }
+                    if (data.employee.department_id && !departmentSelect.value) {
+                        departmentSelect.value = data.employee.department_id;
+                    }
+                    if (data.employee.section_id && !sectionSelect.value) {
+                        sectionSelect.value = data.employee.section_id;
+                    }
+                    if (data.employee.position_id && !positionSelect.value) {
+                        positionSelect.value = data.employee.position_id;
+                    }
+                }
+            })
+            .catch(err => console.error("Error fetching employee info:", err));
+    }
+
+    if (empCodeInput) {
+        empCodeInput.addEventListener('change', function () {
+            fetchEmpDetails(this.value.trim(), '');
+        });
+    }
+
+    if (empIdSelect) {
+        empIdSelect.addEventListener('change', function () {
+            fetchEmpDetails('', this.value);
+        });
+    }
+
+    // Auto trigger check on load if filter was active
+    if (empCodeInput && empCodeInput.value) {
+        fetchEmpDetails(empCodeInput.value.trim(), '');
+    } else if (empIdSelect && empIdSelect.value) {
+        fetchEmpDetails('', empIdSelect.value);
+    }
+
+    // Checkbox select all logic
+    const checkAll = document.getElementById('checkAllLeaves');
+    const checkboxes = document.querySelectorAll('.leave-checkbox');
+    const btnBulkDelete = document.getElementById('btnBulkDelete');
+    const selectedCountSpan = document.getElementById('selectedCount');
+
+    function updateBulkButton() {
+        const checked = document.querySelectorAll('.leave-checkbox:checked');
+        const count = checked.length;
+        selectedCountSpan.textContent = count;
+        btnBulkDelete.disabled = count === 0;
+    }
+
+    if (checkAll) {
+        checkAll.addEventListener('change', function () {
+            checkboxes.forEach(cb => cb.checked = this.checked);
+            updateBulkButton();
+        });
+    }
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', function () {
+            if (!this.checked && checkAll) checkAll.checked = false;
+            updateBulkButton();
+        });
+    });
+
+    // Single Delete Modal handling
+    const singleDeleteModal = new bootstrap.Modal(document.getElementById('singleDeleteModal'));
+    document.querySelectorAll('.btn-single-delete').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.getElementById('singleDeleteLeaveId').value = this.dataset.id;
+            document.getElementById('modalEmpCode').textContent = this.dataset.code;
+            document.getElementById('modalEmpName').textContent = this.dataset.name;
+            document.getElementById('modalLeaveType').textContent = this.dataset.type;
+            singleDeleteModal.show();
+        });
+    });
+
+    // Bulk Delete Modal handling
+    const bulkDeleteModal = new bootstrap.Modal(document.getElementById('bulkDeleteModal'));
+    if (btnBulkDelete) {
+        btnBulkDelete.addEventListener('click', function () {
+            const count = document.querySelectorAll('.leave-checkbox:checked').length;
+            if (count > 0) {
+                document.getElementById('bulkModalCount').textContent = count;
+                bulkDeleteModal.show();
+            }
+        });
+    }
+
+    const btnConfirmBulkDelete = document.getElementById('btnConfirmBulkDelete');
+    if (btnConfirmBulkDelete) {
+        btnConfirmBulkDelete.addEventListener('click', function () {
+            const formRemarks = document.getElementById('form_remarks');
+            const hiddenRemarks = document.getElementById('bulk_remarks_hidden');
+            if (formRemarks && hiddenRemarks) {
+                hiddenRemarks.value = formRemarks.value;
+            }
+            document.getElementById('bulkDeleteForm').submit();
+        });
+    }
+});
+</script>
+{% endblock %}

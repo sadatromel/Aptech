@@ -1,0 +1,120 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Style Details • {{ style.style_code }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <!-- Breadcrumb & Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ BASE_URL }}/merchandising/styles">Styles Library</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ style.style_code }}</li>
+                </ol>
+            </nav>
+            <h1 class="h3 fw-bold text-dark mb-0">
+                <i class="fas fa-tshirt text-primary me-2"></i>{{ style.style_code }} — {{ style.style_name }}
+            </h1>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ BASE_URL }}/merchandising/styles/{{ style.style_id }}/tech-pack" class="btn btn-primary rounded-pill px-3 shadow-sm btn-sm">
+                <i class="fas fa-file-invoice me-1"></i>Generate Tech Pack
+            </a>
+            <a href="{{ BASE_URL }}/merchandising/styles/edit?id={{ style.style_id }}" class="btn btn-outline-primary rounded-pill px-3 shadow-sm btn-sm">
+                <i class="fas fa-edit me-1"></i>Edit Style
+            </a>
+            <a href="{{ BASE_URL }}/merchandising/styles" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm btn-sm">
+                <i class="fas fa-arrow-left me-1"></i>Back to Styles
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Header Card -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <div class="row align-items-center g-4">
+                <div class="col-md-3 text-center border-end">
+                    {% if style.photo_path %}
+                    <img src="{{ BASE_URL }}/{{ style.photo_path }}" alt="{{ style.style_name }}" class="img-fluid rounded-3 border shadow-sm" style="max-height: 180px; object-fit: contain;">
+                    {% else %}
+                    <div class="py-4 text-muted bg-light rounded-3">
+                        <i class="fas fa-tshirt fa-4x mb-2 opacity-25"></i>
+                        <p class="small mb-0">No Photo Uploaded</p>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-9">
+                    <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
+                        <div>
+                            <span class="badge bg-primary rounded-pill px-3 py-1 mb-2">{{ style.style_code }}</span>
+                            <h3 class="fw-bold text-dark mb-1">{{ style.style_name }}</h3>
+                            <p class="text-muted small mb-0"><i class="fas fa-building me-1"></i>Buyer: <strong class="text-dark">{{ style.buyer_name ?? 'N/A' }}</strong></p>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge rounded-pill fs-6 px-3 py-2 {% if style.status == 'approved_for_production' or style.status == 'active' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ style.status|replace({'_': ' '})|capitalize }}
+                            </span>
+                            <div class="mt-2 text-success fw-bold fs-5">${{ style.price|number_format(2) }} <small class="text-muted fs-6">Target FOB</small></div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 bg-light p-3 rounded-3 mt-1">
+                        <div class="col-sm-3 col-6">
+                            <span class="text-muted small d-block">Season</span>
+                            <span class="fw-bold text-dark">{{ style.season ?? '-' }}</span>
+                        </div>
+                        <div class="col-sm-3 col-6">
+                            <span class="text-muted small d-block">Category</span>
+                            <span class="fw-bold text-dark">{{ style.category ?? '-' }}</span>
+                        </div>
+                        <div class="col-sm-3 col-6">
+                            <span class="text-muted small d-block">Garment Type</span>
+                            <span class="fw-bold text-dark">{{ style.garment_type ?? '-' }}</span>
+                        </div>
+                        <div class="col-sm-3 col-6">
+                            <span class="text-muted small d-block">Article Number</span>
+                            <span class="fw-bold text-dark">{{ style.article_number ?? '-' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Size Breakdowns Card -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-0 pt-3 px-3">
+            <h6 class="fw-bold mb-0"><i class="fas fa-ruler-horizontal text-primary me-2"></i>Size Breakdowns & Color Allocations</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted small">
+                        <tr>
+                            <th class="ps-3">Breakdown Name</th>
+                            <th>Color</th>
+                            <th>Available Sizes</th>
+                            <th>Size Quantities Ratio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if breakdowns is empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-4">No size breakdowns defined for this style.</td></tr>
+                        {% else %}
+                        {% for bd in breakdowns %}
+                        <tr>
+                            <td class="ps-3 fw-bold">{{ bd.breakdown_name }}</td>
+                            <td><span class="badge bg-secondary-subtle text-secondary">{{ bd.color }}</span></td>
+                            <td>{{ bd.sizes }}</td>
+                            <td class="fw-semibold text-primary">{{ bd.size_quantities }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

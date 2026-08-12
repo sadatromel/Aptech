@@ -1,0 +1,118 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}New Style | Merchandising{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">New Style</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/merchandising/styles">Styles</a></li>
+        <li class="breadcrumb-item active">New Style</li>
+    </ol>
+
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+             <div class="h5 mb-0 text-primary"><i class="fas fa-tshirt me-2"></i>Create New Style</div>
+        </div>
+        <div class="card-body p-4">
+            <form action="{{ BASE_URL }}/merchandising/styles/store" method="POST" enctype="multipart/form-data">
+    {{ csrf_field() | raw }}
+                
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" name="style_code" id="style_code" placeholder="Style Code" required autofocus>
+                            <label for="style_code">Style Code <span class="text-danger">*</span></label>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" name="style_name" id="style_name" placeholder="Style Name" required>
+                            <label for="style_name">Style Name <span class="text-danger">*</span></label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            <select class="form-select" name="buyer_id" id="buyer_id" required>
+                                <option value="">Select Buyer...</option>
+                                {% for buyer in dropdowns.buyers %}
+                                    <option value="{{ buyer.buyer_id }}">{{ buyer.buyer_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="buyer_id">Buyer <span class="text-danger">*</span></label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" name="season" id="season" placeholder="e.g. SS25">
+                            <label for="season">Season</label>
+                        </div>
+                    </div>
+                     <div class="col-md-4">
+                        <div class="form-floating">
+                            <input type="number" step="0.01" class="form-control" name="price" id="price" min="0" placeholder="0.00">
+                            <label for="price">Target Price (USD)</label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" name="article_number" id="article_number" placeholder="Article Number">
+                            <label for="article_number">Article Number</label>
+                        </div>
+                    </div>
+                     <div class="col-md-4">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" name="category" id="category" placeholder="e.g. Denim">
+                            <label for="category">Category</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" name="garment_type" id="garment_type" placeholder="e.g. Jacket">
+                            <label for="garment_type">Garment Type</label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <div class="form-floating">
+                            <select class="form-select" name="status" id="status">
+                                {% for status in dropdowns.statuses %}
+                                    <option value="{{ status.value }}" {{ status.value == 'design' ? 'selected' }}>{{ status.label }}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="status">Status</label>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="form-floating">
+                            <textarea class="form-control" name="style_description" id="style_description" placeholder="Style Description" style="height: 100px"></textarea>
+                            <label for="style_description">Style Description</label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="form-floating">
+                            <textarea class="form-control" name="description" id="description" placeholder="Internal remarks..." style="height: 100px"></textarea>
+                            <label for="description">Internal Notes</label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <label class="form-label text-muted small mb-1" for="style_photo">Style Photo</label>
+                        <input type="file" class="form-control form-control-lg text-muted fs-6" name="style_photo" id="style_photo" accept="image/*">
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-top d-flex justify-content-end gap-2">
+                    <a href="{{ BASE_URL }}/merchandising/styles" class="btn btn-light border rounded-pill px-4">Cancel</a>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4"><i class="fas fa-save me-1"></i> Create Style</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

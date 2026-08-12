@@ -1,0 +1,83 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Garments Items | Master Library{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Garments Items</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item active">Garments Items</li>
+    </ol>
+
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+            <div class="h5 mb-0 text-primary"><i class="fas fa-tshirt me-2"></i>Garments Item List</div>
+            {% if canCreate('master_library', 'create_garments_items') %}
+            <a href="{{ BASE_URL }}/master_library/garments_items/create" class="btn btn-primary px-4 rounded-pill">
+                <i class="fas fa-plus me-1"></i> Add New
+            </a>
+            {% endif %}
+        </div>
+        <div class="card-body p-4">
+            <div class="table-responsive">
+                <table id="datatablesSimple" class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Item Code</th>
+                            <th>Item Name</th>
+                            <th>Description</th>
+                            <th>Product Types</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td><strong>{{ item.item_code }}</strong></td>
+                            <td>{{ item.item_name }}</td>
+                            <td>{{ item.description }}</td>
+                            <td>
+                                {% if item.types %}
+                                    <span class="text-secondary">{{ item.types }}</span>
+                                {% else %}
+                                    <span class="text-muted small">None</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge rounded-pill bg-{{ item.status == 'active' ? 'success' : 'secondary' }}">
+                                    {{ item.status|capitalize }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if canEdit('master_library', 'edit_garments_items') %}
+                                <a href="{{ BASE_URL }}/master_library/garments_items/edit/{{ item.item_id }}" class="btn btn-warning btn-sm rounded-circle" title="Edit">
+                                    <i class="fas fa-edit text-white"></i>
+                                </a>
+                                {% endif %}
+                                
+                                {% if canDelete('master_library', 'delete_garments_items') %}
+                                <form action="{{ BASE_URL }}/master_library/garments_items/delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this garments item?');">
+                                    {{ csrf_field() | raw }}
+                                    <input type="hidden" name="id" value="{{ item.item_id }}">
+                                    <button type="submit" class="btn btn-danger btn-sm rounded-circle" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">No garments items found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

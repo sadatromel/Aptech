@@ -1,0 +1,75 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}New Buyer | Master Library{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">New Buyer</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library/buyers">Buyers</a></li>
+        <li class="breadcrumb-item active">New Buyer</li>
+    </ol>
+
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+             <div class="h5 mb-0 text-primary"><i class="fas fa-user-plus me-2"></i>Create New Buyer</div>
+        </div>
+        <div class="card-body p-4">
+            <form action="{{ BASE_URL }}/master_library/buyers/store" method="POST">
+    {{ csrf_field() | raw }}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Buyer Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="buyer_name" required autofocus>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Buyer Code</label>
+                        <input type="text" class="form-control" name="buyer_code">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Country</label>
+                        <select class="form-select" name="country" id="country">
+                            <option value="">-- Select Country --</option>
+                            {% for country in countries %}
+                                <option value="{{ country.country_name }}">{{ country.country_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Contact Person</label>
+                        <input type="text" class="form-control" name="contact_person">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" name="email">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Phone</label>
+                        <input type="text" class="form-control" name="phone">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Address</label>
+                        <textarea class="form-control" name="address" rows="2"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status">
+                            <option value="active" selected>Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-4 mb-0">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ BASE_URL }}/master_library/buyers" class="btn btn-light me-md-2 px-4 rounded-pill border">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 rounded-pill"><i class="fas fa-save me-1"></i> Create Buyer</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Export Shipping Documents • Aptech ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h1 class="h3 fw-bold text-dark mb-1">
+                <i class="fas fa-ship text-secondary me-2"></i>Export Shipping Documents
+            </h1>
+            <p class="text-muted small mb-0">Manage Bill of Lading (B/L), EXP Forms, Port of Loading/Discharge, Vessels, and Export Dossiers.</p>
+        </div>
+        <div>
+            <button class="btn btn-primary rounded-pill px-3 shadow-sm btn-sm" data-bs-toggle="modal" data-bs-target="#createExportModal">
+                <i class="fas fa-plus me-1"></i>New Export Dossier
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter & Search Bar -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-3">
+            <form method="GET" action="{{ BASE_URL }}/commercial/export-documents" class="row g-2 align-items-center">
+                <div class="col-md-9">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" name="search" class="form-control bg-light border-0" placeholder="Search by Document #, PO #, or Buyer..." value="{{ search }}">
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-dark w-100 rounded-3">Search</button>
+                    {% if search %}
+                    <a href="{{ BASE_URL }}/commercial/export-documents" class="btn btn-outline-secondary rounded-3">Reset</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Export Documents Table -->
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted small">
+                        <tr>
+                            <th class="ps-3">Doc Number</th>
+                            <th>Buyer</th>
+                            <th>Order #</th>
+                            <th>Ports</th>
+                            <th>Vessel / Voyage</th>
+                            <th class="text-end">Invoice Value</th>
+                            <th>Payment Terms</th>
+                            <th class="text-end pe-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if documents is empty %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-5">
+                                <i class="fas fa-ship fa-3x mb-3 text-secondary opacity-50 d-block"></i>
+                                No export shipping documents found. Click "New Export Dossier" to add one.
+                            </td>
+                        </tr>
+                        {% else %}
+                        {% for doc in documents %}
+                        <tr>
+                            <td class="ps-3 fw-bold">
+                                <a href="{{ BASE_URL }}/commercial/export-documents/{{ doc.document_id }}" class="text-decoration-none text-primary">
+                                    {{ doc.document_number }}
+                                </a>
+                            </td>
+                            <td><span class="fw-semibold">{{ doc.buyer_name ?? 'N/A' }}</span></td>
+                            <td><span class="badge bg-light text-dark border">{{ doc.order_number ?? 'General' }}</span></td>
+                            <td>
+                                <small class="d-block text-dark fw-semibold"><i class="fas fa-anchor text-muted me-1"></i>{{ doc.port_of_loading ?: 'Chittagong' }}</small>
+                                <small class="text-muted"><i class="fas fa-map-marker-alt text-danger me-1"></i>{{ doc.port_of_discharge ?: 'N/A' }}</small>
+                            </td>
+                            <td>
+                                <small class="d-block fw-semibold text-dark">{{ doc.vessel_name ?: '-' }}</small>
+                                <small class="text-muted">Voy: {{ doc.voyage_number ?: '-' }}</small>
+                            </td>
+                            <td class="text-end fw-bold text-success">
+                                ${{ doc.invoice_value|number_format(2) }}
+                            </td>
+                            <td><small class="badge bg-info-subtle text-info border border-info">{{ doc.payment_terms ?: 'L/C' }}</small></td>
+                            <td class="text-end pe-3">
+                                <a href="{{ BASE_URL }}/commercial/export-documents/{{ doc.document_id }}" class="btn btn-sm btn-outline-primary rounded-pill">
+                                    <i class="fas fa-eye me-1"></i>View Dossier
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: New Export Shipping Dossier -->
+<div class="modal fade" id="createExportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header bg-dark text-white rounded-top-4">
+                <h5 class="modal-title fw-bold"><i class="fas fa-ship me-2"></i>Create Export Shipping Dossier</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ BASE_URL }}/commercial/export-documents">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Buyer / Customer</label>
+                            <select name="buyer_id" class="form-select" required>
+                                <option value="">-- Select Buyer --</option>
+                                {% for b in buyers %}
+                                <option value="{{ b.buyer_id }}">{{ b.buyer_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Production Order (PO #)</label>
+                            <select name="order_id" class="form-select">
+                                <option value="0">-- Select PO --</option>
+                                {% for po in orders %}
+                                <option value="{{ po.po_id }}">{{ po.order_number }} (Style: {{ po.style_code }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Commercial Invoice Number</label>
+                            <input type="text" name="invoice_number" class="form-control" placeholder="e.g. INV-2026-089">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Invoice Value ($)</label>
+                            <input type="number" step="0.01" name="invoice_value" class="form-control" placeholder="0.00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Port of Loading</label>
+                            <input type="text" name="port_of_loading" class="form-control" value="Chittagong Port, Bangladesh">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Port of Discharge</label>
+                            <input type="text" name="port_of_discharge" class="form-control" placeholder="e.g. Port of Hamburg, Germany">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Vessel Name</label>
+                            <input type="text" name="vessel_name" class="form-control" placeholder="e.g. MV Maersk Mc-Kinney">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Voyage Number</label>
+                            <input type="text" name="voyage_number" class="form-control" placeholder="e.g. V-402E">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Consignee Name</label>
+                            <input type="text" name="consignee_name" class="form-control" placeholder="Consignee company name">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Payment Terms</label>
+                            <select name="payment_terms" class="form-select">
+                                <option value="L/C at Sight">L/C at Sight</option>
+                                <option value="L/C 60 Days Usance">L/C 60 Days Usance</option>
+                                <option value="TT / Advance">TT / Advance</option>
+                                <option value="CAD (Cash Against Documents)">CAD</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4"><i class="fas fa-save me-1"></i>Save Export Dossier</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

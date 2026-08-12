@@ -1,0 +1,232 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Create Store Requisition{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-8">
+        <h2 class="mb-0">New Store Requisition</h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb bg-transparent p-0 mb-0">
+                <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ BASE_URL }}/store_requisitions">Store Requisitions</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Create</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4 mb-4">
+    <div class="card-body p-4">
+        <form id="requisitionForm" onsubmit="submitRequisition(event)">
+            <!-- Header Section -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <label class="form-label">Location/Warehouse <span class="text-danger">*</span></label>
+                    <select class="form-select select2" name="location_id" required>
+                        <option value="">Select Location</option>
+                        {% for loc in locations %}
+                        <option value="{{ loc.location_id }}">{{ loc.location_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Department <span class="text-danger">*</span></label>
+                    <select class="form-select select2" name="department_id" required>
+                        <option value="">Select Department</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.department_id }}">{{ dept.department_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Requisition Date <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" name="requisition_date" value="{{ 'now'|date('Y-m-d') }}" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Required Date <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" name="required_date" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Reference No.</label>
+                    <input type="text" class="form-control" name="reference_no" placeholder="e.g. Job #">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Purpose</label>
+                    <input type="text" class="form-control" name="purpose" placeholder="Reason for requisition">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Remarks</label>
+                    <input type="text" class="form-control" name="remarks" placeholder="Additional notes">
+                </div>
+            </div>
+
+            <!-- Items Section -->
+            <h5 class="mb-3">Requested Items</h5>
+            <div class="table-responsive mb-3">
+                <table class="table table-bordered align-middle" id="itemsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="40%">Item <span class="text-danger">*</span></th>
+                            <th width="15%">Req. Qty <span class="text-danger">*</span></th>
+                            <th width="35%">Remarks</th>
+                            <th width="10%" class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Items will be added here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <button type="button" class="btn btn-outline-secondary btn-sm mb-4 rounded-pill" onclick="addItemRow()">
+                <i class="bx bx-plus"></i> Add Item Row
+            </button>
+
+            <div class="text-end border-top pt-3">
+                <a href="{{ BASE_URL }}/store_requisition" class="btn btn-light rounded-pill px-4 me-2">Cancel</a>
+                <button type="submit" class="btn btn-primary rounded-pill px-4" id="submitBtn">
+                    <i class="bx bx-save me-1"></i> Save Requisition
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Hidden template for item row -->
+<template id="itemRowTemplate">
+    <tr>
+        <td>
+            <select class="form-select item-select" onchange="updateRow(this)" required>
+                <option value="">Select Item</option>
+                {% for item in items %}
+                <option value="{{ item.item_id }}" data-uom="{{ item.unit_of_measure }}">{{ item.item_code }} - {{ item.item_name }}</option>
+                {% endfor %}
+            </select>
+        </td>
+        <td>
+            <div class="input-group">
+                <input type="number" class="form-control qty-input" step="0.01" min="0.01" required>
+                <span class="input-group-text unit-label text-muted" style="min-width: 45px;">-</span>
+            </div>
+        </td>
+        <td>
+            <input type="text" class="form-control remarks-input" placeholder="Notes">
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-danger btn-icon rounded-circle" onclick="this.closest('tr').remove()">
+                <i class="bx bx-trash"></i>
+            </button>
+        </td>
+    </tr>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        addItemRow();
+        if(typeof jQuery !== 'undefined' && $.fn.select2) {
+            $('.select2').select2({ theme: 'bootstrap-5' });
+        }
+    });
+
+    function addItemRow() {
+        const template = document.getElementById('itemRowTemplate');
+        const tbody = document.querySelector('#itemsTable tbody');
+        const clone = template.content.cloneNode(true);
+        tbody.appendChild(clone);
+        
+        // initialize select2 for the new row if it exists
+        if(typeof jQuery !== 'undefined' && $.fn.select2) {
+            const select = tbody.lastElementChild.querySelector('.item-select');
+            $(select).select2({ theme: 'bootstrap-5' });
+        }
+    }
+
+    function updateRow(selectElement) {
+        const row = selectElement.closest('tr');
+        const option = selectElement.options[selectElement.selectedIndex];
+        const unitLabel = row.querySelector('.unit-label');
+        
+        if (option && option.dataset.uom) {
+            unitLabel.textContent = option.dataset.uom;
+        } else {
+            unitLabel.textContent = '-';
+        }
+    }
+
+    async function submitRequisition(e) {
+        e.preventDefault();
+        
+        const form = e.target;
+        const submitBtn = document.getElementById('submitBtn');
+        
+        // Gather items
+        const items = [];
+        let hasValidItems = false;
+        
+        document.querySelectorAll('#itemsTable tbody tr').forEach(row => {
+            const sel = row.querySelector('.item-select');
+            const itemId = sel ? sel.value : null;
+            const qty = row.querySelector('.qty-input').value;
+            const remarks = row.querySelector('.remarks-input').value;
+            
+            if (itemId && qty > 0) {
+                items.push({
+                    item_id: itemId,
+                    quantity_requested: parseFloat(qty),
+                    remarks: remarks
+                });
+                hasValidItems = true;
+            }
+        });
+        
+        if (!hasValidItems) {
+            alert('Please add at least one valid item with a quantity greater than zero.');
+            return;
+        }
+        
+        // Build payload
+        const payload = {
+            location_id: form.location_id.value,
+            department_id: form.department_id.value,
+            requisition_date: form.requisition_date.value,
+            required_date: form.required_date.value,
+            reference_no: form.reference_no.value,
+            purpose: form.purpose.value,
+            remarks: form.remarks.value,
+            items: items
+        };
+        
+        try {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+            
+            const response = await fetch('{{ BASE_URL }}/store_requisition/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                window.location.href = '{{ BASE_URL }}/store_requisition';
+            } else {
+                alert('Error: ' + (result.message || 'Failed to save requisition'));
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bx bx-save me-1"></i> Save Requisition';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An unexpected error occurred.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bx bx-save me-1"></i> Save Requisition';
+        }
+    }
+</script>
+{% endblock %}

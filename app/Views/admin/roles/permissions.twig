@@ -1,0 +1,249 @@
+{% extends "layouts/app.twig" %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Role Permissions: {{ role.role_name }}</h1>
+            <p class="text-muted small mb-0">Define default access capabilities for all users with this role.</p>
+        </div>
+        <div class="btn-group">
+            <a href="{{ BASE_URL }}/admin/roles" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Roles
+            </a>
+            <button type="submit" form="permissionsForm" class="btn btn-primary">
+                <i class="fas fa-save me-2"></i>Save Changes
+            </button>
+        </div>
+    </div>
+
+    {% if message %}
+        <div class="alert alert-{{ message_type }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+
+    <!-- Stats Cards -->
+    <div class="row mb-4 g-3">
+        <div class="col-md-4">
+            <div class="card bg-dark text-white border-0 h-100 shadow-sm position-relative overflow-hidden">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase small fw-bold">Total Pages</h6>
+                    <h2 class="mb-0 display-6 fw-bold">{{ stats.total_pages }}</h2>
+                    <i class="fas fa-file-alt position-absolute text-primary opacity-25" style="font-size: 4rem; bottom: -1rem; right: -1rem;"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-dark text-white border-0 h-100 shadow-sm position-relative overflow-hidden">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase small fw-bold">Accessible Pages</h6>
+                    <h2 class="mb-0 display-6 fw-bold text-success">{{ stats.pages_with_access }}</h2>
+                    <i class="fas fa-check-circle position-absolute text-success opacity-25" style="font-size: 4rem; bottom: -1rem; right: -1rem;"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-dark text-white border-0 h-100 shadow-sm position-relative overflow-hidden">
+               <div class="card-body">
+                    <h6 class="text-muted text-uppercase small fw-bold">Coverage</h6>
+                    <h2 class="mb-0 display-6 fw-bold text-info">{{ stats.coverage }}%</h2>
+                    <div class="progress mt-2" style="height: 4px;">
+                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ stats.coverage }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Permissions Form -->
+    <form id="permissionsForm" action="{{ BASE_URL }}/admin/roles?action=permissions&id={{ role.role_id }}" method="POST">
+    {{ csrf_field() | raw }}
+        <input type="hidden" name="role_id" value="{{ role.role_id }}">
+
+        {% for module, permissions in grouped_permissions %}
+            {% set module_class = 'module-' ~ module|replace({' ': '-'})|lower %}
+            <div class="card shadow mb-4 border-0 module-card" data-module="{{ module|lower }}">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-{{ module_icons[module]|default('circle') }} me-3 fa-lg text-secondary"></i>
+                        <div>
+                            <h6 class="m-0 font-weight-bold">{{ module_names[module]|default(module|capitalize) }}</h6>
+                        </div>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-secondary text-light btn-grant-all" data-target="{{ module_class }}">
+                            <i class="fas fa-check-double me-1 text-success"></i> Grant All
+                        </button>
+                         <button type="button" class="btn btn-outline-secondary text-light btn-revoke-all" data-target="{{ module_class }}">
+                            <i class="fas fa-times me-1 text-danger"></i> Revoke All
+                        </button>
+                         <button type="button" class="btn btn-outline-secondary text-light" data-bs-toggle="collapse" data-bs-target="#collapse{{ module|replace({' ': ''}) }}">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="collapse{{ module|replace({' ': ''}) }}" class="collapse show">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-dark mb-0 align-middle">
+                            <thead style="background: #2b2d3c;">
+                                <tr>
+                                    <th style="width: 40%;">PAGE</th>
+                                    <th class="text-center" style="width: 15%;"><i class="fas fa-eye text-primary"></i> VIEW</th>
+                                    <th class="text-center" style="width: 15%;"><i class="fas fa-plus text-success"></i> ADD</th>
+                                    <th class="text-center" style="width: 15%;"><i class="fas fa-edit text-warning"></i> EDIT</th>
+                                    <th class="text-center" style="width: 15%;"><i class="fas fa-trash text-danger"></i> DELETE</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for perm in permissions %}
+                                    {# Check permissions for this specific page #}
+                                    {% set p = role_permissions[perm.permission_name] %}
+                                    
+                                    <tr class="permission-row">
+                                        <td>
+                                            <div class="d-flex flex-column">
+                                                <span class="fw-bold">{{ perm.permission_name }}</span>
+                                                <small class="text-muted">{{ perm.description }}</small>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="form-check form-switch d-inline-block">
+                                                <input class="form-check-input {{ module_class }} view-toggle" 
+                                                       type="checkbox" 
+                                                       name="permissions[{{ perm.permission_name }}][can_view]" 
+                                                       value="1" 
+                                                       {{ p.can_view ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="form-check form-switch d-inline-block">
+                                                <input class="form-check-input {{ module_class }} action-toggle" 
+                                                       type="checkbox" 
+                                                       name="permissions[{{ perm.permission_name }}][can_create]" 
+                                                       value="1" 
+                                                       {{ p.can_create ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="form-check form-switch d-inline-block">
+                                                <input class="form-check-input {{ module_class }} action-toggle" 
+                                                       type="checkbox" 
+                                                       name="permissions[{{ perm.permission_name }}][can_edit]" 
+                                                       value="1" 
+                                                       {{ p.can_edit ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="form-check form-switch d-inline-block">
+                                                <input class="form-check-input {{ module_class }} action-toggle" 
+                                                       type="checkbox" 
+                                                       name="permissions[{{ perm.permission_name }}][can_delete]" 
+                                                       value="1" 
+                                                       {{ p.can_delete ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Grant All
+    document.querySelectorAll('.btn-grant-all').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const target = this.dataset.target;
+            document.querySelectorAll('.' + target).forEach(chk => chk.checked = true);
+        });
+    });
+
+    // Revoke All
+    document.querySelectorAll('.btn-revoke-all').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const target = this.dataset.target;
+            document.querySelectorAll('.' + target).forEach(chk => chk.checked = false);
+        });
+    });
+    
+    // Auto-enable view if action is checked
+    document.querySelectorAll('.action-toggle').forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            if(this.checked) {
+                const row = this.closest('tr');
+                const viewToggle = row.querySelector('.view-toggle');
+                if(viewToggle) viewToggle.checked = true;
+            }
+        });
+    });
+    
+    // Auto-disable actions if view is unchecked
+    document.querySelectorAll('.view-toggle').forEach(toggle => {
+        toggle.addEventListener('change', function() {
+             if(!this.checked) {
+                const row = this.closest('tr');
+                row.querySelectorAll('.action-toggle').forEach(t => t.checked = false);
+            }
+        });
+    });
+    
+    // Form Submit handling via AJAX
+    const form = document.getElementById('permissionsForm');
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+        
+        try {
+            const formData = new FormData(form);
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                // Show success
+                 Swal.fire({
+                    title: 'Saved!',
+                    text: 'Role permissions updated successfully.',
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            } else {
+                throw new Error(result.message || 'Failed to save');
+            }
+        } catch (error) {
+             Swal.fire({
+                title: 'Error',
+                text: error.message,
+                icon: 'error'
+            });
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    });
+});
+</script>
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% endblock %}

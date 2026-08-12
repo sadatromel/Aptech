@@ -1,0 +1,583 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block styles %}
+<link href="{{ ASSETS_URL }}/css/settings.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <!-- Environment Badge -->
+    <span class="env-badge badge bg-{{ env_color }}">{{ environment|upper }}</span>
+    
+    <div class="settings-wrapper">
+        <!-- Left Sidebar Navigation -->
+        <nav class="settings-sidebar">
+            <div class="settings-nav">
+                <div class="settings-nav-header">Configuration</div>
+                <a class="settings-nav-item active" data-section="general">
+                    <i class="fas fa-cog"></i>
+                    <span>General</span>
+                </a>
+                <a class="settings-nav-item" data-section="branding">
+                    <i class="fas fa-paint-brush"></i>
+                    <span>Branding</span>
+                </a>
+                <a class="settings-nav-item" data-section="theme">
+                    <i class="fas fa-palette"></i>
+                    <span>Theme & UI</span>
+                </a>
+                
+                <div class="settings-nav-header mt-3">Security</div>
+                <a class="settings-nav-item" data-section="security">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Security & Session</span>
+                </a>
+                
+                <div class="settings-nav-header mt-3">Data Management</div>
+                <a class="settings-nav-item" data-section="backup">
+                    <i class="fas fa-database"></i>
+                    <span>Backup & Recovery</span>
+                </a>
+                
+                <div class="settings-nav-header mt-3">Monitoring</div>
+                <a class="settings-nav-item" data-section="audit">
+                    <i class="fas fa-history"></i>
+                    <span>Audit & Logs</span>
+                </a>
+                
+                {% if is_super_admin %}
+                <div class="settings-nav-header mt-3">Advanced</div>
+                <a class="settings-nav-item" data-section="advanced">
+                    <i class="fas fa-sliders-h"></i>
+                    <span>Advanced Controls</span>
+                </a>
+                {% endif %}
+            </div>
+        </nav>
+        
+        <!-- Main Content Area -->
+        <div class="settings-content">
+            <!-- Search Box -->
+            <div class="settings-search">
+                <i class="fas fa-search"></i>
+                <input type="text" class="form-control" id="settingsSearch" placeholder="Search settings...">
+            </div>
+            
+            <form id="settingsForm" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+                
+                <!-- Section 1: General Configuration -->
+                <div class="settings-section active" id="section-general">
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h2 class="section-title">
+                                <i class="fas fa-cog text-primary"></i>
+                                General Configuration
+                            </h2>
+                        </div>
+                        <p class="section-description">
+                            Manage core system identity and regional behavior
+                        </p>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group-enhanced">
+                                    <label class="form-label-enhanced">
+                                        System Name
+                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" title="Display name used across the application"></i>
+                                    </label>
+                                    <input type="text" class="form-control" name="settings[system_name]" 
+                                           value="{{ settings.system_name|default('Transport Management System') }}" 
+                                           data-validate="required">
+                                    <div class="form-help">This name appears in the header and page titles</div>
+                                    <div class="invalid-feedback-custom">System name is required</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group-enhanced">
+                                    <label class="form-label-enhanced">
+                                        Company Name
+                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" title="Organization name shown in reports"></i>
+                                    </label>
+                                    <input type="text" class="form-control" name="settings[company_name]" 
+                                           value="{{ settings.company_name|default('My Company') }}">
+                                    <div class="form-help">Used in reports and documents</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group-enhanced">
+                                    <label class="form-label-enhanced">Support Email</label>
+                                    <input type="email" class="form-control" name="settings[company_email]" 
+                                           value="{{ settings.company_email|default('admin@example.com') }}"
+                                           data-validate="email">
+                                    <div class="form-help">Official contact email for system notifications</div>
+                                    <div class="invalid-feedback-custom">Please enter a valid email address</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group-enhanced">
+                                    <label class="form-label-enhanced">Support Phone</label>
+                                    <input type="tel" class="form-control" name="settings[company_phone]" 
+                                           value="{{ settings.company_phone }}">
+                                    <div class="form-help">Support contact number</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group-enhanced">
+                                    <label class="form-label-enhanced">Default Language</label>
+                                    <select class="form-select" name="settings[default_language]">
+                                        <option value="English" {{ settings.default_language == 'English' ? 'selected' : '' }}>English</option>
+                                        <option value="Bangla" {{ settings.default_language == 'Bangla' ? 'selected' : '' }}>Bangla</option>
+                                    </select>
+                                    <div class="form-help">Primary system language</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-group-enhanced">
+                                    <label class="form-label-enhanced">Timezone</label>
+                                    <select class="form-select" name="settings[timezone]">
+                                        <option value="Asia/Dhaka" {{ settings.timezone|default('Asia/Dhaka') == 'Asia/Dhaka' ? 'selected' : '' }}>Asia/Dhaka (GMT+6)</option>
+                                        <option value="UTC" {{ settings.timezone == 'UTC' ? 'selected' : '' }}>UTC</option>
+                                        <option value="America/New_York" {{ settings.timezone == 'America/New_York' ? 'selected' : '' }}>America/New_York (EST)</option>
+                                    </select>
+                                    <div class="form-help">System-wide timezone configuration</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-group-enhanced">
+                                    <label class="form-label-enhanced">Date Format</label>
+                                    <select class="form-select" name="settings[date_format]">
+                                        <option value="DD-MM-YYYY" {{ settings.date_format|default('DD-MM-YYYY') == 'DD-MM-YYYY' ? 'selected' : '' }}>DD-MM-YYYY</option>
+                                        <option value="MM-DD-YYYY" {{ settings.date_format == 'MM-DD-YYYY' ? 'selected' : '' }}>MM-DD-YYYY</option>
+                                        <option value="YYYY-MM-DD" {{ settings.date_format == 'YYYY-MM-DD' ? 'selected' : '' }}>YYYY-MM-DD</option>
+                                    </select>
+                                    <div class="form-help">Standard date display format</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Section 2: Branding & Appearance -->
+                <div class="settings-section" id="section-branding">
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h2 class="section-title">
+                                <i class="fas fa-paint-brush text-primary"></i>
+                                Branding & Appearance
+                            </h2>
+                        </div>
+                        <p class="section-description">
+                            Control application identity and visual branding
+                        </p>
+                        
+                        <div class="subsection">
+                            <div class="subsection-header" onclick="toggleSubsection(this)">
+                                <h5 class="subsection-title">
+                                    <i class="fas fa-image"></i>
+                                    Logo Configuration
+                                </h5>
+                                <i class="fas fa-chevron-down subsection-toggle"></i>
+                            </div>
+                            <div class="subsection-content">
+                                <div class="form-group-enhanced">
+                                    <label class="form-label-enhanced">Logo Upload</label>
+                                    <input type="file" class="form-control" name="logo_file" id="logoUpload" accept="image/*">
+                                    <input type="hidden" name="settings[logo_url]" id="logoUrl" value="{{ settings.logo_url }}">
+                                    <div class="form-help">Upload your company logo (JPG, PNG - Max 2MB)</div>
+                                    
+                                    <div class="upload-preview {{ settings.logo_url ? 'show' : '' }}" id="logoPreview">
+                                        <img src="{{ settings.logo_url }}" class="preview-image" alt="Logo Preview">
+                                        <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="removeLogo()">
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="subsection">
+                            <div class="subsection-header" onclick="toggleSubsection(this)">
+                                <h5 class="subsection-title">
+                                    <i class="fas fa-bookmark"></i>
+                                    Favicon Configuration
+                                </h5>
+                                <i class="fas fa-chevron-down subsection-toggle"></i>
+                            </div>
+                            <div class="subsection-content">
+                                <div class="form-group-enhanced">
+                                    <label class="form-label-enhanced">Favicon Upload</label>
+                                    <input type="file" class="form-control" name="favicon_file" id="faviconUpload" accept="image/x-icon,image/png">
+                                    <input type="hidden" name="settings[favicon_url]" id="faviconUrl" value="{{ settings.favicon_url }}">
+                                    <div class="form-help">Browser tab icon (16x16 or 32x32, ICO/PNG)</div>
+                                    
+                                    <div class="upload-preview {{ settings.favicon_url ? 'show' : '' }}" id="faviconPreview">
+                                        <img src="{{ settings.favicon_url }}" class="preview-image" alt="Favicon Preview" style="max-width: 32px;">
+                                        <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="removeFavicon()">
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group-enhanced">
+                            <label class="form-label-enhanced">Footer Text</label>
+                            <textarea class="form-control" name="settings[footer_text]" rows="2" 
+                                      placeholder="© 2026 Your Company. All rights reserved.">{{ settings.footer_text|default('© ' ~ "now"|date("Y") ~ ' AIP RMG ERP. All rights reserved.') }}</textarea>
+                            <div class="form-help">Custom footer content (copyright, version, etc.)</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Section 3: Theme & UI Customization -->
+                <div class="settings-section" id="section-theme">
+                    <div class="section-header mb-4 border-0 pb-0">
+                        <div class="d-flex justify-content-between align-items-center w-100">
+                            <div>
+                                <h2 class="section-title mb-1">
+                                    <i class="fas fa-palette text-primary"></i>
+                                    Theme & Branding
+                                </h2>
+                            </div>
+                            <div class="glass-switch-wrapper">
+                                <input type="checkbox" class="glass-ctrl" name="settings[glass_effects]" id="glassEffects" {{ settings.glass_effects == 'on' ? 'checked' : '' }}>
+                                <label for="glassEffects" class="fw-bold small text-muted mb-0">Glass Effects</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-light border-0 mb-4">
+                        <div class="card-body p-4">
+                            <h6 class="fw-bold mb-3"><i class="fas fa-globe-americas me-2 text-primary"></i>Quick Theme Presets</h6>
+                            <p class="text-muted small mb-4">Transform your interface instantly with professional themes</p>
+                            
+                            <input type="hidden" name="settings[active_theme_preset]" id="activeThemePreset" value="{{ settings.active_theme_preset|default('default') }}">
+
+                            <div class="theme-grid">
+                                <!-- Default Blue -->
+                                <div class="theme-preset-card {{ settings.active_theme_preset|default('default') == 'default' ? 'active' : '' }}" onclick="applyTheme('default')" id="theme-default">
+                                    <div class="preset-preview" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                                    <div class="preset-info">
+                                        <h6>Default Blue</h6>
+                                        <small>Classic Professional</small>
+                                    </div>
+                                    <i class="fas fa-check-circle check-icon"></i>
+                                </div>
+                                
+                                <!-- Oceanic Depth -->
+                                <div class="theme-preset-card {{ settings.active_theme_preset == 'oceanic' ? 'active' : '' }}" onclick="applyTheme('oceanic')" id="theme-oceanic">
+                                    <div class="preset-preview" style="background: linear-gradient(135deg, #2E3192 0%, #1BFFFF 100%);"></div>
+                                    <div class="preset-info">
+                                        <h6>Oceanic Depth</h6>
+                                        <small>Cool Tones</small>
+                                    </div>
+                                    <i class="fas fa-check-circle check-icon"></i>
+                                </div>
+
+                                <!-- Sunset Bliss -->
+                                <div class="theme-preset-card {{ settings.active_theme_preset == 'sunset' ? 'active' : '' }}" onclick="applyTheme('sunset')" id="theme-sunset">
+                                    <div class="preset-preview" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);"></div>
+                                    <div class="preset-info">
+                                        <h6>Sunset Bliss</h6>
+                                        <small>Warm Amber</small>
+                                    </div>
+                                    <i class="fas fa-check-circle check-icon"></i>
+                                </div>
+                                
+                                <!-- Forest Mint -->
+                                <div class="theme-preset-card {{ settings.active_theme_preset == 'forest' ? 'active' : '' }}" onclick="applyTheme('forest')" id="theme-forest">
+                                    <div class="preset-preview" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);"></div>
+                                    <div class="preset-info">
+                                        <h6>Forest Mint</h6>
+                                        <small>Fresh Nature</small>
+                                    </div>
+                                    <i class="fas fa-check-circle check-icon"></i>
+                                </div>
+                                
+                                <!-- Midnight Pro -->
+                                <div class="theme-preset-card {{ settings.active_theme_preset == 'midnight' ? 'active' : '' }}" onclick="applyTheme('midnight')" id="theme-midnight">
+                                    <div class="preset-preview" style="background: linear-gradient(135deg, #232526 0%, #414345 100%);"></div>
+                                    <div class="preset-info">
+                                        <h6>Midnight Pro</h6>
+                                        <small>Dark Monochrome</small>
+                                    </div>
+                                    <i class="fas fa-check-circle check-icon"></i>
+                                </div>
+                                
+                                <!-- Royal Amethyst -->
+                                <div class="theme-preset-card {{ settings.active_theme_preset == 'royal' ? 'active' : '' }}" onclick="applyTheme('royal')" id="theme-royal">
+                                    <div class="preset-preview" style="background: linear-gradient(135deg, #834d9b 0%, #d04ed6 100%);"></div>
+                                    <div class="preset-info">
+                                        <h6>Royal Amethyst</h6>
+                                        <small>Premium Luxury</small>
+                                    </div>
+                                    <i class="fas fa-check-circle check-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-2col">
+                        <!-- Left Column: Layout & Canvas -->
+                        <div class="settings-col-left">
+                            <div class="mode-toggle-bar">
+                                <button type="button" class="mode-btn active" id="btn-light" onclick="setMode('light')">
+                                    <i class="fas fa-sun text-warning"></i> Light Mode
+                                </button>
+                                <button type="button" class="mode-btn dark-btn" id="btn-dark" onclick="setMode('dark')">
+                                    <i class="fas fa-moon"></i> Dark Mode
+                                </button>
+                                <input type="hidden" name="settings[theme_mode]" id="themeModeInput" value="{{ settings.theme_mode|default('light') }}">
+                            </div>
+
+                            <h5 class="panel-title"><i class="fas fa-sliders-h"></i> Key Brand Colors</h5>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <div class="form-group-enhanced">
+                                        <label class="form-label-enhanced small">Primary Accent</label>
+                                        <div class="input-group">
+                                            <input type="color" class="form-control form-control-color" name="settings[primary_color]" id="primaryColor" value="{{ settings.primary_color|default('#667eea') }}" title="Choose your color">
+                                            <input type="text" class="form-control" value="{{ settings.primary_color|default('#667eea') }}" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group-enhanced">
+                                        <label class="form-label-enhanced small">Hover State</label>
+                                        <div class="input-group">
+                                            <input type="color" class="form-control form-control-color" name="settings[hover_color]" id="hoverColor" value="{{ settings.hover_color|default('#5a67d8') }}" title="Choose your color">
+                                            <input type="text" class="form-control" value="{{ settings.hover_color|default('#5a67d8') }}" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h5 class="panel-title"><i class="fas fa-columns"></i> Sidebar Header (Brand)</h5>
+                             <div class="row g-3">
+                                <div class="col-md-8">
+                                    <div class="form-group-enhanced">
+                                        <label class="form-label-enhanced small">Header Background</label>
+                                        <input type="text" class="form-control" name="settings[sidebar_header_bg]" value="{{ settings.sidebar_header_bg|default('var(--white)') }}" placeholder="Hex, Gradient, or Var">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group-enhanced">
+                                        <label class="form-label-enhanced small">Text Color</label>
+                                        <input type="color" class="form-control w-100" name="settings[sidebar_text_color]" value="{{ settings.sidebar_text_color|default('#334155') }}">
+                                    </div>
+                                </div>
+                             </div>
+                             
+                             <!-- Glass Morphism Effects Panel -->
+                             <div class="card mt-4 border-0 shadow-sm" style="background: rgba(226, 232, 240, 0.3);">
+                                <div class="card-body">
+                                    <h6 class="fw-bold mb-3 small text-primary"><i class="fas fa-wind me-1"></i> Glass Morphism Effects</h6>
+                                    <div class="row align-items-center">
+                                        <div class="col-md-6">
+                                            <label class="small text-muted mb-2">Blur Intensity</label>
+                                            <input type="range" class="custom-range" name="settings[glass_blur]" min="0" max="40" value="{{ settings.glass_blur|default(20) }}">
+                                            <div class="range-labels">
+                                                <span>None</span>
+                                                <span>Heavy</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="small text-muted mb-2">Transparency</label>
+                                            <input type="range" class="custom-range" name="settings[glass_opacity]" min="0" max="100" value="{{ settings.glass_opacity|default(80) }}">
+                                            <div class="range-labels">
+                                                <span>Clear</span>
+                                                <span>Opaque</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                             </div>
+                        </div>
+
+                        <!-- Right Column: Interface Experience -->
+                        <div class="settings-col-right">
+                             <div class="section-card border-0 shadow-none bg-transparent p-0">
+                                <h5 class="panel-title text-dark mb-4">Interface Experience</h5>
+                                <p class="text-end small text-muted mb-4">Fine-tune your interface feel</p>
+                                
+                                <div class="mb-4">
+                                    <label class="form-label-enhanced small text-uppercase text-muted fw-bold ls-1"><i class="fas fa-font me-2"></i> Typography & Shape</label>
+                                    
+                                    <div class="form-group-enhanced mb-3">
+                                        <label class="small fw-bold mb-2">Font Family</label>
+                                        <select class="form-select" name="settings[font_family]">
+                                            <option value="Inter" {{ settings.font_family == 'Inter' ? 'selected' : '' }}>Inter (Default)</option>
+                                            <option value="Roboto" {{ settings.font_family == 'Roboto' ? 'selected' : '' }}>Roboto</option>
+                                            <option value="Poppins" {{ settings.font_family == 'Poppins' ? 'selected' : '' }}>Poppins</option>
+                                            <option value="Open Sans" {{ settings.font_family == 'Open Sans' ? 'selected' : '' }}>Open Sans</option>
+                                        </select>
+                                        <small class="text-muted d-block mt-1">System-wide typography</small>
+                                    </div>
+                                    
+                                    <div class="form-group-enhanced mb-4">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                             <label class="small fw-bold mb-0">Border Radius</label>
+                                             <span class="badge bg-light text-primary border">4px</span>
+                                        </div>
+                                        <input type="range" class="custom-range" name="settings[border_radius]" min="0" max="20" value="{{ settings.border_radius|default(8) }}">
+                                        <div class="range-labels mt-1">
+                                            <span>Sharp</span>
+                                            <span>Rounded</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label class="form-label-enhanced small text-uppercase text-muted fw-bold ls-1"><i class="fas fa-sliders-h me-2"></i> Behavior & Density</label>
+                                    
+                                    <div class="form-group-enhanced mb-3">
+                                        <label class="small fw-bold mb-2">Animation Speed</label>
+                                        <select class="form-select" name="settings[animation_speed]">
+                                            <option value="fast" {{ settings.animation_speed == 'fast' ? 'selected' : '' }}>Fast (0.15s)</option>
+                                            <option value="normal" {{ settings.animation_speed == 'normal' ? 'selected' : '' }}>Normal (0.3s)</option>
+                                            <option value="slow" {{ settings.animation_speed == 'slow' ? 'selected' : '' }}>Relaxed (0.5s)</option>
+                                        </select>
+                                        <small class="text-muted d-block mt-1">Transition timing</small>
+                                    </div>
+
+                                    <div class="form-group-enhanced mb-3">
+                                        <label class="small fw-bold mb-2">Pagination Limit</label>
+                                        <select class="form-select" name="settings[pagination_limit]">
+                                            <option value="10" {{ settings.pagination_limit == '10' ? 'selected' : '' }}>10 items</option>
+                                            <option value="25" {{ settings.pagination_limit == '25' ? 'selected' : '' }}>25 items</option>
+                                            <option value="50" {{ settings.pagination_limit == '50' ? 'selected' : '' }}>50 items</option>
+                                            <option value="100" {{ settings.pagination_limit == '100' ? 'selected' : '' }}>100 items</option>
+                                        </select>
+                                        <small class="text-muted d-block mt-1">Default table rows</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info border-0 bg-info-light text-info small">
+                                    <i class="fas fa-info-circle me-1"></i> <strong>Live Preview</strong>
+                                    <div class="mt-1">Changes apply immediately. Click "Save Changes" to persist.</div>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Section 4: Security (Example) -->
+                <div class="settings-section" id="section-security">
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h2 class="section-title">
+                                <i class="fas fa-shield-alt text-primary"></i>
+                                Security & Session
+                            </h2>
+                        </div>
+                         <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group-enhanced">
+                                    <label class="form-label-enhanced">
+                                        Session Lifetime (Minutes)
+                                    </label>
+                                    <input type="number" class="form-control" name="settings[session_lifetime]" 
+                                           value="{{ settings.session_lifetime|default(60) }}" 
+                                           min="15" max="1440">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Other sections like Audit, Backup, Advanced would follow similar pattern -->
+                 <div class="settings-section" id="section-backup">
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h2 class="section-title">
+                                <i class="fas fa-database text-primary"></i>
+                                Backup & Recovery
+                            </h2>
+                        </div>
+                        <p class="section-description">Backup settings are managed here.</p>
+                         <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Automated backups are coming soon.
+                         </div>
+                         <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" name="settings[auto_backup_enabled]" id="autoBackup" value="1" {{ settings.auto_backup_enabled == '1' ? 'checked' : '' }}>
+                            <label class="form-check-label" for="autoBackup">
+                                <strong>Enable Daily Automatic Backup</strong>
+                            </label>
+                        </div>
+                    </div>
+                 </div>
+                 
+                 <div class="settings-section" id="section-audit">
+                    <div class="section-card">
+                        <div class="section-header">
+                             <h2 class="section-title">
+                                <i class="fas fa-history text-primary"></i>
+                                Audit & Logs
+                            </h2>
+                        </div>
+                        <p class="section-description">Detailed audit trails of user actions.</p>
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-list-alt fa-3x mb-3"></i>
+                            <h5>No recent logs found.</h5>
+                        </div>
+                    </div>
+                 </div>
+                 
+                 {% if is_super_admin %}
+                 <div class="settings-section" id="section-advanced">
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h2 class="section-title">
+                                <i class="fas fa-sliders-h text-primary"></i>
+                                Advanced Controls
+                            </h2>
+                        </div>
+                         <p class="section-description">Dangerous settings for developers only.</p>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> Proceed with caution.
+                        </div>
+                    </div>
+                 </div>
+                 {% endif %}
+                
+            </form>
+        </div>
+    </div>
+    
+    <!-- Sticky Save Bar -->
+    <div class="save-bar">
+        <div class="save-bar-left">
+            <div class="unsaved-indicator" id="unsavedIndicator">
+                <span class="unsaved-dot"></span>
+                <span>Unsaved Changes</span>
+            </div>
+        </div>
+        <div class="save-bar-right">
+            <button type="button" class="btn btn-outline-secondary" id="resetBtn">
+                <i class="fas fa-undo"></i> Reset
+            </button>
+            <button type="button" class="btn btn-primary" id="saveBtn">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{{ ASSETS_URL }}/js/settings.js"></script>
+{% endblock %}

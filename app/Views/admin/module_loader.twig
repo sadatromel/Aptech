@@ -1,0 +1,60 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Module Loader - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="page-header">
+        <div class="page-title">
+            <h1>Module Loader</h1>
+            <p>Upload PHP files to create new modules automatically</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            {% if session.error %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ session.error }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+            
+            {% if session.success %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ session.success }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-upload me-2"></i> Upload Module File
+                </div>
+                <div class="card-body">
+                    <form action="{{ BASE_URL }}/admin/module_loader/upload" method="POST" enctype="multipart/form-data">
+    {{ csrf_field() | raw }}
+                        <div class="mb-4">
+                            <label for="module_name" class="form-label">Module Name</label>
+                            <input type="text" class="form-control form-control-lg" id="module_name" name="module_name" placeholder="e.g. MyNewModule" required>
+                            <div class="form-text">This will create a folder with this name in the modules directory.</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="module_file" class="form-label">PHP File</label>
+                            <input type="file" class="form-control form-control-lg" id="module_file" name="module_file" accept=".php" required>
+                            <div class="form-text">Upload standard PHP files. The system will automatically adjust them to the MVC layout.</div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-cloud-upload-alt me-2"></i> Upload & Adjust
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,211 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Employee Departments | Master Library{% endblock %}
+
+{% block styles %}
+<style>
+    .hover-translate-y {
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .hover-translate-y:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.08) !important;
+    }
+    .stats-icon-box {
+        width: 52px;
+        height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .table > :not(caption) > * > * {
+        padding: 0.75rem 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Employee Departments</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item active">Employee Departments</li>
+    </ol>
+
+    {# Statistics Cards #}
+    <div class="row g-4 mb-4">
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 hover-translate-y">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Total Departments</span>
+                            <h3 class="mb-0 fw-bold text-dark">{{ stats.total|default(0) }}</h3>
+                        </div>
+                        <div class="flex-shrink-0 ms-3">
+                            <div class="stats-icon-box bg-primary bg-opacity-10 text-primary rounded-3">
+                                <i class="fas fa-sitemap fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 hover-translate-y">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Active Departments</span>
+                            <h3 class="mb-0 fw-bold text-dark">{{ stats.active|default(0) }}</h3>
+                        </div>
+                        <div class="flex-shrink-0 ms-3">
+                            <div class="stats-icon-box bg-success bg-opacity-10 text-success rounded-3">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 hover-translate-y">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Inactive Departments</span>
+                            <h3 class="mb-0 fw-bold text-dark">{{ stats.inactive|default(0) }}</h3>
+                        </div>
+                        <div class="flex-shrink-0 ms-3">
+                            <div class="stats-icon-box bg-warning bg-opacity-10 text-warning rounded-3">
+                                <i class="fas fa-times-circle fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Main Card #}
+    <div class="card shadow-sm border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+            <div class="h5 mb-0 text-primary">
+                <i class="fas fa-list me-2"></i>Department List
+            </div>
+            {% if canCreate('master_library', 'create_employee_departments') %}
+            <a href="{{ BASE_URL }}/master_library/employee_departments/create" class="btn btn-primary px-4 rounded-pill">
+                <i class="fas fa-plus me-1"></i> Add New Department
+            </a>
+            {% endif %}
+        </div>
+        <div class="card-body p-4">
+            {# Search Bar #}
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="text" id="searchInput" class="form-control border-start-0 ps-0" placeholder="Search departments...">
+                    </div>
+                </div>
+            </div>
+
+            {# Table #}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="departmentsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 15%;">Department Code</th>
+                            <th style="width: 25%;">Department Name</th>
+                            <th style="width: 20%;">Description</th>
+                            <th style="width: 20%;">Assigned Factories</th>
+                            <th style="width: 8%;" class="text-center">Employees</th>
+                            <th style="width: 7%;">Status</th>
+                            <th style="width: 5%;" class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        {% for dept in departments %}
+                        <tr>
+                            <td class="fw-semibold text-dark">{{ dept.department_code }}</td>
+                            <td>{{ dept.department_name }}</td>
+                            <td class="text-muted text-truncate" style="max-width: 150px;">{{ dept.description|default('—') }}</td>
+                            <td class="text-truncate" style="max-width: 180px;" title="{{ dept.factory_names }}">{{ dept.factory_names|default('—') }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary px-2 py-1">
+                                    {{ dept.employee_count|default(0) }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if dept.status == 'active' %}
+                                <span class="badge rounded-pill bg-success bg-opacity-10 text-success">Active</span>
+                                {% else %}
+                                <span class="badge rounded-pill bg-secondary bg-opacity-10 text-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    {% if canEdit('master_library', 'edit_employee_departments') %}
+                                    <a href="{{ BASE_URL }}/master_library/employee_departments/{{ dept.department_id }}/edit"
+                                       class="btn btn-light rounded-circle me-1" title="Edit">
+                                        <i class="fas fa-edit text-warning"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if canDelete('master_library', 'delete_employee_departments') %}
+                                    <form action="{{ BASE_URL }}/master_library/employee_departments/delete"
+                                          method="POST" class="d-inline"
+                                          onsubmit="return confirm('Are you sure you want to delete department \'{{ dept.department_name }}\'? This cannot be undone.');">
+                                        {{ csrf_field() | raw }}
+                                        <input type="hidden" name="id" value="{{ dept.department_id }}">
+                                        <button type="submit" class="btn btn-light rounded-circle" title="Delete">
+                                            <i class="fas fa-trash text-danger"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                <i class="fas fa-folder-open fa-2x d-block mb-2"></i>
+                                No employee departments found.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function () {
+            const query = this.value.toLowerCase().trim();
+            const rows  = document.querySelectorAll('#tableBody tr');
+            rows.forEach(row => {
+                if (row.cells.length === 1 && row.cells[0].colSpan === 7) return;
+                const code      = row.cells[0].textContent.toLowerCase();
+                const name      = row.cells[1].textContent.toLowerCase();
+                const desc      = row.cells[2].textContent.toLowerCase();
+                const factories = row.cells[3].textContent.toLowerCase();
+                if (code.includes(query) || name.includes(query) || desc.includes(query) || factories.includes(query)) {
+                    row.style.setProperty('display', '', 'important');
+                } else {
+                    row.style.setProperty('display', 'none', 'important');
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

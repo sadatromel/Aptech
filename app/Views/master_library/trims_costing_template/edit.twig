@@ -1,0 +1,285 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Edit Trims Costing Template | Master Library{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header Section -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <div>
+            <h1 class="h3 mb-1 fw-bold text-dark">Edit Trims Costing Template</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard" class="text-decoration-none text-primary">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library" class="text-decoration-none text-primary">Master Library</a></li>
+                    <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library/trims_costing_template" class="text-decoration-none text-primary">Trims Costing Templates</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Edit: {{ template.template_name }}</li>
+                </ol>
+            </nav>
+        </div>
+        <a href="{{ BASE_URL }}/master_library/trims_costing_template" class="btn btn-outline-secondary px-4 rounded-pill shadow-sm bg-white">
+            <i class="fas fa-arrow-left me-2"></i>Back to List
+        </a>
+    </div>
+
+    <form method="POST" action="{{ BASE_URL }}/master_library/trims_costing_template/edit/{{ template.template_id }}" id="editTemplateForm">
+    {{ csrf_field() | raw }}
+        <div class="row g-4">
+            <!-- Left Side: Basic Info -->
+            <div class="col-lg-12">
+                <div class="card premium-glass-card border-0 shadow-lg rounded-4 overflow-hidden">
+                    <div class="card-header bg-white bg-opacity-50 border-bottom py-3 px-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-info-circle me-2 text-primary"></i>Template Identification</h5>
+                            <div class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill small">ID: #TMPL-{{ template.template_id|format("%03d") }}</div>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <label for="templateName" class="form-label small fw-bold text-muted text-uppercase">Template Name <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="fas fa-tag text-muted"></i></span>
+                                    <input type="text" class="form-control border-0 bg-light py-2" id="templateName" name="template_name" value="{{ template.template_name }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="relatedBuyers" class="form-label small fw-bold text-muted text-uppercase">Primary Buyer <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="fas fa-user-tie text-muted"></i></span>
+                                    <select class="form-select border-0 bg-light py-2" id="relatedBuyers" name="related_buyers" required>
+                                        <option value="">-- Choose Buyer --</option>
+                                        {% for buyer in buyers %}
+                                        <option value="{{ buyer.buyer_id }}" {{ template.related_buyers == buyer.buyer_id ? 'selected' : '' }}>{{ buyer.buyer_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="status" class="form-label small fw-bold text-muted text-uppercase">Status</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="fas fa-toggle-on text-muted"></i></span>
+                                    <select class="form-select border-0 bg-light py-2" id="status" name="status">
+                                        <option value="Active" {{ template.status == 'Active' ? 'selected' : '' }}>Active</option>
+                                        <option value="Inactive" {{ template.status == 'Inactive' ? 'selected' : '' }}>Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Full Width: Items Table -->
+            <div class="col-lg-12">
+                <div class="card premium-glass-card border-0 shadow-lg rounded-4 overflow-hidden">
+                    <div class="card-header bg-white bg-opacity-50 border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-list-ol me-2 text-primary"></i>Trims & Accessories Breakdown</h5>
+                        <button type="button" class="btn btn-sm btn-success rounded-pill px-3" onclick="addRow()">
+                            <i class="fas fa-plus me-1"></i> Add Item
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="itemsTable">
+                                <thead class="table-light text-uppercase small fw-bold text-muted">
+                                    <tr>
+                                        <th class="ps-4" style="min-width: 120px;">Code</th>
+                                        <th style="min-width: 150px;">Group</th>
+                                        <th style="min-width: 200px;">Description</th>
+                                        <th style="min-width: 100px;">UOM</th>
+                                        <th style="min-width: 100px;">Cons/Gmt</th>
+                                        <th style="min-width: 80px;">Ex.%</th>
+                                        <th style="min-width: 100px;">Rate</th>
+                                        <th style="min-width: 100px;">Amount</th>
+                                        <th style="min-width: 120px;">Supplier</th>
+                                        <th class="text-center pe-4">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="itemsTableBody">
+                                    {% for index, item in template.items %}
+                                    <tr class="item-row">
+                                        <td class="ps-3"><input type="text" class="form-control form-control-sm border-0 bg-light" name="items[{{ index }}][user_code]" value="{{ item.user_code }}" placeholder="Code"></td>
+                                        <td>
+                                            <select class="form-select form-select-sm border-0 bg-light" name="items[{{ index }}][trims_group]">
+                                                <option value="">--Grp--</option>
+                                                {% for key, value in trimsGroups %}
+                                                <option value="{{ key }}" {{ item.trims_group == key ? 'selected' : '' }}>{{ value }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </td>
+                                        <td><input type="text" class="form-control form-control-sm border-0 bg-light" name="items[{{ index }}][item_description]" value="{{ item.item_description }}" placeholder="Full item description"></td>
+                                        <td>
+                                            <select class="form-select form-select-sm border-0 bg-light" name="items[{{ index }}][consumption_uom]">
+                                                {% for key, value in uomOptions %}
+                                                <option value="{{ key }}" {{ item.consumption_uom == key ? 'selected' : '' }}>{{ value }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </td>
+                                        <td><input type="number" step="0.0001" class="form-control form-control-sm border-0 bg-light consumption-per-garment text-end" name="items[{{ index }}][consumption_per_garment]" value="{{ item.consumption_per_garment }}" placeholder="0.0000"></td>
+                                        <td><input type="number" step="0.01" class="form-control form-control-sm border-0 bg-light excess-percentage text-end" name="items[{{ index }}][excess_percentage]" value="{{ item.excess_percentage }}" placeholder="0.00"></td>
+                                        <td><input type="number" step="0.0001" class="form-control form-control-sm border-0 bg-light purchase-rate text-end" name="items[{{ index }}][purchase_rate]" value="{{ item.purchase_rate }}" placeholder="0.0000"></td>
+                                        <td>
+                                            <input type="number" step="0.01" class="form-control form-control-sm border-0 bg-white fw-bold text-primary amount text-end" name="items[{{ index }}][amount]" value="{{ item.amount }}" readonly tabindex="-1">
+                                            <input type="hidden" class="total-consumption" name="items[{{ index }}][total_consumption]" value="{{ item.total_consumption }}">
+                                        </td>
+                                        <td>
+                                            <select class="form-select form-select-sm border-0 bg-light" name="items[{{ index }}][supplier]">
+                                                <option value="">--Sup--</option>
+                                                {% for supplier in suppliers %}
+                                                <option value="{{ supplier.vendor_id }}" {{ item.supplier == supplier.vendor_id ? 'selected' : '' }}>{{ supplier.vendor_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </td>
+                                        <td class="text-center pe-3">
+                                            <button type="button" class="btn btn-link text-danger p-0" onclick="removeRow(this)">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="7" class="text-end fw-bold text-muted small pe-3">ESTIMATED TOTAL AMOUNT:</td>
+                                        <td class="text-end fw-bold text-dark pe-3 h6 mb-0" id="grandTotal">0.00</td>
+                                        <td colspan="2"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white py-3 px-4 text-end">
+                        <button type="submit" class="btn btn-primary px-5 rounded-pill shadow">
+                            <i class="fas fa-sync-alt me-2"></i>Update Template
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+    .card.premium-glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+    #itemsTable input:focus, #itemsTable select:focus {
+        background-color: #fff !important;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15) !important;
+        border: 1px solid #0d6efd !important;
+    }
+    .form-control-sm { font-size: 0.8rem; }
+    .item-row:hover { background-color: rgba(13, 110, 253, 0.02); }
+</style>
+
+<script>
+let rowCount = {{ template.items|length }};
+
+function addRow() {
+    const tbody = document.getElementById('itemsTableBody');
+    const newRow = document.createElement('tr');
+    newRow.className = 'item-row';
+    
+    newRow.innerHTML = `
+        <td class="ps-3"><input type="text" class="form-control form-control-sm border-0 bg-light" name="items[${rowCount}][user_code]" placeholder="Code"></td>
+        <td>
+            <select class="form-select form-select-sm border-0 bg-light" name="items[${rowCount}][trims_group]">
+                <option value="">--Grp--</option>
+                {% for key, value in trimsGroups %}
+                <option value="{{ key }}">{{ value }}</option>
+                {% endfor %}
+            </select>
+        </td>
+        <td><input type="text" class="form-control form-control-sm border-0 bg-light" name="items[${rowCount}][item_description]" placeholder="Full item description"></td>
+        <td>
+            <select class="form-select form-select-sm border-0 bg-light" name="items[${rowCount}][consumption_uom]">
+                {% for key, value in uomOptions %}
+                <option value="{{ key }}" {{ key == 'Pcs' ? 'selected' : '' }}>{{ value }}</option>
+                {% endfor %}
+            </select>
+        </td>
+        <td><input type="number" step="0.0001" class="form-control form-control-sm border-0 bg-light consumption-per-garment text-end" name="items[${rowCount}][consumption_per_garment]" placeholder="0.0000"></td>
+        <td><input type="number" step="0.01" class="form-control form-control-sm border-0 bg-light excess-percentage text-end" name="items[${rowCount}][excess_percentage]" placeholder="0.00"></td>
+        <td><input type="number" step="0.0001" class="form-control form-control-sm border-0 bg-light purchase-rate text-end" name="items[${rowCount}][purchase_rate]" placeholder="0.0000"></td>
+        <td>
+            <input type="number" step="0.01" class="form-control form-control-sm border-0 bg-white fw-bold text-primary amount text-end" name="items[${rowCount}][amount]" readonly tabindex="-1">
+            <input type="hidden" class="total-consumption" name="items[${rowCount}][total_consumption]">
+        </td>
+        <td>
+            <select class="form-select form-select-sm border-0 bg-light" name="items[${rowCount}][supplier]">
+                <option value="">--Sup--</option>
+                {% for supplier in suppliers %}
+                <option value="{{ supplier.vendor_id }}">{{ supplier.vendor_name }}</option>
+                {% endfor %}
+            </select>
+        </td>
+        <td class="text-center pe-3">
+            <button type="button" class="btn btn-link text-danger p-0" onclick="removeRow(this)">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </td>
+    `;
+    
+    tbody.appendChild(newRow);
+    rowCount++;
+}
+
+function removeRow(button) {
+    const tbody = document.getElementById('itemsTableBody');
+    if (tbody.rows.length > 1) {
+        button.closest('tr').remove();
+        calculateGrandTotal();
+    } else {
+        Swal.fire({ icon: 'error', title: 'Action Denied', text: 'At least one item row must remain.' });
+    }
+}
+
+function calculateRow(row) {
+    const consumptionPerGarment = parseFloat(row.querySelector('.consumption-per-garment').value) || 0;
+    const excessPercentage = parseFloat(row.querySelector('.excess-percentage').value) || 0;
+    const purchaseRate = parseFloat(row.querySelector('.purchase-rate').value) || 0;
+    
+    const totalConsumption = consumptionPerGarment * (1 + (excessPercentage / 100));
+    const amount = purchaseRate * totalConsumption;
+    
+    row.querySelector('.total-consumption').value = totalConsumption.toFixed(4);
+    row.querySelector('.amount').value = amount.toFixed(2);
+    
+    calculateGrandTotal();
+}
+
+function calculateGrandTotal() {
+    let grandTotal = 0;
+    document.querySelectorAll('.amount').forEach(input => {
+        grandTotal += parseFloat(input.value) || 0;
+    });
+    document.getElementById('grandTotal').innerText = grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('consumption-per-garment') || 
+            e.target.classList.contains('excess-percentage') || 
+            e.target.classList.contains('purchase-rate')) {
+            calculateRow(e.target.closest('tr'));
+        }
+    });
+
+    calculateGrandTotal();
+
+    document.getElementById('editTemplateForm').addEventListener('submit', function(e) {
+        const templateName = document.getElementById('templateName').value;
+        const buyer = document.getElementById('relatedBuyers').value;
+        
+        if (!templateName || !buyer) {
+            e.preventDefault();
+            Swal.fire({ icon: 'error', title: 'Incomplete Form', text: 'Please fill in all required fields.' });
+        }
+    });
+});
+</script>
+{% endblock %}

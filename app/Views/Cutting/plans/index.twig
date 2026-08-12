@@ -1,0 +1,219 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Cutting Plans{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Page Header -->
+    <div class="col-12 mb-4">
+        <div class="page-header d-flex justify-content-between align-items-center p-4 bg-white rounded shadow-sm">
+            <div class="page-title">
+                <h1 class="h3 text-primary fw-bold mb-1">Cutting Plans</h1>
+                <p class="text-muted mb-0">Manage cutting schedules and production planning</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPlanModal">
+                    <i class="fas fa-plus me-2"></i>New Cutting Plan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="col-12 mb-4">
+        <div class="stats-grid">
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.total_plans }}</h3>
+                <p class="text-muted mb-0">Total Plans</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.active_plans }}</h3>
+                <p class="text-muted mb-0">Active Plans</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.completed_plans }}</h3>
+                <p class="text-muted mb-0">Completed Plans</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.total_cut_quantity|number_format }}</h3>
+                <p class="text-muted mb-0">Total Cut Quantity</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plans Table -->
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fas fa-cut me-2"></i>Cutting Plans</span>
+                <input type="text" class="form-control form-control-sm w-auto" id="searchInput" placeholder="Search plans...">
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="plansTable">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="p-3 border-0">Plan Number</th>
+                                <th class="p-3 border-0">Order</th>
+                                <th class="p-3 border-0">Style</th>
+                                <th class="p-3 border-0">Quantity</th>
+                                <th class="p-3 border-0">Progress</th>
+                                <th class="p-3 border-0">Planned Date</th>
+                                <th class="p-3 border-0">Room</th>
+                                <th class="p-3 border-0">Status</th>
+                                <th class="p-3 border-0">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for plan in plans %}
+                            {% set progress = plan.total_quantity > 0 ? (plan.completed_quantity / plan.total_quantity) * 100 : 0 %}
+                            <tr>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ plan.plan_number }}</div>
+                                    
+                                </td>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ plan.order_number }}</div>
+                                    <small class="text-muted">{{ plan.style_code }}</small>
+                                </td>
+                                <td class="p-3">{{ plan.style_name }}</td>
+                                <td class="p-3">
+                                    {{ plan.completed_quantity|number_format }} / {{ plan.total_quantity|number_format }}
+                                </td>
+                                <td class="p-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1" style="height: 6px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ progress }}%"></div>
+                                        </div>
+                                        <span class="ms-2 small text-muted">{{ progress|number_format(1) }}%</span>
+                                    </div>
+                                </td>
+                                <td class="p-3">{{ plan.planned_date|date('M d, Y') }}</td>
+                                <td class="p-3">{{ plan.cutting_room_name }}</td>
+                                <td class="p-3">
+                                    <span class="status-badge status-{{ plan.status == 'completed' ? 'completed' : (plan.status == 'in_progress' ? 'production' : 'approved-for-production') }}">
+                                        {{ plan.status|replace({'_': ' '})|title }}
+                                    </span>
+                                </td>
+                                <td class="p-3">
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-outline-info" onclick="editPlan({{ plan.plan_id }})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                            <form action="{{ BASE_URL }}/cutting/plans/{{ plan.plan_id }}/delete" method="POST" onsubmit="return confirm('Delete this plan?')" style="display:inline;">
+    {{ csrf_field() | raw }}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center p-4 text-muted">No cutting plans found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal fade" id="addPlanModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <form action="{{ BASE_URL }}/cutting/plans" method="POST" class="modal-content">
+    {{ csrf_field() | raw }}
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">New Cutting Plan</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Form Content Matches Legacy -->
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Plan Number</label>
+                        <input type="text" class="form-control" name="plan_number" value="CP-{{ 'now'|date('Y-m-d') }}-001" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Order</label>
+                        <select class="form-select" name="order_id" required>
+                            <option value="">Select Order</option>
+                            {% for order in orders %}
+                            <option value="{{ order.order_id }}">{{ order.order_number }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Style</label>
+                        <select class="form-select" name="style_id" required>
+                            <option value="">Select Style</option>
+                            {% for style in styles %}
+                            <option value="{{ style.style_id }}">{{ style.style_code }} - {{ style.style_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Total Quantity</label>
+                        <input type="number" class="form-control" name="total_quantity" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Planned Date</label>
+                        <input type="date" class="form-control" name="planned_date" value="{{ 'now'|date('Y-m-d') }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Cutting Room</label>
+                        <select class="form-select" name="cutting_room_id" required>
+                            {% for room in cutting_rooms %}
+                            <option value="{{ room.cutting_room_id }}">{{ room.cutting_room_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                     <h6>Size Breakdown</h6>
+                     <div id="sizesContainer">
+                        <div class="row g-2 mb-2">
+                            <div class="col-3"><input type="text" class="form-control" name="sizes[0][size_name]" placeholder="Size"></div>
+                            <div class="col-3"><input type="number" class="form-control" name="sizes[0][size_quantity]" placeholder="Qty"></div>
+                            <div class="col-3"><input type="number" class="form-control" name="sizes[0][layers]" placeholder="Layers" value="1"></div>
+                        </div>
+                     </div>
+                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addSize()">+ Add Size</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Create Plan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let sizeIndex = 1;
+function addSize() {
+    const html = `
+    <div class="row g-2 mb-2">
+        <div class="col-3"><input type="text" class="form-control" name="sizes[${sizeIndex}][size_name]" placeholder="Size"></div>
+        <div class="col-3"><input type="number" class="form-control" name="sizes[${sizeIndex}][size_quantity]" placeholder="Qty"></div>
+        <div class="col-3"><input type="number" class="form-control" name="sizes[${sizeIndex}][layers]" placeholder="Layers" value="1"></div>
+    </div>`;
+    document.getElementById('sizesContainer').insertAdjacentHTML('beforeend', html);
+    sizeIndex++;
+}
+
+// Simple search filter
+document.getElementById('searchInput').addEventListener('keyup', function(e) {
+    const term = e.target.value.toLowerCase();
+    document.querySelectorAll('#plansTable tbody tr').forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+    });
+});
+</script>
+
+{% endblock %}

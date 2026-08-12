@@ -1,0 +1,346 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Warehouse Master & Mapping{% endblock %}
+
+{% block styles %}
+<style>
+    .premium-glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05);
+        border-radius: var(--border-radius);
+    }
+    [data-theme="dark"] .premium-glass-card {
+        background: rgba(30, 41, 59, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    .nav-tabs .nav-link {
+        border: none;
+        color: #718096;
+        font-weight: 600;
+        padding: 12px 20px;
+    }
+    .nav-tabs .nav-link.active {
+        background: transparent;
+        color: var(--primary);
+        border-bottom: 3px solid var(--primary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 bg-transparent px-0">
+                <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard" class="text-decoration-none"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ BASE_URL }}/inventory/dashboard" class="text-decoration-none">Store & Inventory</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Warehouse Master</li>
+            </ol>
+        </nav>
+        <div class="btn-group">
+            <button class="btn btn-primary rounded-pill px-4 me-2" data-bs-toggle="modal" data-bs-target="#addWarehouseModal">
+                <i class="fas fa-warehouse me-2"></i> Add Warehouse
+            </button>
+            <button class="btn btn-outline-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addLocationModal">
+                <i class="fas fa-map-marker-alt me-2"></i> Add Room/Rack
+            </button>
+        </div>
+    </div>
+
+    <!-- Alert Notifications -->
+    {% if session.success_message %}
+    <div class="alert alert-success alert-dismissible fade show premium-glass-card mb-4" role="alert">
+        <i class="fas fa-check-circle me-2"></i>{{ session.success_message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+    {% if session.error_message %}
+    <div class="alert alert-danger alert-dismissible fade show premium-glass-card mb-4" role="alert">
+        <i class="fas fa-times-circle me-2"></i>{{ session.error_message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <!-- Tabs Navigation -->
+    <div class="card border-0 premium-glass-card mb-4">
+        <div class="card-header bg-transparent border-0 p-0">
+            <ul class="nav nav-tabs border-bottom" id="warehouseTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" id="warehouse-tab" data-bs-toggle="tab" data-bs-target="#warehouseContent" type="button" role="tab"><i class="fas fa-warehouse me-2"></i>Warehouse List</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="locations-tab" data-bs-toggle="tab" data-bs-target="#locationsContent" type="button" role="tab"><i class="fas fa-map-marked-alt me-2"></i>Bins & Racks</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="capacity-tab" data-bs-toggle="tab" data-bs-target="#capacityContent" type="button" role="tab"><i class="fas fa-chart-bar me-2"></i>Warehouse Capacity</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#usersContent" type="button" role="tab"><i class="fas fa-user-shield me-2"></i>Warehouse Users</button>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="card-body p-4">
+            <div class="tab-content" id="warehouseTabsContent">
+                <!-- Tab 1: Warehouse List -->
+                <div class="tab-pane fade show active" id="warehouseContent" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Warehouse Name</th>
+                                    <th>Factory/Company Mapping</th>
+                                    <th>Location/Address</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for wh in warehouses %}
+                                <tr>
+                                    <td class="font-weight-bold text-primary">{{ wh.warehouse_code }}</td>
+                                    <td class="font-weight-bold">{{ wh.warehouse_name }}</td>
+                                    <td>{{ wh.factory_name|default('Consolidated') }}</td>
+                                    <td>{{ wh.location|default('Main Campus') }}</td>
+                                    <td>
+                                        {% if wh.status == 'active' %}
+                                            <span class="badge bg-success rounded-pill">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary rounded-pill">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Rooms and Racks -->
+                <div class="tab-pane fade" id="locationsContent" role="tabpanel">
+                    <div class="row">
+                        <!-- Rooms Column -->
+                        <div class="col-md-6 border-end">
+                            <h5 class="font-weight-bold mb-3"><i class="fas fa-door-open me-2 text-primary"></i>Store Rooms</h5>
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Room Name</th>
+                                        <th>Floor</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for rm in rooms %}
+                                    <tr>
+                                        <td class="font-weight-bold">{{ rm.room_code }}</td>
+                                        <td>{{ rm.room_name }}</td>
+                                        <td>{{ rm.floor_name }}</td>
+                                        <td><span class="badge bg-success rounded-pill">Active</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Racks Column -->
+                        <div class="col-md-6 ps-md-4">
+                            <h5 class="font-weight-bold mb-3"><i class="fas fa-boxes me-2 text-success"></i>Store Racks & Bins</h5>
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Rack Name</th>
+                                        <th>Room Mapping</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for rk in racks %}
+                                    <tr>
+                                        <td class="font-weight-bold">{{ rk.rack_code }}</td>
+                                        <td>{{ rk.rack_name }}</td>
+                                        <td>{{ rk.room_name }}</td>
+                                        <td><span class="badge bg-success rounded-pill">Active</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Warehouse Capacity -->
+                <div class="tab-pane fade" id="capacityContent" role="tabpanel">
+                    <h5 class="font-weight-bold mb-4">Storage Volume Capacity Indicators</h5>
+                    <div class="row g-4">
+                        {% for cap in warehouseCapacities %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card border-0 bg-light p-4 rounded h-100">
+                                <h6 class="font-weight-bold mb-1">{{ cap.warehouse_name }}</h6>
+                                <small class="text-muted mb-3 d-block">Code: {{ cap.warehouse_code }}</small>
+                                
+                                <div class="d-flex justify-content-between font-size-14 mb-2">
+                                    <span>Used Volume</span>
+                                    <span class="font-weight-bold">{{ cap.used_volume|number_format }} / {{ cap.max_capacity|number_format }} Items</span>
+                                </div>
+                                <div class="progress mb-3" style="height: 12px; border-radius: 6px;">
+                                    <div class="progress-bar {% if cap.percentage > 85 %}bg-danger{% elseif cap.percentage > 60 %}bg-warning{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ cap.percentage }}%;" aria-valuenow="{{ cap.percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge {% if cap.percentage > 85 %}bg-danger-light text-danger{% else %}bg-success-light text-success{% endif %} font-weight-bold">{{ cap.percentage }}% Mapped</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Tab 4: Warehouse Users -->
+                <div class="tab-pane fade" id="usersContent" role="tabpanel">
+                    <h5 class="font-weight-bold mb-3">Warehouse Personnel Assignments</h5>
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Allowed Warehouses</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td class="font-weight-bold">{{ user.name }}</td>
+                                <td>{{ user.email }}</td>
+                                <td><span class="badge bg-primary rounded-pill">{{ user.role }}</span></td>
+                                <td>
+                                    <span class="badge bg-secondary">All Warehouses</span>
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3">Modify Access</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Add Warehouse -->
+<div class="modal fade" id="addWarehouseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content premium-glass-card">
+            <div class="modal-header border-0">
+                <h5 class="modal-title font-weight-bold">Add Warehouse</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ BASE_URL }}/inventory/warehouses/store" method="POST">
+                {{ csrf_field()|raw }}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Warehouse Name</label>
+                        <input type="text" class="form-control" name="warehouse_name" required placeholder="e.g. Yarn Depot">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Warehouse Code</label>
+                        <input type="text" class="form-control" name="warehouse_code" required placeholder="e.g. WH-YRN">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Company / Factory Mapping</label>
+                        <select class="form-select" name="factory_id" required>
+                            <option value="">-- Choose Factory --</option>
+                            {% for fac in factories %}
+                            <option value="{{ fac.factory_id }}">{{ fac.factory_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Address/Location</label>
+                        <input type="text" class="form-control" name="location" placeholder="Building B, Floor 1">
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Save Warehouse</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Add Location -->
+<div class="modal fade" id="addLocationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content premium-glass-card">
+            <div class="modal-header border-0">
+                <h5 class="modal-title font-weight-bold">Add Room or Rack Location</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row">
+                    <!-- Add Room Form -->
+                    <div class="col-md-6 border-end pr-md-4">
+                        <h6 class="font-weight-bold text-primary mb-3">Add Room</h6>
+                        <form action="{{ BASE_URL }}/inventory/warehouses/room" method="POST">
+                            {{ csrf_field()|raw }}
+                            <div class="mb-3">
+                                <label class="form-label">Room Name</label>
+                                <input type="text" class="form-control" name="room_name" required placeholder="e.g. Indigo Dyeing Section">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Room Code</label>
+                                <input type="text" class="form-control" name="room_code" required placeholder="e.g. RM-IND">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Floor Mapping</label>
+                                <select class="form-select" name="floor_id" required>
+                                    <option value="">-- Choose Floor --</option>
+                                    {% for fl in floors %}
+                                    <option value="{{ fl.floor_id }}">{{ fl.floor_name }} ({{ fl.floor_code }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 rounded-pill mt-2">Save Room</button>
+                        </form>
+                    </div>
+                    <!-- Add Rack Form -->
+                    <div class="col-md-6 ps-md-4 mt-4 mt-md-0">
+                        <h6 class="font-weight-bold text-success mb-3">Add Rack / Bin</h6>
+                        <form action="{{ BASE_URL }}/inventory/warehouses/rack" method="POST">
+                            {{ csrf_field()|raw }}
+                            <div class="mb-3">
+                                <label class="form-label">Rack Name/Number</label>
+                                <input type="text" class="form-control" name="rack_name" required placeholder="e.g. Fabric Rack Shelf 3">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Rack Code</label>
+                                <input type="text" class="form-control" name="rack_code" required placeholder="e.g. RK-F3">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Room Mapping</label>
+                                <select class="form-select" name="room_id" required>
+                                    <option value="">-- Choose Room --</option>
+                                    {% for rm in rooms %}
+                                    <option value="{{ rm.room_id }}">{{ rm.room_name }} ({{ rm.room_code }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100 rounded-pill mt-2">Save Rack</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

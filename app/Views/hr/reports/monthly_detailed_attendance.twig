@@ -1,0 +1,533 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Monthly Detailed Attendance Report{% endblock %}
+
+{% block content %}
+<style>
+/* Filter Table Grid Styling (Matches RMG Enterprise Standards) */
+.filter-grid-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    background-color: #f8f9fa;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.filter-grid-table th {
+    border: 1px solid #b0bec5 !important;
+    background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+    color: #0f172a;
+    font-weight: 700;
+    text-align: center;
+    padding: 4px 6px;
+    font-size: 11px;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.filter-grid-table td {
+    border: 1px solid #b0bec5 !important;
+    padding: 3px 4px;
+    text-align: center;
+    vertical-align: middle;
+    background: #ffffff;
+}
+
+.filter-grid-table select, 
+.filter-grid-table input {
+    font-size: 11px;
+    padding: 2px 5px;
+    height: 27px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    width: 100%;
+    background-color: #ffffff;
+    color: #1e293b;
+    transition: border-color 0.15s ease-in-out;
+}
+
+.filter-grid-table select:focus, 
+.filter-grid-table input:focus {
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.date-range-container {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+}
+
+.date-range-container input {
+    font-size: 10px;
+    padding: 2px 3px;
+}
+
+/* Attendance Report Table Styling */
+.attendance-report-table {
+    font-size: 10px;
+    border-collapse: collapse;
+    width: 100%;
+    background-color: #ffffff;
+}
+
+.attendance-report-table th, 
+.attendance-report-table td {
+    border: 1px solid #6c757d !important;
+    padding: 2px 3px;
+    text-align: center;
+    vertical-align: middle;
+    line-height: 1.1;
+}
+
+.attendance-report-table th {
+    background-color: #e9ecef;
+    font-weight: 700;
+    color: #212529;
+}
+
+.cell-day-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+}
+
+.status-code {
+    font-weight: 800;
+    font-size: 11px;
+}
+
+.status-P { color: #198754; }
+.status-W { color: #0d6efd; font-weight: 900; }
+.status-L { color: #fd7e14; }
+.status-A { color: #dc3545; font-weight: 900; }
+.status-CL, .status-SL, .status-AL { color: #0dcaf0; }
+
+.time-str {
+    font-size: 9px;
+    color: #333333;
+}
+
+.ot-str {
+    font-size: 9px;
+    color: #666666;
+}
+
+.group-header-row {
+    background-color: #d1e7dd !important;
+    font-weight: bold;
+    text-align: left !important;
+    padding: 6px 10px !important;
+    font-size: 11px;
+}
+
+.line-summary-row {
+    background-color: #fff3cd !important;
+    font-weight: bold;
+    font-size: 10px;
+}
+
+.grand-summary-row {
+    background-color: #cff4fc !important;
+    font-weight: 800;
+    font-size: 11px;
+}
+
+/* Print Styles */
+@media print {
+    @page {
+        size: A4 landscape;
+        margin: 4mm;
+    }
+    html, body {
+        background: #ffffff !important;
+        font-family: Arial, sans-serif !important;
+        color: #000000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+    .no-print, 
+    nav, 
+    .navbar, 
+    .sidebar, 
+    #sidebarMenu, 
+    header, 
+    .btn, 
+    .card-header, 
+    footer,
+    .topbar,
+    .filter-card {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        width: 0 !important;
+        overflow: hidden !important;
+    }
+    .container-fluid, 
+    .row, 
+    main, 
+    main.col-md-9, 
+    main.col-lg-10 {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
+        left: 0 !important;
+        position: static !important;
+    }
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+    .attendance-report-table {
+        width: 100% !important;
+    }
+    .attendance-report-table th, 
+    .attendance-report-table td {
+        border: 1px solid #000000 !important;
+        font-size: 8px !important;
+        padding: 1px 2px !important;
+    }
+    .status-code { font-size: 9px !important; }
+    .time-str, .ot-str { font-size: 7.5px !important; }
+}
+</style>
+
+<div class="container-fluid py-3">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mb-3 p-3 rounded-3 text-white shadow-sm no-print" style="background: linear-gradient(135deg, #0d9488 0%, #059669 100%);">
+        <div>
+            <span class="badge bg-white text-teal mb-1 font-monospace" style="color: #0d9488;"><i class="fas fa-calendar-check me-1"></i> RMG FACTORY REPORT</span>
+            <h3 class="mb-0 font-weight-bold">Monthly Detailed Attendance Report</h3>
+            <p class="mb-0 small opacity-75">Full 31-day worker attendance, in/out punch times, late hours, overtime & leave breakdown.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ BASE_URL }}/hr/reports/monthly-detailed-attendance/export-excel" class="btn btn-light btn-sm rounded-pill px-3 font-weight-bold text-success shadow-sm"><i class="fas fa-file-excel me-1"></i> Export Excel</a>
+            <button onclick="window.print()" class="btn btn-outline-light btn-sm rounded-pill px-3"><i class="fas fa-print me-1"></i> Print Landscape</button>
+        </div>
+    </div>
+
+    <!-- Filter Section (Exact 2-Row Matrix Layout matching screenshot) -->
+    <div class="card shadow-sm border-0 mb-3 no-print filter-card">
+        <div class="card-body p-2">
+            <form method="GET" action="{{ BASE_URL }}/hr/reports/monthly-detailed-attendance" id="attendanceFilterForm">
+                
+                <table class="filter-grid-table mb-2">
+                    <!-- ROW 1 -->
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Company</th>
+                            <th>Location</th>
+                            <th>Division</th>
+                            <th>Department</th>
+                            <th>Section</th>
+                            <th>Subsection</th>
+                            <th>Designation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <select name="category">
+                                    <option value="">-- Select --</option>
+                                    {% for cat in filterOptions.categories %}
+                                    <option value="{{ cat }}" {{ filters.category == cat ? 'selected' : '' }}>{{ cat }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <select name="company">
+                                    <option value="">-- Select --</option>
+                                    {% for cmp in filterOptions.companies %}
+                                    <option value="{{ cmp }}" {{ filters.company == cmp ? 'selected' : '' }}>{{ cmp }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <select name="location">
+                                    <option value="">-- Select --</option>
+                                    {% for loc in filterOptions.locations %}
+                                    <option value="{{ loc }}" {{ filters.location == loc ? 'selected' : '' }}>{{ loc }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <select name="division">
+                                    <option value="">-- Select --</option>
+                                    {% for div in filterOptions.divisions %}
+                                    <option value="{{ div }}" {{ filters.division == div ? 'selected' : '' }}>{{ div }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <select name="department_id">
+                                    <option value="">-- Select --</option>
+                                    {% for dept in filterOptions.departments %}
+                                    <option value="{{ dept.department_id }}" {{ filters.department_id == dept.department_id ? 'selected' : '' }}>{{ dept.department_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <select name="section_id">
+                                    <option value="">-- Select --</option>
+                                    {% for sec in filterOptions.sections %}
+                                    <option value="{{ sec.section_id }}" {{ filters.section_id == sec.section_id ? 'selected' : '' }}>{{ sec.section_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <select name="subsection_id">
+                                    <option value="">-- Select --</option>
+                                    {% for sub in filterOptions.subsections %}
+                                    <option value="{{ sub }}" {{ filters.subsection_id == sub ? 'selected' : '' }}>{{ sub }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <select name="designation">
+                                    <option value="">Select Multiple Item</option>
+                                    {% for desig in filterOptions.designations %}
+                                    <option value="{{ desig }}" {{ filters.designation == desig ? 'selected' : '' }}>{{ desig }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                        </tr>
+                    </tbody>
+
+                    <!-- ROW 2 -->
+                    <thead>
+                        <tr>
+                            <th>Designation Level</th>
+                            <th>Shift Policy</th>
+                            <th>Year</th>
+                            <th>Month</th>
+                            <th>Joining Date</th>
+                            <th>Order By</th>
+                            <th>Emp Code</th>
+                            <th>Emp ID</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <select name="designation_level">
+                                    <option value="">Select Multiple Item</option>
+                                    {% for lvl in filterOptions.designation_levels %}
+                                    <option value="{{ lvl }}" {{ filters.designation_level == lvl ? 'selected' : '' }}>{{ lvl }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <select name="shift_policy">
+                                    <option value="">Select Multiple Item</option>
+                                    {% for shift in filterOptions.shift_policies %}
+                                    <option value="{{ shift }}" {{ filters.shift_policy == shift ? 'selected' : '' }}>{{ shift }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <select name="year">
+                                    {% for yr in filterOptions.years %}
+                                    <option value="{{ yr }}" {{ filters.year == yr ? 'selected' : '' }}>{{ yr }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <select name="month">
+                                    <option value="">-- Select --</option>
+                                    {% for code, mName in filterOptions.months %}
+                                    <option value="{{ code }}" {{ filters.month == code ? 'selected' : '' }}>{{ mName }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <div class="date-range-container">
+                                    <input type="date" name="joining_from" value="{{ filters.joining_from }}" placeholder="From">
+                                    <input type="date" name="joining_to" value="{{ filters.joining_to }}" placeholder="To">
+                                </div>
+                            </td>
+                            <td>
+                                <select name="order_by">
+                                    <option value="">-- Select --</option>
+                                    {% for val, label in filterOptions.order_by_list %}
+                                    <option value="{{ val }}" {{ filters.order_by == val ? 'selected' : '' }}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" name="emp_code" value="{{ filters.emp_code }}" placeholder="Browse">
+                            </td>
+                            <td>
+                                <input type="text" name="emp_id" value="{{ filters.emp_id }}" placeholder="Browse">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm px-3">
+                            <i class="fas fa-filter me-1"></i> Generate Report
+                        </button>
+                        <a href="{{ BASE_URL }}/hr/reports/monthly-detailed-attendance" class="btn btn-outline-secondary btn-sm px-3">
+                            <i class="fas fa-undo me-1"></i> Reset
+                        </a>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" onclick="window.print()" class="btn btn-dark btn-sm px-3">
+                            <i class="fas fa-print me-1"></i> Print PDF
+                        </button>
+                        <a href="{{ BASE_URL }}/hr/reports/monthly-detailed-attendance/export-excel?year={{ filters.year }}&month={{ filters.month }}&category={{ filters.category }}&company={{ filters.company }}&department_id={{ filters.department_id }}&section_id={{ filters.section_id }}&emp_code={{ filters.emp_code }}&emp_id={{ filters.emp_id }}" class="btn btn-success btn-sm px-3">
+                            <i class="fas fa-file-excel me-1"></i> Export Excel
+                        </a>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- Report Document Card -->
+    <div class="card shadow border-0">
+        <div class="card-body p-3">
+            
+            <!-- Document Header -->
+            <div class="text-center mb-3">
+                <h3 class="h4 font-weight-bold mb-0 text-dark">{{ companyName }}</h3>
+                <p class="small text-muted mb-0">{{ companyAddress }}</p>
+                <h5 class="h6 font-weight-bold mt-1 mb-2 text-primary">
+                    Detail Attendance Report for the month of {{ reportData.startDate }} to {{ reportData.endDate }}
+                </h5>
+            </div>
+
+            <!-- Attendance Data Table Grid -->
+            <div class="table-responsive">
+                <table class="attendance-report-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 25px;">SL</th>
+                            <th style="width: 65px;">Id</th>
+                            <th style="width: 120px;">Name</th>
+                            <th style="width: 55px;">J.D</th>
+                            <th style="width: 45px;">L.D</th>
+                            <th style="width: 45px;">Q.D</th>
+                            
+                            {% for day in 1..reportData.daysInMonth %}
+                            <th style="min-width: 32px;">{{ day }}</th>
+                            {% endfor %}
+
+                            <th style="width: 50px;">Total OT</th>
+                            <th style="width: 60px;">Total Pay.D<br><span class="fw-normal">P / L / A</span></th>
+                            <th style="width: 60px;">Total HW<br><span class="fw-normal">W / OSD / Leave</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group in reportData.groups %}
+                        <!-- Department & Line Group Header -->
+                        <tr>
+                            <td colspan="{{ 9 + reportData.daysInMonth }}" class="group-header-row">
+                                <strong>Department Name:</strong> {{ group.department_name }}, 
+                                <strong>Section:</strong> {{ group.section_name }} | 
+                                <strong>Line Name:</strong> {{ group.line_name }}
+                            </td>
+                        </tr>
+
+                        {% for emp in group.employees %}
+                        <tr>
+                            <td>{{ emp.sl }}</td>
+                            <td class="font-monospace fw-bold">{{ emp.id }}</td>
+                            <td class="text-start">
+                                <div class="fw-bold">{{ emp.name }}</div>
+                                <div class="text-muted small" style="font-size: 8.5px;">{{ emp.designation }}</div>
+                            </td>
+                            <td>{{ emp.jd }}</td>
+                            <td>{{ emp.ld }}</td>
+                            <td>{{ emp.qd }}</td>
+
+                            <!-- Days Cells -->
+                            {% for day in 1..reportData.daysInMonth %}
+                            {% set dayInfo = emp.days[day] %}
+                            <td>
+                                <div class="cell-day-block">
+                                    <span class="status-code status-{{ dayInfo.status }}">{{ dayInfo.status }}</span>
+                                    <span class="time-str">{{ dayInfo.in }}</span>
+                                    <span class="time-str">{{ dayInfo.out }}</span>
+                                    <span class="ot-str">{{ dayInfo.ot }}</span>
+                                </div>
+                            </td>
+                            {% endfor %}
+
+                            <!-- Summary Metrics -->
+                            <td class="fw-bold text-primary">{{ emp.total_ot|number_format(2) }}</td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ emp.total_pay_days }}</div>
+                                <div class="small text-muted" style="font-size: 8px;">
+                                    P:{{ emp.present_days }} | L:{{ emp.late_days }} | A:{{ emp.absent_days }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="small">HW:{{ emp.total_hw }}</div>
+                                <div class="small text-muted" style="font-size: 8px;">
+                                    W:{{ emp.weekend_days }} | OSD:{{ emp.osd_days }} | L:{{ emp.leave_days }}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        <!-- Line Summary Row -->
+                        <tr class="line-summary-row">
+                            <td colspan="6" class="text-start ps-2">Line Total: {{ group.line_total }}</td>
+                            <td colspan="{{ reportData.daysInMonth }}" class="text-center">
+                                Two Hour OT: {{ group.two_hour_ot|number_format(2) }} | 
+                                Extra Hour OT: {{ group.extra_hour_ot|number_format(2) }} | 
+                                E Extra Hour OT: {{ group.e_extra_hour_ot|number_format(2) }}
+                            </td>
+                            <td colspan="3" class="text-end pe-2">Total OT: {{ group.total_ot|number_format(2) }}</td>
+                        </tr>
+                        {% endfor %}
+
+                        <!-- Grand Total Row -->
+                        <tr class="grand-summary-row">
+                            <td colspan="6" class="text-start ps-2">Grand Total: {{ reportData.grandTotal.count }}</td>
+                            <td colspan="{{ reportData.daysInMonth }}" class="text-center">
+                                Two Hour OT: {{ reportData.grandTotal.two_hour_ot|number_format(2) }} | 
+                                Extra Hour OT: {{ reportData.grandTotal.extra_hour_ot|number_format(2) }} | 
+                                E Extra Hour OT: {{ reportData.grandTotal.e_extra_hour_ot|number_format(2) }}
+                            </td>
+                            <td colspan="3" class="text-end pe-2">Grand Total OT: {{ reportData.grandTotal.total_ot|number_format(2) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer Signatures -->
+            <div class="row mt-5 pt-3 no-print">
+                <div class="col-3 text-center">
+                    <div class="border-top pt-1 font-weight-bold small">Prepared By</div>
+                </div>
+                <div class="col-3 text-center">
+                    <div class="border-top pt-1 font-weight-bold small">Checked By</div>
+                </div>
+                <div class="col-3 text-center">
+                    <div class="border-top pt-1 font-weight-bold small">HR Manager</div>
+                </div>
+                <div class="col-3 text-center">
+                    <div class="border-top pt-1 font-weight-bold small">Authorized Signature</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

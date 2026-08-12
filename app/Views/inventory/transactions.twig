@@ -1,0 +1,712 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Receiving & Goods Transactions{% endblock %}
+
+{% block styles %}
+<style>
+    .premium-glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05);
+        border-radius: var(--border-radius);
+    }
+    [data-theme="dark"] .premium-glass-card {
+        background: rgba(30, 41, 59, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    .nav-tabs .nav-link {
+        border: none;
+        color: #718096;
+        font-weight: 600;
+        padding: 12px 20px;
+    }
+    .nav-tabs .nav-link.active {
+        background: transparent;
+        color: var(--primary);
+        border-bottom: 3px solid var(--primary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 bg-transparent px-0">
+                <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard" class="text-decoration-none"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ BASE_URL }}/inventory/dashboard" class="text-decoration-none">Store & Inventory</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Stock Transactions</li>
+            </ol>
+        </nav>
+        <div class="btn-group">
+            <button class="btn btn-primary rounded-pill px-4 me-2" data-bs-toggle="modal" data-bs-target="#createGRNModal">
+                <i class="fas fa-truck-loading me-2"></i> Receive GRN
+            </button>
+            <button class="btn btn-outline-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#createReqModal">
+                <i class="fas fa-file-signature me-2"></i> Create Requisition
+            </button>
+        </div>
+    </div>
+
+    <!-- Alert Notifications -->
+    {% if session.success_message %}
+    <div class="alert alert-success alert-dismissible fade show premium-glass-card mb-4" role="alert">
+        <i class="fas fa-check-circle me-2"></i>{{ session.success_message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+    {% if session.error_message %}
+    <div class="alert alert-danger alert-dismissible fade show premium-glass-card mb-4" role="alert">
+        <i class="fas fa-times-circle me-2"></i>{{ session.error_message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <!-- Tabs Navigation -->
+    <div class="card border-0 premium-glass-card mb-4">
+        <div class="card-header bg-transparent border-0 p-0">
+            <ul class="nav nav-tabs border-bottom" id="transactionTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" id="grn-tab" data-bs-toggle="tab" data-bs-target="#grnContent" type="button" role="tab"><i class="fas fa-clipboard-list me-2"></i>Goods Receive Notes (GRN)</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="req-tab" data-bs-toggle="tab" data-bs-target="#reqContent" type="button" role="tab"><i class="fas fa-file-alt me-2"></i>Requisitions</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="issues-tab" data-bs-toggle="tab" data-bs-target="#issuesContent" type="button" role="tab"><i class="fas fa-sign-out-alt me-2"></i>Material Issues</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="transfers-tab" data-bs-toggle="tab" data-bs-target="#transfersContent" type="button" role="tab"><i class="fas fa-exchange-alt me-2"></i>Stock Transfers</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="gatepass-tab" data-bs-toggle="tab" data-bs-target="#gatepassContent" type="button" role="tab"><i class="fas fa-address-card me-2"></i>Gate Passes</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="adjustments-tab" data-bs-toggle="tab" data-bs-target="#adjustmentsContent" type="button" role="tab"><i class="fas fa-balance-scale-right me-2"></i>Adjustments & Returns</button>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="card-body p-4">
+            <div class="tab-content" id="transactionTabsContent">
+                <!-- Tab 1: GRN List -->
+                <div class="tab-pane fade show active" id="grnContent" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>GRN Number</th>
+                                    <th>Received Date</th>
+                                    <th>Supplier</th>
+                                    <th>Warehouse</th>
+                                    <th class="text-end">Total Cost</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if grns is empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">No Goods Receive Notes (GRN) logged.</td>
+                                </tr>
+                                {% else %}
+                                    {% for grn in grns %}
+                                    <tr>
+                                        <td class="font-weight-bold text-primary">{{ grn.grn_number }}</td>
+                                        <td>{{ grn.received_date|date('d-M-Y') }}</td>
+                                        <td>{{ grn.vendor_name|default('Direct') }}</td>
+                                        <td>{{ grn.warehouse_name|default('Main Store') }}</td>
+                                        <td class="text-end font-weight-bold">${{ grn.total_amount|number_format(2) }}</td>
+                                        <td>
+                                            {% if grn.status == 'approved' %}
+                                                <span class="badge bg-success rounded-pill">QC Approved</span>
+                                            {% elseif grn.status == 'pending_qc' %}
+                                                <span class="badge bg-warning rounded-pill">QC Inspection Pending</span>
+                                            {% else %}
+                                                <span class="badge bg-danger rounded-pill">{{ grn.status|capitalize }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Requisitions List -->
+                <div class="tab-pane fade" id="reqContent" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Requisition No</th>
+                                    <th>Req Date</th>
+                                    <th>Required Date</th>
+                                    <th>Department</th>
+                                    <th>Purpose</th>
+                                    <th>Requested By</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if requisitions is empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">No Requisition requests logged.</td>
+                                </tr>
+                                {% else %}
+                                    {% for req in requisitions %}
+                                    <tr>
+                                        <td class="font-weight-bold text-primary">{{ req.requisition_no }}</td>
+                                        <td>{{ req.requisition_date|date('d-M-Y') }}</td>
+                                        <td>{{ req.required_date|date('d-M-Y') }}</td>
+                                        <td>{{ req.department_name }}</td>
+                                        <td>{{ req.purpose|slice(0, 30) }}...</td>
+                                        <td>{{ req.requested_by_name }}</td>
+                                        <td>
+                                            {% if req.status == 'approved' or req.status == 'completed' %}
+                                                <span class="badge bg-success rounded-pill">{{ req.status|capitalize }}</span>
+                                            {% elseif req.status == 'pending' %}
+                                                <span class="badge bg-warning rounded-pill">Pending Approval</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary rounded-pill">{{ req.status|capitalize }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Material Issues List -->
+                <div class="tab-pane fade" id="issuesContent" role="tabpanel">
+                    <div class="row mb-3">
+                        <div class="col-md-12 text-end">
+                            <button class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#issueStockModal">
+                                <i class="fas fa-sign-out-alt me-1"></i> Issue Material
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Issue Ref No</th>
+                                    <th>Item Details</th>
+                                    <th>Issued From</th>
+                                    <th class="text-end">Qty Issued</th>
+                                    <th class="text-end">Value</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if materialIssues is empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">No material issue logs found.</td>
+                                </tr>
+                                {% else %}
+                                    {% for issue in materialIssues %}
+                                    <tr>
+                                        <td>{{ issue.created_at|date('d-M-Y H:i') }}</td>
+                                        <td class="font-weight-bold text-dark">{{ issue.reference_no }}</td>
+                                        <td>
+                                            <div class="font-weight-bold text-primary">{{ issue.item_code }}</div>
+                                            <small class="text-muted">{{ issue.item_name }}</small>
+                                        </td>
+                                        <td>{{ issue.location_name }}</td>
+                                        <td class="text-end font-weight-bold text-danger">-{{ issue.quantity }}</td>
+                                        <td class="text-end font-weight-bold">${{ issue.total_cost|number_format(2) }}</td>
+                                        <td>{{ issue.remarks }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 4: Stock Transfers -->
+                <div class="tab-pane fade" id="transfersContent" role="tabpanel">
+                    <div class="row mb-3">
+                        <div class="col-md-12 text-end">
+                            <button class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#createTransferModal">
+                                <i class="fas fa-exchange-alt me-1"></i> Initiate Stock Transfer
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Transfer No</th>
+                                    <th>Source Location</th>
+                                    <th>Destination Location</th>
+                                    <th>Status</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if transfers is empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">No transfers initiated.</td>
+                                </tr>
+                                {% else %}
+                                    {% for tr in transfers %}
+                                    <tr>
+                                        <td class="font-weight-bold text-primary">{{ tr.transfer_no }}</td>
+                                        <td>{{ tr.from_loc_name }}</td>
+                                        <td>{{ tr.to_loc_name }}</td>
+                                        <td><span class="badge bg-success rounded-pill">{{ tr.status|capitalize }}</span></td>
+                                        <td>{{ tr.remarks }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 5: Gate Passes -->
+                <div class="tab-pane fade" id="gatepassContent" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Gate Pass No</th>
+                                    <th>Date/Time</th>
+                                    <th>Challan No</th>
+                                    <th>Type</th>
+                                    <th>Department</th>
+                                    <th>Bearer</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if gatePasses is empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">No Gate Passes issued.</td>
+                                </tr>
+                                {% else %}
+                                    {% for gp in gatePasses %}
+                                    <tr>
+                                        <td class="font-weight-bold text-primary">{{ gp.gate_pass_no }}</td>
+                                        <td>{{ gp.date|date('d-M-Y') }} {{ gp.time }}</td>
+                                        <td>{{ gp.challan_no|default('N/A') }}</td>
+                                        <td>
+                                            {% if gp.returnable == 1 %}
+                                                <span class="badge bg-info-light text-info rounded-pill">Returnable</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary-light text-secondary rounded-pill">Non-Returnable</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ gp.department_name }}</td>
+                                        <td>{{ gp.bearer_by }}</td>
+                                        <td>{{ gp.remarks|slice(0, 30) }}...</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 6: Adjustments & Returns -->
+                <div class="tab-pane fade" id="adjustmentsContent" role="tabpanel">
+                    <div class="row mb-3">
+                        <div class="col-md-12 text-end">
+                            <button class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#createAdjustmentModal">
+                                <i class="fas fa-balance-scale me-1"></i> Log Adjustment/Damage
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Adjustment No</th>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Reason</th>
+                                    <th>Store</th>
+                                    <th class="text-end">Total Impact Value</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if adjustments is empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">No stock adjustments entered.</td>
+                                </tr>
+                                {% else %}
+                                    {% for adj in adjustments %}
+                                    <tr>
+                                        <td class="font-weight-bold text-primary">{{ adj.adjustment_no }}</td>
+                                        <td>{{ adj.adjustment_date|date('d-M-Y') }}</td>
+                                        <td>
+                                            {% if adj.adjustment_type == 'positive' %}
+                                                <span class="badge bg-success rounded-pill">Positive (+ Excess)</span>
+                                            {% else %}
+                                                <span class="badge bg-danger rounded-pill">Negative (- Shortage)</span>
+                                            {% endif %}
+                                        </td>
+                                        <td><span class="badge bg-secondary rounded-pill">{{ adj.reason|replace({'_': ' '})|capitalize }}</span></td>
+                                        <td>{{ adj.location_name }}</td>
+                                        <td class="text-end font-weight-bold">${{ adj.total_adjustment_value|number_format(2) }}</td>
+                                        <td><span class="badge bg-success rounded-pill">{{ adj.status|capitalize }}</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Receive GRN -->
+<div class="modal fade" id="createGRNModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content premium-glass-card">
+            <div class="modal-header border-0">
+                <h5 class="modal-title font-weight-bold">Receive Goods (GRN)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ BASE_URL }}/inventory/transactions/grn" method="POST">
+                {{ csrf_field()|raw }}
+                <input type="hidden" name="qc_required" value="no" id="qcRequiredField">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">Purchase Order Ref</label>
+                            <select class="form-select" name="po_id">
+                                <option value="">-- Receive Without PO --</option>
+                                {% for po in purchaseOrders %}
+                                <option value="{{ po.id }}">{{ po.po_number }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">Supplier Delivery Challan No</label>
+                            <input type="text" class="form-control" name="remarks" placeholder="Challan No / Invoice Ref">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">Supplier</label>
+                            <select class="form-select" name="vendor_id" required>
+                                <option value="">-- Choose Supplier --</option>
+                                {% for ven in vendors %}
+                                <option value="{{ ven.vendor_id }}">{{ ven.vendor_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">Target Warehouse</label>
+                            <select class="form-select" name="warehouse_id" required>
+                                <option value="">-- Choose Warehouse --</option>
+                                {% for wh in warehouses %}
+                                <option value="{{ wh.warehouse_id }}">{{ wh.warehouse_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">Received Date</label>
+                            <input type="date" class="form-control" name="received_date" value="{{ 'now'|date('Y-m-d') }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">Require Quality Control Inspection?</label>
+                            <div class="btn-group w-100" role="group">
+                                <button type="button" class="btn btn-outline-warning active" onclick="setQc('yes', this)">Yes, Pending Inspection</button>
+                                <button type="button" class="btn btn-outline-success" onclick="setQc('no', this)">No, Auto Approve</button>
+                            </div>
+                        </div>
+
+                        <!-- Item Grid Dynamic row (simplified single item adding for now) -->
+                        <div class="col-12 mt-4">
+                            <h6 class="font-weight-bold mb-2">Item to Receive</h6>
+                            <div class="row g-2">
+                                <div class="col-md-5">
+                                    <label class="form-label small text-muted">Select Item</label>
+                                    <select class="form-select" name="items[0][item_id]" required>
+                                        <option value="">-- Choose Item --</option>
+                                        {% for item in items %}
+                                        <option value="{{ item.item_id }}">{{ item.item_code }} - {{ item.item_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small text-muted">Quantity</label>
+                                    <input type="number" class="form-control" name="items[0][quantity]" required placeholder="0">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small text-muted">Unit Cost ($)</label>
+                                    <input type="number" step="0.01" class="form-control" name="items[0][unit_price]" required placeholder="0.00">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Post Goods Receipt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Create Requisition -->
+<div class="modal fade" id="createReqModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content premium-glass-card">
+            <div class="modal-header border-0">
+                <h5 class="modal-title font-weight-bold">Create Store Requisition Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ BASE_URL }}/inventory/transactions/requisition" method="POST">
+                {{ csrf_field()|raw }}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Department Requisitioning</label>
+                        <select class="form-select" name="department_id" required>
+                            <option value="">-- Choose Department --</option>
+                            {% for dep in departments %}
+                            <option value="{{ dep.department_id }}">{{ dep.department_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Issue Store Location</label>
+                        <select class="form-select" name="location_id" required>
+                            <option value="">-- Choose Location --</option>
+                            {% for loc in locations %}
+                            <option value="{{ loc.location_id }}">{{ loc.location_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Required Date</label>
+                        <input type="date" class="form-control" name="required_date" value="{{ 'now'|date('Y-m-d') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Requisition Purpose</label>
+                        <textarea class="form-control" name="purpose" placeholder="Explain requisition details..."></textarea>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-8">
+                            <label class="form-label font-weight-bold">Select Item</label>
+                            <select class="form-select" name="items[0][item_id]" required>
+                                <option value="">-- Choose Item --</option>
+                                {% for item in items %}
+                                <option value="{{ item.item_id }}">{{ item.item_code }} - {{ item.item_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label font-weight-bold">Quantity</label>
+                            <input type="number" class="form-control" name="items[0][quantity]" required placeholder="0">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Submit Requisition</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Issue Stock -->
+<div class="modal fade" id="issueStockModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content premium-glass-card">
+            <div class="modal-header border-0">
+                <h5 class="modal-title font-weight-bold">Issue Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ BASE_URL }}/inventory/transactions/issue" method="POST">
+                {{ csrf_field()|raw }}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Select Item</label>
+                        <select class="form-select" name="item_id" required>
+                            <option value="">-- Select Item --</option>
+                            {% for item in items %}
+                            <option value="{{ item.item_id }}">{{ item.item_code }} - {{ item.item_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Source Warehouse</label>
+                        <select class="form-select" name="warehouse_id" required>
+                            <option value="">-- Select Warehouse --</option>
+                            {% for wh in warehouses %}
+                            <option value="{{ wh.warehouse_id }}">{{ wh.warehouse_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Target Department</label>
+                        <select class="form-select" name="department_id" required>
+                            <option value="">-- Choose Department --</option>
+                            {% for dep in departments %}
+                            <option value="{{ dep.department_id }}">{{ dep.department_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Quantity to Issue</label>
+                        <input type="number" class="form-control" name="quantity" required placeholder="0">
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4">Post Stock Issue</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Create Transfer -->
+<div class="modal fade" id="createTransferModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content premium-glass-card">
+            <div class="modal-header border-0">
+                <h5 class="modal-title font-weight-bold">Initiate Stock Transfer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ BASE_URL }}/inventory/transactions/transfer" method="POST">
+                {{ csrf_field()|raw }}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">From Location (Source)</label>
+                        <select class="form-select" name="from_location_id" required>
+                            <option value="">-- Choose Source --</option>
+                            {% for loc in locations %}
+                            <option value="{{ loc.location_id }}">{{ loc.location_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">To Location (Destination)</label>
+                        <select class="form-select" name="to_location_id" required>
+                            <option value="">-- Choose Destination --</option>
+                            {% for loc in locations %}
+                            <option value="{{ loc.location_id }}">{{ loc.location_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Remarks/Notes</label>
+                        <input type="text" class="form-control" name="remarks" placeholder="Explain transfer purpose...">
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-8">
+                            <label class="form-label font-weight-bold">Select Item</label>
+                            <select class="form-select" name="items[0][item_id]" required>
+                                <option value="">-- Choose Item --</option>
+                                {% for item in items %}
+                                <option value="{{ item.item_id }}">{{ item.item_code }} - {{ item.item_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label font-weight-bold">Quantity</label>
+                            <input type="number" class="form-control" name="items[0][quantity]" required placeholder="0">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Execute Transfer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Log Adjustment -->
+<div class="modal fade" id="createAdjustmentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content premium-glass-card">
+            <div class="modal-header border-0">
+                <h5 class="modal-title font-weight-bold">Log Stock Adjustment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ BASE_URL }}/inventory/transactions/adjustment" method="POST">
+                {{ csrf_field()|raw }}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Target Location/Warehouse</label>
+                        <select class="form-select" name="location_id" required>
+                            <option value="">-- Select Store Room --</option>
+                            {% for loc in locations %}
+                            <option value="{{ loc.location_id }}">{{ loc.location_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Adjustment Type</label>
+                        <select class="form-select" name="adjustment_type" required>
+                            <option value="positive">Positive (Excess stock found)</option>
+                            <option value="negative">Negative (Damage/Shortage log)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Reason</label>
+                        <select class="form-select" name="reason" required>
+                            <option value="damage">Damage Entry</option>
+                            <option value="lost">Lost / Shortage Entry</option>
+                            <option value="found">Excess Entry</option>
+                            <option value="count_difference">Audit Count Variance</option>
+                            <option value="other">Scrap Entry</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Remarks</label>
+                        <input type="text" class="form-control" name="remarks" placeholder="Explain adjustment reason...">
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-8">
+                            <label class="form-label font-weight-bold">Select Item</label>
+                            <select class="form-select" name="items[0][item_id]" required>
+                                <option value="">-- Choose Item --</option>
+                                {% for item in items %}
+                                <option value="{{ item.item_id }}">{{ item.item_code }} - {{ item.item_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label font-weight-bold">Quantity</label>
+                            <input type="number" class="form-control" name="items[0][quantity]" required placeholder="0">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Post Adjustment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function setQc(val, btn) {
+    document.getElementById('qcRequiredField').value = val;
+    // Toggle active state classes
+    $(btn).addClass('active').siblings().removeClass('active');
+}
+</script>
+{% endblock %}

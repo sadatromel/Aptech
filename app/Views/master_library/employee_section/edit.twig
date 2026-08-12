@@ -1,0 +1,71 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Edit Section | Master Library{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Edit Section</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library/employee_sections">Employee Sections</a></li>
+        <li class="breadcrumb-item active">Edit</li>
+    </ol>
+
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <h5 class="mb-0 text-warning"><i class="fas fa-edit me-1"></i> Edit Section Details</h5>
+        </div>
+        <div class="card-body p-4">
+            <form action="{{ BASE_URL }}/master_library/employee_sections/edit/{{ section.section_id }}" method="POST">
+                {{ csrf_field() | raw }}
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input class="form-control" id="section_name" name="section_name" type="text"
+                                   placeholder="e.g. Quality Control, Cutting Room" required maxlength="150"
+                                   value="{{ section.section_name }}" />
+                            <label for="section_name">Section Name <span class="text-danger">*</span></label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <select class="form-select" id="department_id" name="department_id" required>
+                                <option value="">-- Select Department --</option>
+                                {% for dept in departments %}
+                                <option value="{{ dept.department_id }}" {{ dept.department_id == section.department_id ? 'selected' : '' }}>
+                                    {{ dept.department_name }} ({{ dept.department_code }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <label for="department_id">Employee Department <span class="text-danger">*</span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <select class="form-select" id="status" name="status">
+                                <option value="active" {{ section.status == 'active' ? 'selected' : '' }}>Active</option>
+                                <option value="inactive" {{ section.status == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                            </select>
+                            <label for="status">Status <span class="text-danger">*</span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-2">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ BASE_URL }}/master_library/employee_sections" class="btn btn-light me-md-2 px-4 rounded-pill border">Cancel</a>
+                        <button type="submit" class="btn btn-warning px-4 rounded-pill text-dark fw-semibold">
+                            <i class="fas fa-save me-1"></i> Update Section
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,1364 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Merchandising • Production Orders{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 merchandising-production-orders">
+    <h1 class="mt-4">Production Orders</h1>
+    
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/merchandising">Merchandising</a></li>
+        <li class="breadcrumb-item active">Production Orders</li>
+    </ol>
+    
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <div>
+            <p class="text-muted mb-0">Manage production orders with SKU-level quantity and pricing details.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary rounded-pill" id="exportPOCsv">
+                <i class="fas fa-file-export me-2"></i>Export CSV
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs mb-4" id="poTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="list-tab-btn" data-bs-toggle="tab" data-bs-target="#list-tab" type="button" role="tab">
+                <i class="fas fa-list me-2"></i>Production Orders
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="form-tab-btn" data-bs-toggle="tab" data-bs-target="#form-tab" type="button" role="tab">
+                <i class="fas fa-plus me-2"></i>New Production Order
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="poTabContent">
+        <!-- List Tab -->
+        <div class="tab-pane fade show active" id="list-tab" role="tabpanel" tabindex="0">
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <p class="label">Total POs</p>
+                        <h2>{{ stats.total }}</h2>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card warning">
+                        <p class="label">Draft</p>
+                        <h2>{{ stats.draft }}</h2>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card success">
+                        <p class="label">Approved</p>
+                        <h2>{{ stats.approved }}</h2>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card info">
+                        <p class="label">In Production</p>
+                        <h2>{{ stats.in_production }}</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-md border-0 mb-4">
+                <div class="card-body">
+                    <form class="row gy-3 gx-3 align-items-end" method="get" action="/merchandising/production-orders">
+                        <div class="col-md-3">
+                            <label class="form-label">Search</label>
+                            <input type="text" class="form-control" name="search" placeholder="PO number, allocation" value="{{ filters.search }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" name="status">
+                                <option value="">All statuses</option>
+                                {% for status in dropdowns.statuses %}
+                                    <option value="{{ status.value }}" {{ filters.status == status.value ? 'selected' }}>{{ status.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Style</label>
+                            <select class="form-select" name="style_id">
+                                <option value="">All styles</option>
+                                {% for style in dropdowns.styles %}
+                                    <option value="{{ style.style_id }}" {{ filters.style_id == style.style_id ? 'selected' }}>
+                                        {{ style.style_code }} • {{ style.style_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Priority</label>
+                            <select class="form-select" name="priority">
+                                <option value="">Any priority</option>
+                                {% for priority in dropdowns.priorities %}
+                                    <option value="{{ priority.value }}" {{ filters.priority == priority.value ? 'selected' }}>{{ priority.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-primary w-100" type="submit">
+                                <i class="fas fa-filter me-1"></i>Filter
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-md border-0 mb-4">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle" id="poTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="sortable" data-sort="po_number" style="cursor: pointer;">PO Number <i class="fas fa-sort text-muted ms-1 sort-icon"></i></th>
+                                    <th class="sortable" data-sort="style" style="cursor: pointer;">Style <i class="fas fa-sort text-muted ms-1 sort-icon"></i></th>
+                                    <th class="sortable" data-sort="buyer" style="cursor: pointer;">Buyer <i class="fas fa-sort text-muted ms-1 sort-icon"></i></th>
+                                    <th class="sortable" data-sort="quantity" style="cursor: pointer;">Quantity <i class="fas fa-sort text-muted ms-1 sort-icon"></i></th>
+                                    <th class="sortable" data-sort="date" style="cursor: pointer;">Dates <i class="fas fa-sort text-muted ms-1 sort-icon"></i></th>
+                                    <th class="sortable" data-sort="priority" style="cursor: pointer;">Priority <i class="fas fa-sort text-muted ms-1 sort-icon"></i></th>
+                                    <th class="sortable" data-sort="status" style="cursor: pointer;">Status <i class="fas fa-sort text-muted ms-1 sort-icon"></i></th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for po in production_orders %}
+                                    <tr data-po='{{ po|json_encode|raw }}'>
+                                        <td>
+                                            <strong>{{ po.po_number }}</strong>
+                                            {% if po.allocation_number %}
+                                                <div class="text-muted small">Alloc: {{ po.allocation_number }}</div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {{ po.style_code }}
+                                            <div class="text-muted small">{{ po.style_name }}</div>
+                                        </td>
+                                        <td>{{ po.buyer_name ?: '—' }}</td>
+                                        <td>
+                                            {{ po.quantity_ordered }}
+                                            <div class="text-muted small">{{ po.line_items_count }} SKUs</div>
+                                        </td>
+                                        <td>
+                                            <div class="small">Order: {{ po.order_date|date('M d') }}</div>
+                                            <div class="small">Shipment: {{ po.required_date|date('M d') }}</div>
+                                            {% if po.ex_factory_date %}
+                                            <div class="small text-muted">Ex-Factory: {{ po.ex_factory_date|date('M d') }}</div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ po.priority == 'urgent' ? 'danger' : (po.priority == 'high' ? 'warning text-dark' : 'secondary') }} text-uppercase">
+                                                {{ po.priority }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ po.status == 'completed' ? 'success' : (po.status == 'in_production' ? 'info text-dark' : (po.status == 'approved' ? 'primary' : 'secondary')) }} text-uppercase">
+                                                {{ po.status|replace({'_': ' '}) }}
+                                            </span>
+                                            {% if po.country_name %}
+                                                <div class="small text-muted mt-1">
+                                                    <i class="fas fa-map-marker-alt me-1"></i>{{ po.country_name }}{{ po.city_name ? ', ' ~ po.city_name : '' }}
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-secondary rounded-circle me-1" data-view-po title="View"><i class="fas fa-eye"></i></button>
+                                                <button class="btn btn-outline-primary rounded-circle me-1" data-edit-po title="Edit"><i class="fas fa-edit"></i></button>
+                                                <button class="btn btn-outline-success rounded-circle me-1" data-status-po title="Update Status"><i class="fas fa-check"></i></button>
+                                                <button class="btn btn-outline-danger rounded-circle" data-delete-po title="Delete"><i class="fas fa-trash"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr id="emptyStateRow">
+                                        <td colspan="8" class="text-center py-5">
+                                            <div class="d-flex flex-column align-items-center justify-content-center opacity-50 py-4">
+                                                <i class="fas fa-clipboard-list fa-4x mb-3 text-muted"></i>
+                                                <h5 class="text-muted">No Production Orders Found</h5>
+                                                <p class="text-muted small mb-3">We couldn't find any orders matching your criteria.</p>
+                                                {% if filters|length > 0 %}
+                                                    <a href="{{ BASE_URL }}/merchandising/production-orders" class="btn btn-outline-secondary btn-sm rounded-pill">Clear Filters</a>
+                                                {% else %}
+                                                    <button type="button" class="btn btn-primary btn-sm rounded-pill" onclick="document.getElementById('form-tab-btn').click();">Create First Order</button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Tab -->
+        <div class="tab-pane fade" id="form-tab" role="tabpanel" tabindex="0">
+            <div class="card shadow-md border-0 mb-4">
+                <div class="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0" id="formTabTitle">New Production Order</h5>
+                        <small class="text-muted">Create production order with SKU-level details.</small>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form id="poForm">
+                        <input type="hidden" name="po_id" id="poId">
+                        <div id="poAlert" class="alert d-none"></div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Factory</label>
+                                <select class="form-select" name="factory_id" required>
+                                    <option value="">Select Factory</option>
+                                    {% for factory in dropdowns.factories %}
+                                        <option value="{{ factory.factory_id }}">{{ factory.factory_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Buyer</label>
+                                <select class="form-select" name="buyer_id">
+                                    <option value="">Select Buyer</option>
+                                    {% for buyer in dropdowns.buyers %}
+                                        <option value="{{ buyer.buyer_id }}">{{ buyer.buyer_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Style</label>
+                                <select class="form-select" name="style_id" required>
+                                    <option value="">Select style</option>
+                                    {% for style in dropdowns.styles %}
+                                        <option value="{{ style.style_id }}">{{ style.style_code }} • {{ style.style_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Allocation Number</label>
+                                <input type="text" class="form-control" name="allocation_number">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Order Date</label>
+                                <input type="date" class="form-control" name="order_date" value="{{ 'now'|date('Y-m-d') }}" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Shipment Date</label>
+                                <input type="date" class="form-control" name="required_date" id="requiredDateInput" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Ex-Factory Date</label>
+                                <input type="date" class="form-control" name="ex_factory_date" id="exFactoryDateInput">
+                                <div class="form-text small">Auto-set to 7 days before Shipment.</div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Priority</label>
+                                <select class="form-select" name="priority" required>
+                                    {% for priority in dropdowns.priorities %}
+                                        <option value="{{ priority.value }}" {{ priority.value == 'medium' ? 'selected' }}>{{ priority.label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" name="status" required>
+                                    {% for status in dropdowns.statuses %}
+                                        <option value="{{ status.value }}" {{ status.value == 'draft' ? 'selected' }}>{{ status.label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Currency and Conversion Rate Row -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Currency</label>
+                                <select class="form-select" name="currency_id" id="currencySelect">
+                                    <option value="">Select Currency</option>
+                                    {% for currency in dropdowns.currencies %}
+                                        <option value="{{ currency.currency_id }}" data-rate="{{ currency.exchange_rate }}" data-symbol="{{ currency.symbol }}">{{ currency.currency_code }} - {{ currency.currency_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Conversion Rate</label>
+                                <input type="number" step="0.0001" class="form-control" name="conversion_rate" id="conversionRateInput" placeholder="e.g. 1.0000">
+                                <div class="form-text small">Amount converted based on selected currency's rate. Update if needed.</div>
+                            </div>
+                        </div>
+
+                        <!-- New Row for Country and City -->
+                        <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                <label class="form-label">Country</label>
+                                <select class="form-select" name="country_id" id="countrySelect">
+                                    <option value="">Select Country</option>
+                                    {% for country in dropdowns.countries %}
+                                        <option value="{{ country.country_id }}">{{ country.country_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">City</label>
+                                <select class="form-select" name="city_id" id="citySelect" disabled>
+                                    <option value="">Select City (Choose Country First)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <datalist id="colorTypeOptions">
+                            {% for type in dropdowns.color_types %}
+                                <option value="{{ type }}">
+                            {% endfor %}
+                        </datalist>
+
+                        <!-- New Row for Size Range and Details -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Size Range</label>
+                                <input class="form-control" list="sizeRangeList" id="sizeRangeInput" name="size_range_name" placeholder="Select or Type Range Name" autocomplete="off">
+                                <datalist id="sizeRangeList">
+                                    {% for range in dropdowns.size_ranges %}
+                                        <option value="{{ range.range_name }}" data-id="{{ range.size_range_id }}" data-sizes='{{ range.sizes|raw }}'></option>
+                                    {% endfor %}
+                                </datalist>
+                                    <input type="hidden" name="size_range_id" id="sizeRangeId">
+                            </div>
+                            <div class="col-md-9">
+                                <label class="form-label fw-bold">Size Details <small class="text-muted fw-normal">(Comma separated, e.g. S, M, L, XL)</small></label>
+                                <input type="text" class="form-control fw-bold" id="sizeDetailsInput" name="size_details" placeholder="e.g. S, M, L, XL" readonly>
+                            </div>
+                        </div>
+                        <hr>
+                        <h6>Line Items (SKUs)</h6>
+                        <div id="lineItemsContainer">
+                            <table class="table table-bordered table-hover align-middle" id="lineItemsTableInput">
+                                <thead id="lineItemsHeader" class="text-center table-light">
+                                    <!-- Dynamic Headers will be injected here -->
+                                </thead>
+                                <tbody id="lineItemsList">
+                                    <!-- Dynamic Rows -->
+                                </tbody>
+                                <tfoot id="lineItemsFooterInput" class="fw-bold bg-light">
+                                    <!-- Totals will be here -->
+                                </tfoot>
+                            </table>
+
+                        </div>
+                        
+                        <div class="mt-4 pt-4 border-top d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-secondary rounded-pill px-4" id="cancelFormBtn">Cancel</button>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4" id="poSubmitBtn">
+                                <i class="fas fa-save me-1"></i>Save PO
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Update Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="statusForm">
+                <input type="hidden" name="po_id" id="statusPoId">
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title">Update PO Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="statusAlert" class="alert d-none"></div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status" id="statusSelect" required>
+                            {% for status in dropdowns.statuses %}
+                                <option value="{{ status.value }}">{{ status.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Update Status</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View PO Modal -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title">Production Order Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row" id="poDetails"></dl>
+                <hr>
+                <h6>Line Items</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm" id="lineItemsTable">
+                        <thead>
+                            <tr>
+                                <th>Color</th>
+                                <th>Color Type</th>
+                                <th>Inseam</th> <!-- Reordered -->
+                                <th>Size</th> <!-- Reordered -->
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lineItemsBody"></tbody>
+                        <tfoot id="lineItemsFooter" class="fw-bold"></tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Premium Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body p-4 text-center">
+                <div class="text-danger mb-3">
+                    <i class="fas fa-exclamation-triangle fa-3x"></i>
+                </div>
+                <h5 class="mb-2">Delete Production Order?</h5>
+                <p class="text-muted small mb-4">This action cannot be undone. All associated SKUs and breakdown records will be permanently removed.</p>
+                <div class="d-flex justify-content-center gap-2">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger rounded-pill px-3" id="confirmDeleteBtn"><i class="fas fa-trash me-1"></i>Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1090;">
+    <div id="systemToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="systemToastBody">
+                <!-- Message content -->
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ parent() }}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const BASE_URL = '{{ BASE_URL }}';
+        
+        // Tab Elements
+        const listTabBtn = new bootstrap.Tab(document.getElementById('list-tab-btn'));
+        const formTabBtn = new bootstrap.Tab(document.getElementById('form-tab-btn'));
+        const formTabBtnEl = document.getElementById('form-tab-btn');
+        const listTabBtnEl = document.getElementById('list-tab-btn');
+
+        const statusModalEl = document.getElementById('statusModal');
+        const statusModal = statusModalEl ? bootstrap.Modal.getOrCreateInstance(statusModalEl) : null;
+        const viewModalEl = document.getElementById('viewModal');
+        const viewModal = viewModalEl ? bootstrap.Modal.getOrCreateInstance(viewModalEl) : null;
+
+        const poForm = document.getElementById('poForm');
+        const poAlert = document.getElementById('poAlert');
+        const formTabTitle = document.getElementById('formTabTitle');
+        const poSubmitBtn = document.getElementById('poSubmitBtn');
+        const cancelFormBtn = document.getElementById('cancelFormBtn');
+        const deleteConfirmModalEl = document.getElementById('deleteConfirmModal');
+        const deleteConfirmModal = deleteConfirmModalEl ? bootstrap.Modal.getOrCreateInstance(deleteConfirmModalEl) : null;
+        let poToDelete = null;
+        
+        const lineItemsList = document.getElementById('lineItemsList');
+        const lineItemsHeader = document.getElementById('lineItemsHeader');
+        const lineItemsFooterInput = document.getElementById('lineItemsFooterInput');
+        const statusForm = document.getElementById('statusForm');
+        const statusAlert = document.getElementById('statusAlert');
+        const currencySelect = document.getElementById('currencySelect');
+        const conversionRateInput = document.getElementById('conversionRateInput');
+        
+        let lineItemCounter = 0;
+        let currentStyleSizes = []; // Store fetched sizes for the selected style
+
+        // Toast logic
+        const toastEl = document.getElementById('systemToast');
+        const systemToast = toastEl ? bootstrap.Toast.getOrCreateInstance(toastEl) : null;
+        const toastBody = document.getElementById('systemToastBody');
+
+        function showToast(message, type = 'success') {
+            if (!toastEl || !systemToast) return;
+            toastEl.className = `toast align-items-center text-white border-0 bg-${type}`;
+            toastBody.textContent = message;
+            systemToast.show();
+        }
+
+        // Event listener for currency change to auto-fill conversion rate
+        if (currencySelect && conversionRateInput) {
+            currencySelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const rate = selectedOption ? selectedOption.getAttribute('data-rate') : '';
+                if(rate) {
+                    conversionRateInput.value = rate;
+                } else {
+                    conversionRateInput.value = '';
+                }
+                updateTotals(); // Recalculate converted amount when rate changes
+            });
+            conversionRateInput.addEventListener('input', updateTotals);
+        }
+
+        function showAlert(box, message) {
+            box.className = 'alert alert-danger';
+            box.textContent = message;
+            box.classList.remove('d-none');
+        }
+
+        function hideAlert(box) {
+            box.classList.add('d-none');
+        }
+        
+        function switchToListTab() {
+             listTabBtn.show();
+             formTabTitle.textContent = 'New Production Order';
+             formTabBtnEl.innerHTML = '<i class="fas fa-plus me-2"></i>New Production Order';
+             formTabBtnEl.classList.remove('active'); 
+             listTabBtnEl.classList.add('active');
+        }
+
+        function switchToFormTab(isEdit = false) {
+             formTabBtn.show();
+             formTabTitle.textContent = isEdit ? 'Edit Production Order' : 'New Production Order';
+             formTabBtnEl.innerHTML = isEdit ? '<i class="fas fa-edit me-2"></i>Edit Production Order' : '<i class="fas fa-plus me-2"></i>New Production Order';
+             formTabBtnEl.classList.add('active');
+             listTabBtnEl.classList.remove('active');
+        }
+
+        if(cancelFormBtn) {
+            cancelFormBtn.addEventListener('click', () => {
+                switchToListTab();
+            });
+        }
+        
+        // Reset form when clicking "New Production Order" tab manually
+        formTabBtnEl.addEventListener('click', () => {
+             if (formTabBtnEl.textContent.includes('New Production Order')) {
+                 populatePOForm(null);
+             }
+        });
+
+        async function fetchStyleSizes(styleId, addDefaultRow = true) {
+            if (!styleId) {
+                currentStyleSizes = [];
+                updateMatrixColumns([], addDefaultRow);
+                return;
+            }
+            try {
+                const response = await fetch(`${BASE_URL}/merchandising/production-orders/style-details/${styleId}`);
+                const data = await response.json();
+                
+                const sizeRangeInput = document.getElementById('sizeRangeInput');
+                const sizeRangeId = document.getElementById('sizeRangeId');
+                const sizeDetailsInput = document.getElementById('sizeDetailsInput');
+
+                if (data.range_id) {
+                    if (sizeRangeInput) {
+                        sizeRangeInput.value = data.range_name || '';
+                        sizeRangeId.value = data.range_id;
+                        if (data.sizes && Array.isArray(data.sizes)) {
+                            sizeDetailsInput.readOnly = true;
+                            updateMatrixColumns(data.sizes, addDefaultRow);
+                        }
+                    }
+                } else {
+                    if (sizeRangeInput) {
+                        sizeRangeInput.value = '';
+                        sizeRangeId.value = '';
+                        sizeDetailsInput.value = '';
+                        sizeDetailsInput.readOnly = false;
+                        updateMatrixColumns([], addDefaultRow);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching style sizes:', error);
+                currentStyleSizes = [];
+                updateMatrixColumns([], addDefaultRow);
+            }
+        }
+
+        function updateTotals() {
+            let sizeTotals = {};
+            let qty = 0;
+            let val = 0;
+            const rows = lineItemsList.querySelectorAll('.line-item-row');
+            rows.forEach(row => {
+                const price = Math.max(0, parseFloat(row.querySelector('[name$="[unit_price]"]').value) || 0);
+                
+                const qtyInputs = row.querySelectorAll('.qty-input');
+                let rowQty = 0;
+                qtyInputs.forEach(input => {
+                    const inputVal = Math.max(0, parseFloat(input.value) || 0);
+                    rowQty += inputVal;
+                    if (input.dataset.size) {
+                        sizeTotals[input.dataset.size] = (sizeTotals[input.dataset.size] || 0) + inputVal;
+                    }
+                });
+
+                const rowTotalEl = row.querySelector('.row-total-qty');
+                if (rowTotalEl) rowTotalEl.textContent = rowQty;
+
+                qty += rowQty;
+                val += rowQty * price;
+            });
+            
+            let symbol = '$';
+            if(currencySelect && currencySelect.selectedIndex > 0) {
+                 symbol = currencySelect.options[currencySelect.selectedIndex].getAttribute('data-symbol') || '$';
+            }
+            
+            let convertedValHtml = '';
+            if (conversionRateInput && conversionRateInput.value && !isNaN(parseFloat(conversionRateInput.value))) {
+                const rate = parseFloat(conversionRateInput.value);
+                const convertedVal = val * rate;
+                
+                convertedValHtml = `<div class="small text-muted mt-1" style="font-size:0.8rem">(Conv: <br> $${convertedVal.toFixed(2)})</div>`;
+            }
+            
+            let footerHtml = '';
+            if (currentStyleSizes && currentStyleSizes.length > 0) {
+                footerHtml += `
+                <tr>
+                    <td colspan="3" class="text-end align-middle pe-3">Totals:</td>
+                    <td class="p-2"><div class="d-flex gap-2 justify-content-center">`;
+                currentStyleSizes.forEach(size => {
+                    const sizeTotal = sizeTotals[size] || 0;
+                    footerHtml += `
+                        <div class="text-center" style="flex: 1; min-width: 50px;">
+                            <span class="fs-6 fw-bold text-dark">${sizeTotal > 0 ? sizeTotal : ''}</span>
+                        </div>`;
+                });
+                footerHtml += `</div></td>
+                    <td class="text-center align-middle fw-bold fs-5 text-dark">${qty > 0 ? qty : ''}</td>
+                    <td colspan="2" class="text-center align-middle fw-bold text-success fs-5 pe-3">
+                       ${val > 0 ? symbol + val.toFixed(2) : ''}
+                       ${val > 0 ? convertedValHtml : ''}
+                    </td>
+                </tr>`;
+            } else {
+                footerHtml += `
+                <tr>
+                    <td colspan="4" class="text-end align-middle pe-3">Totals:</td>
+                    <td class="text-center align-middle fw-bold fs-5 text-dark">${qty > 0 ? qty : ''}</td>
+                    <td class="text-center align-middle fw-bold fs-5 text-dark">${qty > 0 ? qty : ''}</td>
+                    <td colspan="2" class="text-center align-middle fw-bold text-success fs-5 pe-3">
+                       ${val > 0 ? symbol + val.toFixed(2) : ''}
+                       ${val > 0 ? convertedValHtml : ''}
+                    </td>
+                </tr>`;
+            }
+            
+            lineItemsFooterInput.innerHTML = footerHtml;
+        }
+
+        function updateMatrixColumns(sizes, addDefaultRow = true, updateInput = true) {
+            currentStyleSizes = sizes || [];
+            const sizeDetailsInput = document.getElementById('sizeDetailsInput');
+            if(sizeDetailsInput && updateInput) {
+                 sizeDetailsInput.value = currentStyleSizes.join(', ');
+            }
+
+            // Update Table Header
+            let headerHtml = `
+                <th style="width: 120px;">Color</th>
+                <th style="width: 120px;">Type</th>
+                <th style="width: 80px;">Inseam</th>
+            `;
+            
+            if (currentStyleSizes.length > 0) {
+                 headerHtml += `<th>Size Matrix (${currentStyleSizes.join(', ')})</th>`;
+            } else {
+                 headerHtml += `<th>Size</th><th>Qty</th>`;
+            }
+
+            headerHtml += `
+                <th style="width: 80px;">Row Total</th>
+                <th style="width: 100px;">Unit Price</th>
+                <th style="width: 100px;">Actions</th>
+            `;
+            lineItemsHeader.innerHTML = `<tr>${headerHtml}</tr>`;
+
+            // Reset Rows
+            lineItemsList.innerHTML = '';
+            if (addDefaultRow) {
+                addLineItem();
+            }
+        }
+
+        function addLineItem(data = {}, insertAfterElement = null) {
+            const id = lineItemCounter++;
+            const row = document.createElement('tr');
+            row.className = 'line-item-row align-middle'; 
+            row.dataset.lineId = id;
+
+            let innerHtml = `
+                <td>
+                    <input type="text" class="form-control form-control-sm" placeholder="Color" name="line_items[${id}][color]" value="${data.color || ''}" required>
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm" placeholder="Type" name="line_items[${id}][color_type]" value="${data.color_type || ''}" list="colorTypeOptions">
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm" placeholder="Inseam" name="line_items[${id}][inseam]" value="${data.inseam || ''}">
+                </td>
+            `;
+
+            if (currentStyleSizes && currentStyleSizes.length > 0) {
+                // MATRIX MODE
+                let matrixHtml = '<td><div class="d-flex gap-2 justify-content-center">';
+                currentStyleSizes.forEach(size => {
+                    const qtyVal = (data.quantities && data.quantities[size]) ? data.quantities[size] : '';
+                    matrixHtml += `
+                        <div class="text-center" style="flex: 1; min-width: 50px;">
+                            <label class="form-label mb-0 small text-muted d-block fw-bold" style="font-size: 0.75rem;">${size}</label>
+                            <input type="number" class="form-control form-control-sm qty-input text-center fw-bold" 
+                                   placeholder="0" 
+                                   name="matrix[${id}][${size}]"
+                                   data-size="${size}"
+                                   min="0"
+                                   value="${qtyVal}">
+                        </div>`;
+                });
+                matrixHtml += '</div></td>';
+                innerHtml += matrixHtml;
+                innerHtml += `<td class="text-center fw-bold"><span class="row-total-qty">0</span></td>`;
+            } else {
+                // SIMPLE MODE
+                 innerHtml += `
+                    <td>
+                        <input type="text" class="form-control form-control-sm" placeholder="Size" name="line_items[${id}][size]" value="${data.size || ''}" required>
+                    </td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm qty-input" placeholder="Qty" name="line_items[${id}][quantity]" value="${data.quantity_ordered || data.quantity || ''}" min="1" required>
+                    </td>
+                    <td class="text-center fw-bold"><span class="row-total-qty">0</span></td>
+                `;
+            }
+
+            // Unit Price and Actions
+            innerHtml += `
+                <td>
+                    <input type="number" step="0.01" class="form-control form-control-sm price-input" placeholder="Price" name="line_items[${id}][unit_price]" value="${data.unit_price || ''}">
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm text-primary add-line-after p-0 me-2" title="Add row below"><i class="fas fa-plus fa-lg"></i></button>
+                    <button type="button" class="btn btn-sm text-danger remove-line-item p-0" title="Remove row"><i class="fas fa-times fa-lg"></i></button>
+                </td>
+            `;
+
+            row.innerHTML = innerHtml;
+
+            if (insertAfterElement) insertAfterElement.after(row);
+            else lineItemsList.appendChild(row);
+
+            row.querySelector('.remove-line-item').addEventListener('click', () => { row.remove(); updateTotals(); });
+            row.querySelector('.add-line-after').addEventListener('click', () => addLineItem({}, row));
+            
+            const qtyInputs = row.querySelectorAll('.qty-input');
+            const priceInputEl = row.querySelector('.price-input');
+            
+            qtyInputs.forEach(qi => qi.addEventListener('input', () => {
+                if (currentStyleSizes.length > 0) {
+                     let rowSum = 0;
+                     qtyInputs.forEach(q => rowSum += parseFloat(q.value) || 0);
+                     const totalEl = row.querySelector('.row-total-qty');
+                     if(totalEl) totalEl.textContent = rowSum;
+                } else {
+                     const totalEl = row.querySelector('.row-total-qty');
+                     // In Simple mode 'Quantity' input is key, but here we query all qty-input.
+                     // The simple mode has 1 input.
+                     if(totalEl) totalEl.textContent = qi.value || 0;
+                }
+                updateTotals();
+            }));
+            priceInputEl.addEventListener('input', updateTotals);
+
+            // Initial Row Calc
+            if (currentStyleSizes.length > 0) {
+                 let rowSum = 0;
+                 qtyInputs.forEach(q => rowSum += parseFloat(q.value) || 0);
+                 const totalEl = row.querySelector('.row-total-qty');
+                 if(totalEl) totalEl.textContent = rowSum;
+            } else {
+                 const qtyInput = row.querySelector('[name*="[quantity]"]');
+                 if(qtyInput) {
+                      const totalEl = row.querySelector('.row-total-qty');
+                      if(totalEl) totalEl.textContent = qtyInput.value || 0;
+                 }
+            }
+            updateTotals();
+        }
+
+        // --- Event Listeners ---
+
+        poForm.querySelector('[name="style_id"]').addEventListener('change', function() {
+            fetchStyleSizes(this.value);
+        });
+
+        // Date Logic
+        const requiredDateInput = document.getElementById('requiredDateInput');
+        const exFactoryDateInput = document.getElementById('exFactoryDateInput');
+
+        if (requiredDateInput && exFactoryDateInput) {
+            requiredDateInput.addEventListener('change', function() {
+                if (this.value) {
+                    const shipmentDate = new Date(this.value);
+                    shipmentDate.setDate(shipmentDate.getDate() - 7);
+                    const year = shipmentDate.getFullYear();
+                    const month = String(shipmentDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(shipmentDate.getDate()).padStart(2, '0');
+                    exFactoryDateInput.value = `${year}-${month}-${day}`;
+                }
+            });
+        }
+
+        // Location Logic
+        const countrySelect = document.getElementById('countrySelect');
+        const citySelect = document.getElementById('citySelect');
+
+        async function fetchCities(countryId, selectedCityId = null) {
+            if (!citySelect) return;
+            citySelect.innerHTML = '<option value="">Loading...</option>';
+            citySelect.disabled = true;
+            if (!countryId) {
+                citySelect.innerHTML = '<option value="">Select City (Choose Country First)</option>';
+                return;
+            }
+            try {
+                const response = await fetch(`${BASE_URL}/merchandising/production-orders/get-cities/${countryId}`);
+                const cities = await response.json();
+                let html = '<option value="">Select City</option>';
+                cities.forEach(city => {
+                    const selected = (selectedCityId && String(city.city_id) === String(selectedCityId)) ? 'selected' : '';
+                    html += `<option value="${city.city_id}" ${selected}>${city.city_name}</option>`;
+                });
+                citySelect.innerHTML = html;
+                citySelect.disabled = false;
+            } catch (error) {
+                console.error('Error fetching cities:', error);
+                citySelect.innerHTML = '<option value="">Error loading cities</option>';
+            }
+        }
+
+        if (countrySelect) {
+            countrySelect.addEventListener('change', function() {
+                fetchCities(this.value);
+            });
+        }
+
+        // Size Range Logic
+        const sizeRangeInput = document.getElementById('sizeRangeInput');
+        const sizeRangeList = document.getElementById('sizeRangeList');
+        const sizeDetailsInput = document.getElementById('sizeDetailsInput');
+        const sizeRangeId = document.getElementById('sizeRangeId');
+
+        if (sizeRangeInput) {
+            sizeRangeInput.addEventListener('input', function() {
+                const val = this.value;
+                let foundOption = null;
+                if (sizeRangeList) {
+                    for (let option of sizeRangeList.options) {
+                        if (option.value === val) {
+                            foundOption = option;
+                            break;
+                        }
+                    }
+                }
+                if (foundOption) {
+                    sizeRangeId.value = foundOption.getAttribute('data-id');
+                    const sizesJson = foundOption.getAttribute('data-sizes');
+                    const sizes = sizesJson ? JSON.parse(sizesJson) : [];
+                    sizeDetailsInput.readOnly = true;
+                    updateMatrixColumns(sizes);
+                } else {
+                    sizeRangeId.value = ''; 
+                    sizeDetailsInput.readOnly = false;
+                    if (val === '') {
+                        updateMatrixColumns([]);
+                    }
+                }
+            });
+        }
+
+        if (sizeDetailsInput) {
+            sizeDetailsInput.addEventListener('input', function() {
+                const txt = this.value;
+                const sizes = txt.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                currentStyleSizes = sizes;
+                updateMatrixColumns(currentStyleSizes, true, false); 
+            });
+        }
+
+        // Populate Form
+        async function populatePOForm(po = null) {
+            poForm.reset();
+            document.getElementById('poSubmitBtn').textContent = 'Save PO';
+            hideAlert(poAlert);
+            lineItemsList.innerHTML = '';
+            lineItemCounter = 0;
+
+            if (sizeRangeInput) sizeRangeInput.value = '';
+            if (sizeRangeId) sizeRangeId.value = '';
+            if (sizeDetailsInput) {
+                sizeDetailsInput.value = '';
+                sizeDetailsInput.readOnly = false;
+            }
+            if(countrySelect) countrySelect.value = '';
+            if(citySelect) {
+                citySelect.innerHTML = '<option value="">Select City (Choose Country First)</option>';
+                citySelect.disabled = true;
+            }
+
+            if (po) {
+                const order = po.order || po;
+                const items = po.line_items || po.breakdowns || [];
+
+                switchToFormTab(true);
+                document.getElementById('poSubmitBtn').textContent = 'Update PO';
+                poForm.po_id.value = order.po_id;
+                poForm.buyer_id.value = order.buyer_id || '';
+                poForm.style_id.value = order.style_id;
+                poForm.allocation_number.value = order.allocation_number || '';
+                poForm.factory_id.value = order.factory_id || 1;
+                poForm.order_date.value = order.order_date;
+                poForm.required_date.value = order.required_date;
+                poForm.ex_factory_date.value = order.ex_factory_date || '';
+                poForm.priority.value = order.priority;
+                poForm.status.value = order.status;
+                
+                if (currencySelect) currencySelect.value = order.currency_id || '';
+                if (conversionRateInput) conversionRateInput.value = order.conversion_rate || '';
+                
+                if (order.country_id) {
+                    if (countrySelect) countrySelect.value = order.country_id;
+                    await fetchCities(order.country_id, order.city_id);
+                }
+
+                // Prioritize saved PO size details, fallback to Style default
+                if (order.size_details) {
+                    if (sizeRangeInput) sizeRangeInput.value = order.size_range_name || '';
+                    if (sizeRangeId) sizeRangeId.value = order.size_range_id || '';
+                    if (sizeDetailsInput) {
+                        sizeDetailsInput.value = order.size_details;
+                        sizeDetailsInput.readOnly = !!order.size_range_id; // Readonly if linked to a range ID
+                    }
+                    
+                    const sizes = order.size_details.split(',').map(s => s.trim()).filter(s => s);
+                    updateMatrixColumns(sizes, false);
+                } else {
+                    await fetchStyleSizes(order.style_id, false);
+                }
+
+                // items already extracted above
+
+                
+                if (currentStyleSizes.length > 0) {
+                    const grouped = {};
+                    items.forEach(item => {
+                        const key = `${item.color}|${item.color_type || ''}|${item.inseam || ''}|${item.unit_price || 0}`;
+                        if (!grouped[key]) {
+                            grouped[key] = {
+                                color: item.color,
+                                color_type: item.color_type,
+                                inseam: item.inseam,
+                                unit_price: item.unit_price,
+                                quantities: {}
+                            };
+                        }
+                        grouped[key].quantities[item.size] = parseFloat(item.quantity || item.quantity_ordered || 0);
+                    });
+                    
+                    Object.values(grouped).forEach(group => addLineItem(group));
+                    if (Object.keys(grouped).length === 0) addLineItem();
+
+                } else {
+                    if (items.length > 0) {
+                        items.forEach(item => addLineItem(item));
+                    } else {
+                        addLineItem();
+                    }
+                }
+
+            } else {
+                switchToFormTab(false); 
+                poForm.po_id.value = '';
+                poForm.order_date.value = new Date().toISOString().split('T')[0];
+                currentStyleSizes = [];
+                addLineItem();
+            }
+        }
+
+        // Edit Handler
+        document.querySelectorAll('[data-edit-po]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const po = JSON.parse(btn.closest('tr').dataset.po);
+                try {
+                    const res = await fetch(`${BASE_URL}/merchandising/production-orders/show/${po.po_id}`);
+                    if (!res.ok) throw new Error('Unable to load PO');
+                    const { data } = await res.json();
+                    await populatePOForm(data); 
+                } catch (error) {
+                    alert('Failed to load production order details.');
+                    console.error(error);
+                }
+            });
+        });
+
+        // Submit Handler
+        poForm?.addEventListener('submit', async event => {
+            event.preventDefault();
+            hideAlert(poAlert);
+            const formData = new FormData(poForm);
+            
+            const payload = {
+                po_id: formData.get('po_id'),
+                style_id: formData.get('style_id'),
+                allocation_number: formData.get('allocation_number'),
+                factory_id: formData.get('factory_id'),
+                buyer_id: formData.get('buyer_id'),
+                order_date: formData.get('order_date'),
+                required_date: formData.get('required_date'),
+                ex_factory_date: formData.get('ex_factory_date'),
+                country_id: formData.get('country_id'),
+                city_id: formData.get('city_id'),
+                setStatus: formData.get('status'), // Not used directly in payload map, just in case
+                priority: formData.get('priority'),
+                status: formData.get('status'),
+                currency_id: formData.get('currency_id') || null,
+                conversion_rate: formData.get('conversion_rate') || null,
+                size_range_name: formData.get('size_range_name'),
+                size_range_id: formData.get('size_range_id'),
+                size_details: formData.get('size_details'), 
+                line_items: []
+            };
+
+            const rows = lineItemsList.querySelectorAll('.line-item-row');
+            
+            rows.forEach(row => {
+               const color = row.querySelector('[name$="[color]"]').value;
+               const colorType = row.querySelector('[name$="[color_type]"]').value;
+               const inseam = row.querySelector('[name$="[inseam]"]').value;
+                const price = parseFloat(row.querySelector('[name$="[unit_price]"]').value) || 0;
+
+               if (currentStyleSizes.length > 0) {
+                   const qtyInputs = row.querySelectorAll('.qty-input');
+                   qtyInputs.forEach(input => {
+                       const qty = parseFloat(input.value);
+                       const size = input.dataset.size;
+                       if (qty > 0 && size) {
+                           payload.line_items.push({
+                               color: color,
+                               color_type: colorType,
+                               inseam: inseam,
+                               size: size,
+                               quantity: qty,
+                               unit_price: price
+                           });
+                       }
+                   });
+               } else {
+                   const size = row.querySelector('[name$="[size]"]').value;
+                   const qty = parseFloat(row.querySelector('[name$="[quantity]"]').value);
+                   if (qty > 0 && size) {
+                       payload.line_items.push({
+                           color: color,
+                           color_type: colorType,
+                           inseam: inseam,
+                           size: size,
+                           quantity: qty,
+                           unit_price: price
+                       });
+                   }
+               }
+            });
+
+            const isEdit = Boolean(payload.po_id);
+            const endpoint = isEdit 
+                ? `${BASE_URL}/merchandising/production-orders/update/${payload.po_id}` 
+                : `${BASE_URL}/merchandising/production-orders/store`;
+            
+            payload.quantity = payload.line_items.reduce((sum, item) => sum + item.quantity, 0);
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (!data.success) throw data;
+                
+                showToast(`Production order ${isEdit ? 'updated' : 'created'} successfully!`, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } catch (error) {
+                showAlert(poAlert, error?.message || 'Unable to save production order.');
+            }
+        });
+        
+        // ... (Remaining handlers for view/status/delete) ...
+        document.querySelectorAll('[data-view-po]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const po = JSON.parse(btn.closest('tr').dataset.po);
+                try {
+                    const response = await fetch(`${BASE_URL}/merchandising/production-orders/show/${po.po_id}`);
+                    if (!response.ok) throw new Error('Unable to load PO');
+                    const { data } = await response.json();
+                    renderPODetails(data);
+                    viewModal?.show();
+                } catch (error) {
+                    alert('Failed to load production order details.');
+                }
+            });
+        });
+
+        function renderPODetails(po) {
+            const container = document.getElementById('poDetails');
+            container.innerHTML = '';
+            const meta = {
+                'PO Number': po.po_number,
+                'Allocation': po.allocation_number || '—',
+                'Style': `${po.style_code} - ${po.style_name}`,
+                'Buyer': po.buyer_name || '—',
+                'Factory': po.factory_name || '—',
+                'Total Quantity': po.quantity_ordered,
+                'Order Date': po.order_date,
+                'Required Date': po.required_date,
+                'Priority': po.priority,
+                'Status': po.status,
+                'Currency': po.currency_code ? `${po.currency_code} (Rate: ${po.conversion_rate})` : '—'
+            };
+            Object.entries(meta).forEach(([label, value]) => {
+                container.insertAdjacentHTML('beforeend', `<dt class="col-3">${label}</dt><dd class="col-9">${value}</dd>`);
+            });
+
+            const tbody = document.getElementById('lineItemsBody');
+            const tfoot = document.getElementById('lineItemsFooter');
+            tbody.innerHTML = '';
+            tfoot.innerHTML = '';
+            
+            const items = po.line_items || po.breakdowns || [];
+            if (!items.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No line items</td></tr>';
+                return;
+            }
+
+            let totalQty = 0;
+            let totalVal = 0;
+
+            items.forEach(item => {
+                const qty = Number(item.quantity_ordered || item.quantity || 0);
+                const price = Number(item.unit_price || 0);
+                const total = qty * price;
+                totalQty += qty;
+                totalVal += total;
+
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr>
+                        <td>${item.color}</td>
+                        <td>${item.color_type || '—'}</td>
+                        <td>${item.inseam || '—'}</td>
+                        <td>${item.size}</td>
+                        <td>${qty}</td>
+                        <td>${symbol}${price.toFixed(2)}</td>
+                        <td>${symbol}${total.toFixed(2)}</td>
+                    </tr>
+                `);
+            });
+
+            let symbol = po.currency_symbol || '$';
+            let convertedValHtml = '';
+            if (po.conversion_rate && !isNaN(parseFloat(po.conversion_rate))) {
+                const rate = parseFloat(po.conversion_rate);
+                const convertedVal = totalVal * rate;
+                convertedValHtml = `<div class="small text-muted mt-1">(Conv: $${convertedVal.toFixed(2)})</div>`;
+            }
+
+            tfoot.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-end">Totals:</td>
+                    <td>${totalQty}</td>
+                    <td></td>
+                    <td>
+                        ${symbol}${totalVal.toFixed(2)}
+                        ${convertedValHtml}
+                    </td>
+                </tr>
+            `;
+        }
+
+        document.querySelectorAll('[data-status-po]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const po = JSON.parse(btn.closest('tr').dataset.po);
+                statusForm.po_id.value = po.po_id;
+                statusForm.status.value = po.status;
+                hideAlert(statusAlert);
+                statusModal?.show();
+            });
+        });
+
+        statusForm?.addEventListener('submit', async event => {
+            event.preventDefault();
+            hideAlert(statusAlert);
+            const payload = Object.fromEntries(new FormData(statusForm).entries());
+            const poId = payload.po_id;
+            try {
+                const response = await fetch(`${BASE_URL}/merchandising/production-orders/update-status/${poId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (!data.success) throw data;
+                
+                showToast('Status updated successfully!', 'success');
+                setTimeout(() => location.reload(), 1000);
+                statusModal?.hide();
+            } catch (error) {
+                showAlert(statusAlert, error?.message || 'Unable to update status.');
+            }
+        });
+
+        document.querySelectorAll('[data-delete-po]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                poToDelete = JSON.parse(btn.closest('tr').dataset.po);
+                deleteConfirmModal?.show();
+            });
+        });
+
+        document.getElementById('confirmDeleteBtn')?.addEventListener('click', async function() {
+            if (!poToDelete) return;
+            const originalText = this.innerHTML;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Deleting...';
+            this.disabled = true;
+
+            try {
+                const response = await fetch(`${BASE_URL}/merchandising/production-orders/delete/${poToDelete.po_id}`, { method: 'POST' });
+                const data = await response.json();
+                if (!data.success) throw data;
+                
+                showToast('Production order deleted successfully.', 'success');
+                setTimeout(() => location.reload(), 1000);
+                deleteConfirmModal?.hide();
+            } catch (error) {
+                alert(error?.message || 'Failed to delete production order.');
+            } finally {
+                this.innerHTML = originalText;
+                this.disabled = false;
+                poToDelete = null;
+            }
+        });
+
+        // Interactive Table Sorting
+        const table = document.getElementById('poTable');
+        const sortableHeaders = table.querySelectorAll('th.sortable');
+        let currentSort = { column: null, direction: 'asc' };
+
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                const column = header.dataset.sort;
+                const body = table.querySelector('tbody');
+                const emptyRow = document.getElementById('emptyStateRow');
+                if (emptyRow) return;
+
+                const rows = Array.from(body.querySelectorAll('tr'));
+                
+                if (currentSort.column === column) {
+                    currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    currentSort.column = column;
+                    currentSort.direction = 'asc';
+                }
+
+                // Update icons
+                sortableHeaders.forEach(th => {
+                    const icon = th.querySelector('.sort-icon');
+                    if (th === header) {
+                        icon.className = `fas fa-sort-${currentSort.direction === 'asc' ? 'up' : 'down'} ms-1 sort-icon text-primary`;
+                    } else {
+                        icon.className = 'fas fa-sort text-muted ms-1 sort-icon';
+                    }
+                });
+
+                rows.sort((a, b) => {
+                    const dataA = JSON.parse(a.dataset.po);
+                    const dataB = JSON.parse(b.dataset.po);
+                    let valA, valB;
+
+                    switch (column) {
+                        case 'po_number': valA = dataA.po_number; valB = dataB.po_number; break;
+                        case 'style': valA = dataA.style_code; valB = dataB.style_code; break;
+                        case 'buyer': valA = dataA.buyer_name || ''; valB = dataB.buyer_name || ''; break;
+                        case 'quantity': valA = Number(dataA.quantity_ordered || 0); valB = Number(dataB.quantity_ordered || 0); break;
+                        case 'date': valA = dataA.order_date; valB = dataB.order_date; break;
+                        case 'priority': valA = dataA.priority; valB = dataB.priority; break;
+                        case 'status': valA = dataA.status; valB = dataB.status; break;
+                        default: return 0;
+                    }
+
+                    if (typeof valA === 'string') valA = valA.toLowerCase();
+                    if (typeof valB === 'string') valB = valB.toLowerCase();
+
+                    if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
+                    if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
+                    return 0;
+                });
+
+                // Re-append rows
+                rows.forEach(row => body.appendChild(row));
+            });
+        });
+
+        document.getElementById('exportPOCsv')?.addEventListener('click', () => {
+            const rows = [['PO Number', 'Allocation', 'Style', 'Buyer', 'Quantity', 'Order Date', 'Required Date', 'Priority', 'Status']];
+            document.querySelectorAll('#poTable tbody tr').forEach(tr => {
+                if (tr.querySelector('td[colspan]')) return;
+                let po;
+                try { po = JSON.parse(tr.dataset.po); } catch(e) { return; }
+                rows.push([
+                    po.po_number,
+                    po.allocation_number || '',
+                    `${po.style_code} - ${po.style_name}`,
+                    po.buyer_name || '',
+                    po.quantity_ordered,
+                    po.order_date,
+                    po.required_date,
+                    po.priority,
+                    po.status
+                ]);
+            });
+            const csv = rows.map(r => r.map(col => `"${String(col).replace(/"/g, '""')}"`).join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'production-orders.csv';
+            link.click();
+        });
+    });
+</script>
+{% endblock %}

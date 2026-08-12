@@ -1,0 +1,996 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}User Management - RMG ERP{% endblock %}
+
+{% block styles %}
+<style>
+    /* Statistics Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: var(--bg-card);
+        padding: 1.5rem;
+        border-radius: 15px;
+        box-shadow: var(--card-shadow);
+        text-align: center;
+        transition: transform 0.3s ease;
+        border: 1px solid var(--border-color);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stat-card h3 {
+        color: var(--primary);
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .stat-card p {
+        color: var(--text-secondary);
+        margin: 0.5rem 0 0 0;
+        font-size: 0.9rem;
+    }
+    
+    /* Cards */
+    .card {
+        box-shadow: var(--card-shadow);
+        border: 1px solid var(--border-color);
+        margin-bottom: 1.5rem;
+        background: var(--bg-card);
+    }
+    
+    .card-header {
+        background-color: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+    }
+    
+    /* User avatar */
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    
+    /* Status badges */
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .status-active {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+    
+    .status-inactive {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+    
+    /* Role badges */
+    .role-badge {
+        display: inline-block;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .role-badge.admin {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .role-badge.manager {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+    
+    .role-badge.user {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+    
+    /* Search box */
+    .search-box {
+        position: relative;
+    }
+    
+    .search-box input {
+        padding-left: 2.5rem;
+    }
+    
+    .search-box i {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+    }
+    
+    /* Page header */
+    .border-bottom {
+        border-color: var(--border-color) !important;
+    }
+    
+    h1.h2, h2 {
+        color: var(--text-primary) !important;
+    }
+    
+    /* Action buttons */
+    .btn-action {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        border-radius: 6px;
+        transition: all 0.2s;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* Last login indicator */
+    .last-login {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+    
+    .online-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #10b981;
+        display: inline-block;
+        margin-left: 0.5rem;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        }
+        70% {
+            box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+        }
+    }
+
+    /* Dark mode button text fix */
+    [data-theme='dark'] .btn-primary {
+        color: #ffffff !important;
+    }
+    [data-theme='dark'] .btn-primary:hover {
+        color: #ffffff !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">User Management</h1>
+    <a href="{{ BASE_URL }}/admin/users/create" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add New User
+    </a>
+</div>
+
+<!-- Statistics Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>{{ stats.total }}</h3>
+        <p>Total Users</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ stats.active }}</h3>
+        <p>Active Users</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ stats.inactive }}</h3>
+        <p>Inactive Users</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ stats.admin }}</h3>
+        <p>Admin Users</p>
+    </div>
+</div>
+
+<!-- Search and Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" class="form-control" id="userSearch" placeholder="Search users by name, email, or role...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="roleFilter">
+                    <option value="">All Roles</option>
+                    {% for role in roles %}
+                        <option value="{{ role.role_id }}" {% if filters.role_id == role.role_id %}selected{% endif %}>
+                            {{ role.role_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="active" {% if filters.status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if filters.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-secondary w-100" onclick="resetFilters()">
+                    <i class="fas fa-redo"></i> Reset
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4" id="userTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users-content" type="button" role="tab">
+            <i class="fas fa-users"></i> System Users
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="applications-tab" data-bs-toggle="tab" data-bs-target="#applications-content" type="button" role="tab">
+            <i class="fas fa-user-plus"></i> Access Applications
+            {% if access_applications|length > 0 %}
+                <span class="badge bg-danger ms-2">{{ access_applications|length }}</span>
+            {% endif %}
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="userTabsContent">
+    <!-- Users Tab -->
+    <div class="tab-pane fade show active" id="users-content" role="tabpanel">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-users"></i> System Users
+            </div>
+            <div class="card-body">
+                {% include 'partials/alerts.twig' %}
+
+                <div class="table-responsive">
+                    <table class="table table-hover" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Last Login</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr data-name="{{ (user.first_name ~ ' ' ~ user.last_name)|lower }}" data-email="{{ user.email|lower }}" data-role="{{ user.role_name|lower }}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="user-avatar me-3">
+                                            {{ user.first_name|first }}{{ user.last_name|first }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">{{ user.first_name }} {{ user.last_name }}</div>
+                                            <div class="text-muted small">{{ user.email }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="role-badge {{ user.role_name|lower }}">{{ user.role_name }}</span>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-{{ user.status }}">
+                                        {{ user.status }}
+                                        {% if user.status == 'active' and user.last_login %}
+                                            <span class="online-indicator"></span>
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="last-login">
+                                        {% if user.last_login %}
+                                            {{ user.last_login|date('M d, Y H:i') }}
+                                        {% else %}
+                                            <span class="text-muted">Never</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>{{ user.created_at|date('M d, Y') }}</td>
+                                <td>
+                                    <a href="{{ BASE_URL }}/admin/permissions?user_id={{ user.user_id }}" class="btn btn-sm btn-dark btn-action me-1" title="Manage Permissions">
+                                        <i class="fas fa-shield-alt"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-info btn-action me-1" onclick="viewUser({{ user.user_id }})" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-warning btn-action me-1" onclick="editUser({{ user.user_id }})" title="Edit User">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-secondary btn-action me-1" onclick="resetPassword({{ user.user_id }}, '{{ user.first_name }}')" title="Reset Password">
+                                        <i class="fas fa-key"></i>
+                                    </button>
+                                    {% if user.role_name != 'System Administrator' %}
+                                    <a href="javascript:void(0)" class="btn btn-sm {% if user.status == 'active' %}btn-warning{% else %}btn-success{% endif %} btn-action btn-toggle-status me-1" 
+                                            data-user-id="{{ user.user_id }}" data-current-status="{{ user.status }}" title="Toggle Status">
+                                        <i class="fas fa-{% if user.status == 'active' %}ban{% else %}check{% endif %}"></i>
+                                    </a>
+                                    <a href="javascript:void(0)" class="btn btn-sm btn-danger btn-action btn-delete-user" 
+                                            data-user-id="{{ user.user_id }}" data-user-name="{{ user.first_name }} {{ user.last_name }}" title="Delete User">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Access Applications Tab -->
+    <div class="tab-pane fade" id="applications-content" role="tabpanel">
+        <div class="card">
+            <div class="card-header">
+                Access Applications
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Applicant</th>
+                                <th>Details</th>
+                                <th>Reason</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for app in access_applications %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if app.profile_photo %}
+                                            <img src="{{ app.profile_photo }}" class="rounded-circle me-3" style="width:40px;height:40px;object-fit:cover;">
+                                        {% else %}
+                                            <div class="user-avatar me-3">
+                                                {{ app.full_name|first }}
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <div class="fw-semibold">{{ app.full_name }}</div>
+                                            <div class="text-muted small">{{ app.email }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="small">
+                                        <div><strong>ID:</strong> {{ app.employee_id }}</div>
+                                        <div><strong>Unit:</strong> {{ app.unit }}</div>
+                                        <div><strong>Dept:</strong> {{ app.department }}</div>
+                                        <div><strong>Desig:</strong> {{ app.designation }}</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="text-muted small" title="{{ app.reason }}">{{ app.reason|slice(0, 50) }}...</span>
+                                </td>
+                                <td>{{ app.created_at|date('M d, Y H:i') }}</td>
+                                <td>
+                                    <button class="btn btn-primary btn-sm" onclick="approveApp({{ app|json_encode }})">
+                                        Access Applications <i class="fas fa-arrow-right"></i>
+                                    </button>
+                                    <button class="btn btn-danger btn-sm ms-2" onclick="rejectApp({{ app.id }})">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4">
+                                    <div class="text-muted">No pending applications</div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- View User Modal -->
+<div class="modal fade" id="viewUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">User Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3 row">
+                    <label class="col-sm-4 fw-bold">Full Name:</label>
+                    <div class="col-sm-8" id="viewUserName"></div>
+                </div>
+                <div class="mb-3 row">
+                    <label class="col-sm-4 fw-bold">Email:</label>
+                    <div class="col-sm-8" id="viewUserEmail"></div>
+                </div>
+                <div class="mb-3 row">
+                    <label class="col-sm-4 fw-bold">Role:</label>
+                    <div class="col-sm-8" id="viewUserRole"></div>
+                </div>
+                <div class="mb-3 row">
+                    <label class="col-sm-4 fw-bold">Status:</label>
+                    <div class="col-sm-8" id="viewUserStatus"></div>
+                </div>
+                <div class="mb-3 row">
+                    <label class="col-sm-4 fw-bold">Joined On:</label>
+                    <div class="col-sm-8" id="viewUserCreated"></div>
+                </div>
+                <div class="mb-3 row">
+                    <label class="col-sm-4 fw-bold">Last Login:</label>
+                    <div class="col-sm-8" id="viewUserLogin"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editUserForm">
+                <input type="hidden" id="editUserId">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">First Name *</label>
+                                <input type="text" class="form-control" id="editFirstName" name="first_name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Last Name *</label>
+                                <input type="text" class="form-control" id="editLastName" name="last_name" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email Address *</label>
+                        <input type="email" class="form-control" id="editEmail" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role *</label>
+                        <select class="form-select" id="editRole" name="role_id" required>
+                            {% for role in roles %}
+                                <option value="{{ role.role_id }}">{{ role.role_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reset Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="resetPasswordForm">
+                <input type="hidden" id="resetUserId">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">New Password *</label>
+                        <input type="password" class="form-control" name="password" required minlength="6">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirm Password *</label>
+                        <input type="password" class="form-control" name="confirm_password" required minlength="6">
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> User will need to login again with the new password.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Reset Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Approve Application Modal -->
+<div class="modal fade" id="approveAppModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">New User Entry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="approveAppForm">
+                <input type="hidden" id="appId" name="application_id">
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Left Column: Profile Image -->
+                        <div class="col-md-3 text-center border-end">
+                            <h6 class="mb-4 text-start text-primary">Profile Image</h6>
+                            <div class="mb-3">
+                                <img id="appProfileParams" src="" class="rounded-circle img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;">
+                            </div>
+                            <div class="text-muted small">Applicant Photo</div>
+                        </div>
+                        
+                        <!-- Right Column: Details -->
+                        <div class="col-md-9 ps-4">
+                            <h6 class="mb-3 text-primary"><i class="fas fa-user-circle"></i> Account Details</h6>
+                            
+                            <p class="text-muted small mb-3 border-bottom pb-2">BASIC INFORMATION</p>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="appFullName" name="full_name" readonly>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Username <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="appUsername" name="username" placeholder="e.g. johndoe" required>
+                                    <div class="form-text">Min 4 characters, unique</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Email Address <span class="text-danger">*</span></label>
+                                    <input type="email" class="form-control" id="appEmail" name="email" readonly>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Employee ID</label>
+                                    <input type="text" class="form-control" id="appEmployeeId" readonly>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Designation</label>
+                                    <input type="text" class="form-control" id="appDesignation" readonly>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Unit <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="appUnit" readonly>
+                                </div>
+                            </div>
+                            
+                            <p class="text-muted small mb-3 border-bottom pb-2 mt-2">SECURITY CREDENTIALS</p>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Password <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="appPassword" name="password" required>
+                                        <span class="input-group-text"><i class="fas fa-random"></i></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                                    <input type="password" class="form-control" id="appConfirmPassword" name="confirm_password" required>
+                                </div>
+                            </div>
+                            
+                            <p class="text-muted small mb-3 border-bottom pb-2 mt-2">ROLE & ACCESS</p>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">User Role <span class="text-danger">*</span></label>
+                                    <select class="form-select" name="role_id" required>
+                                        <option value="">Select role...</option>
+                                        {% for role in roles %}
+                                            <option value="{{ role.role_id }}">{{ role.role_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Account Status <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" value="Active" readonly>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info d-flex align-items-center mt-2">
+                                <i class="fas fa-info-circle me-3 fs-4"></i>
+                                <div>
+                                    <strong>Permissions Note</strong><br>
+                                    Initial permissions are based on the selected Role. You can fine-tune them later in the Permissions Console.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Confirm & Create Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Search functionality
+document.getElementById('userSearch').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#usersTable tbody tr');
+    
+    rows.forEach(row => {
+        const name = row.dataset.name || '';
+        const email = row.dataset.email || '';
+        const role = row.dataset.role || '';
+        const matches = name.includes(searchTerm) || email.includes(searchTerm) || role.includes(searchTerm);
+        row.style.display = matches ? '' : 'none';
+    });
+});
+
+// Filter functionality
+document.getElementById('roleFilter').addEventListener('change', applyFilters);
+document.getElementById('statusFilter').addEventListener('change', applyFilters);
+
+function applyFilters() {
+    const roleFilter = document.getElementById('roleFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    const rows = document.querySelectorAll('#usersTable tbody tr');
+    
+    rows.forEach(row => {
+        let show = true;
+        
+        if (roleFilter) {
+            // Check role filter logic here
+        }
+        
+        if (statusFilter) {
+            const statusBadge = row.querySelector('.status-badge');
+            if (statusBadge && !statusBadge.classList.contains('status-' + statusFilter)) {
+                show = false;
+            }
+        }
+        
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+function resetFilters() {
+    document.getElementById('userSearch').value = '';
+    document.getElementById('roleFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.querySelectorAll('#usersTable tbody tr').forEach(row => {
+        row.style.display = '';
+    });
+}
+
+
+// Access Applications Logic
+function approveApp(app) {
+    document.getElementById('appId').value = app.id;
+    document.getElementById('appFullName').value = app.full_name;
+    document.getElementById('appEmail').value = app.email;
+    document.getElementById('appEmployeeId').value = app.employee_id;
+    document.getElementById('appDesignation').value = app.designation;
+    document.getElementById('appUnit').value = app.unit;
+    
+    // Auto-generate username suggestion (e.g. first.last or email prefix)
+    const username = app.email.split('@')[0];
+    document.getElementById('appUsername').value = username;
+    
+    // Set profile image
+    const img = document.getElementById('appProfileParams');
+    if (app.profile_photo) {
+        img.src = app.profile_photo;
+    } else {
+        // Fallback or placeholder
+        img.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(app.full_name) + "&background=random";
+    }
+    
+    new bootstrap.Modal(document.getElementById('approveAppModal')).show();
+}
+
+document.getElementById('approveAppForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const password = document.getElementById('appPassword').value;
+    const confirm = document.getElementById('appConfirmPassword').value;
+    
+    if (password !== confirm) {
+        alert('Passwords do not match');
+        return;
+    }
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    
+    try {
+        const response = await fetch('{{ BASE_URL }}/admin/access_applications/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(result.message);
+            location.reload();
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        console.error(error);
+        alert('An error occurred');
+    }
+});
+
+async function rejectApp(id) {
+    if (!confirm('Are you sure you want to reject this application?')) return;
+    
+    try {
+        const response = await fetch(`{{ BASE_URL }}/admin/access_applications/reject?id=${id}`);
+        // Handle response...
+        const result = await response.json();
+        if (result.success) {
+            alert(result.message);
+            location.reload();
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        console.error(error);
+        alert('Error rejecting application');
+    }
+}
+
+
+// Edit user
+// Edit user
+async function editUser(userId) {
+    try {
+        // Use 'show' to get JSON data for the modal, 'edit' returns a full HTML page
+        const response = await fetch(`{{ BASE_URL }}/admin/users/show?id=${userId}`);
+        const result = await response.json();
+        
+        if (result.data) {
+            const user = result.data;
+            document.getElementById('editUserId').value = user.user_id;
+            document.getElementById('editFirstName').value = user.first_name;
+            document.getElementById('editLastName').value = user.last_name;
+            document.getElementById('editEmail').value = user.email;
+            document.getElementById('editRole').value = user.role_id;
+            
+            new bootstrap.Modal(document.getElementById('editUserModal')).show();
+        }
+    } catch (error) {
+        console.error(error);
+        alert('Failed to load user data');
+    }
+}
+
+// Update user
+document.getElementById('editUserForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    const userId = data.user_id;
+    delete data.user_id;
+    
+    try {
+        // Map 'update' to 'edit' with POST as per index.php routing
+        const response = await fetch(`{{ BASE_URL }}/admin/users/edit?id=${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            alert('User updated successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + (result.message || 'Failed to update user'));
+        }
+    } catch (error) {
+        alert('An error occurred while updating the user');
+        console.error(error);
+    }
+});
+
+// Reset password
+function resetPassword(userId, userName) {
+    document.getElementById('resetUserId').value = userId;
+    new bootstrap.Modal(document.getElementById('resetPasswordModal')).show();
+}
+
+document.getElementById('resetPasswordForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    const userId = document.getElementById('resetUserId').value;
+    
+    try {
+        const response = await fetch(`{{ BASE_URL }}/admin/users/reset_password?id=${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            alert('Password reset successfully!');
+            bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal')).hide();
+        } else {
+            alert('Error: ' + (result.message || 'Failed to reset password'));
+        }
+    } catch (error) {
+        alert('An error occurred while resetting the password');
+        console.error(error);
+    }
+});
+
+// Event Delegation for Dynamic Tables
+// User Actions Scripts (Event Delegation for Dynamic Tables)
+    document.addEventListener('click', function(e) {
+        // Toggle Status
+        const toggleBtn = e.target.closest('.btn-toggle-status');
+        if (toggleBtn) {
+            const userId = toggleBtn.dataset.userId;
+            const currentStatus = toggleBtn.dataset.currentStatus;
+            toggleStatus(userId, currentStatus);
+        }
+
+        // Delete User
+        const deleteBtn = e.target.closest('.btn-delete-user');
+        if (deleteBtn) {
+            const userId = deleteBtn.dataset.userId;
+            const userName = deleteBtn.dataset.userName;
+            deleteUser(userId, userName);
+        }
+    });
+
+    // Toggle user status
+    async function toggleStatus(userId, currentStatus) {
+        const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+        
+        if (!confirm(`Are you sure you want to change user status to ${newStatus}?`)) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`{{ BASE_URL }}/admin/users/toggle_status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `id=${userId}`
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                alert(result.message);
+                location.reload();
+            } else {
+                alert('Error: ' + result.message);
+            }
+        } catch (error) {
+            alert('An error occurred while changing user status');
+            console.error(error);
+        }
+    }
+
+    // Delete user
+    async function deleteUser(userId, userName) {
+        if (!confirm(`Are you sure you want to delete ${userName}? This action cannot be undone.`)) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`{{ BASE_URL }}/admin/users/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `id=${userId}`
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                alert(result.message);
+                location.reload();
+            } else {
+                alert('Error: ' + result.message);
+            }
+        } catch (error) {
+            alert('An error occurred while deleting the user');
+            console.error(error);
+        }
+    }
+
+    // View user details
+    async function viewUser(userId) {
+        try {
+            const response = await fetch(`{{ BASE_URL }}/admin/users/show?id=${userId}`);
+            const result = await response.json();
+            
+            if (result.data) {
+                const user = result.data;
+                document.getElementById('viewUserName').textContent = user.first_name + ' ' + user.last_name;
+                document.getElementById('viewUserEmail').textContent = user.email;
+                document.getElementById('viewUserRole').textContent = user.role_name;
+                document.getElementById('viewUserStatus').textContent = user.status;
+                document.getElementById('viewUserCreated').textContent = user.created_at;
+                document.getElementById('viewUserLogin').textContent = user.last_login || 'Never';
+                
+                new bootstrap.Modal(document.getElementById('viewUserModal')).show();
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Failed to load user data');
+        }
+    }
+    </script>
+{% endblock %}

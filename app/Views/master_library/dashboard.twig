@@ -1,0 +1,571 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Master Library | ERP System{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Master Library</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item active">Master Library</li>
+    </ol>
+
+    <div class="row">
+        <!-- Countries -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Geographical</div>
+                            <div class="text-lg fw-bold">Countries</div>
+                        </div>
+                        <i class="fas fa-globe fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/countries">Manage Countries</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cities -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Geographical</div>
+                            <div class="text-lg fw-bold">Cities</div>
+                        </div>
+                        <i class="fas fa-city fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/cities">Manage Cities</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Districts -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-teal text-white h-100" style="background-color: #0d9488 !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Geographical</div>
+                            <div class="text-lg fw-bold">Districts</div>
+                        </div>
+                        <i class="fas fa-map-marked-alt fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/districts">Manage Districts</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sub-Districts -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-indigo text-white h-100" style="background-color: #6366f1 !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Geographical</div>
+                            <div class="text-lg fw-bold">Sub-Districts</div>
+                        </div>
+                        <i class="fas fa-layer-group fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/sub_districts">Manage Sub-Districts</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Banks -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Financial</div>
+                            <div class="text-lg fw-bold">Banks</div>
+                        </div>
+                        <i class="fas fa-university fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/banks">Manage Banks</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Currencies -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-danger text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Financial</div>
+                            <div class="text-lg fw-bold">Currencies</div>
+                        </div>
+                        <i class="fas fa-money-bill-wave fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/currencies">Manage Currencies</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Factories -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Organization</div>
+                            <div class="text-lg fw-bold">Factories</div>
+                        </div>
+                        <i class="fas fa-industry fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/factories">Manage Factories</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stores -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-secondary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Inventory</div>
+                            <div class="text-lg fw-bold">Stores</div>
+                        </div>
+                        <i class="fas fa-warehouse fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/stores">Manage Stores</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Store Locations -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-dark text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Inventory</div>
+                            <div class="text-lg fw-bold">Store Locations</div>
+                        </div>
+                        <i class="fas fa-boxes fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/store_locations">Manage Locations</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Item Categories -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-primary text-white h-100" style="background-color: #6f42c1 !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Inventory</div>
+                            <div class="text-lg fw-bold">Item Categories</div>
+                        </div>
+                        <i class="fas fa-tags fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/item_categories">Manage Categories</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Production Floors -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-success text-white h-100" style="background-color: #fd7e14 !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Production</div>
+                            <div class="text-lg fw-bold">Production Floors</div>
+                        </div>
+                        <i class="fas fa-hard-hat fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/production_floors">Manage Floors</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rooms -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card text-white h-100" style="background-color: #20c997 !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Production</div>
+                            <div class="text-lg fw-bold">Rooms</div>
+                        </div>
+                        <i class="fas fa-door-open fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/store_rooms">Manage Rooms</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Racks -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card text-white h-100" style="background-color: #6610f2 !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Production</div>
+                            <div class="text-lg fw-bold">Racks</div>
+                        </div>
+                        <i class="fas fa-align-justify fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/store_racks">Manage Racks</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Production Lines -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-info text-white h-100" style="background-color: #0dcaf0 !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Production</div>
+                            <div class="text-lg fw-bold">Production Lines</div>
+                        </div>
+                        <i class="fas fa-stream fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/production_lines">Manage Lines</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buyer Brands -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-danger text-white h-100" style="background-color: #dc3545 !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Merchandising</div>
+                            <div class="text-lg fw-bold">Buyer Brands</div>
+                        </div>
+                        <i class="fas fa-tags fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/buyer_brands">Manage Brands</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Categories -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-warning text-white h-100" style="background-color: #ffc107 !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Product</div>
+                            <div class="text-lg fw-bold">Product Categories</div>
+                        </div>
+                        <i class="fas fa-layer-group fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/product_categories">Manage Categories</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Product Departments -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-secondary text-white h-100" style="background-color: #6c757d !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Product</div>
+                            <div class="text-lg fw-bold">Product Departments</div>
+                        </div>
+                        <i class="fas fa-building fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/product_departments">Manage Departments</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trims Costing Template -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card bg-primary text-white h-100" style="background-color: #0d6efd !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Merchandising</div>
+                            <div class="text-lg fw-bold">Trims Costing Template</div>
+                        </div>
+                        <i class="fas fa-file-invoice-dollar fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/trims_costing_template">Manage Templates</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terms & Conditions -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card text-white h-100" style="background-color: #5f3dc4 !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Commercial</div>
+                            <div class="text-lg fw-bold">Terms &amp; Conditions</div>
+                        </div>
+                        <i class="fas fa-file-contract fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/terms_conditions">Manage Terms</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vendors -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card text-white h-100" style="background-color: #1971c2 !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Procurement</div>
+                            <div class="text-lg fw-bold">Vendors</div>
+                        </div>
+                        <i class="fas fa-users fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/vendors">Manage Vendors</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Garment Sample Types -->
+        {% if canView('master_library', 'view_garment_sample_types') %}
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card text-white h-100" style="background-color: #2b8a3e !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Merchandising</div>
+                            <div class="text-lg fw-bold">Garment Sample Types</div>
+                        </div>
+                        <i class="fas fa-tags fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/garment_sample_types">Manage Sample Types</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Product Natures -->
+        {% if canView('master_library', 'view_product_natures') %}
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card text-white h-100" style="background-color: #e64980 !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Product</div>
+                            <div class="text-lg fw-bold">Product Natures</div>
+                        </div>
+                        <i class="fas fa-leaf fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/product_natures">Manage Natures</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Product Types -->
+        {% if canView('master_library', 'view_product_types') %}
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card text-white h-100" style="background-color: #7048e8 !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Product</div>
+                            <div class="text-lg fw-bold">Product Types</div>
+                        </div>
+                        <i class="fas fa-shapes fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/product_types">Manage Types</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Garments Items -->
+        {% if canView('master_library', 'view_garments_items') %}
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card text-white h-100" style="background-color: #1098ad !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Product</div>
+                            <div class="text-lg fw-bold">Garments Items</div>
+                        </div>
+                        <i class="fas fa-tshirt fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/garments_items">Manage Items</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Units of Measure (UOM) -->
+        {% if canView('master_library', 'view_uoms') %}
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card text-white h-100" style="background-color: #862e9c !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">Inventory</div>
+                            <div class="text-lg fw-bold">Units of Measure (UOM)</div>
+                        </div>
+                        <i class="fas fa-ruler fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/uoms">Manage UOMs</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {# Employee Departments, Sections & Designations #}
+    {% if canView('master_library', 'view_employee_departments') or canView('master_library', 'view_employee_sections') or canView('master_library', 'view_employee_designations') %}
+    <div class="row">
+        {% if canView('master_library', 'view_employee_departments') %}
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card text-white h-100" style="background-color: #099268 !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">HR</div>
+                            <div class="text-lg fw-bold">Employee Departments</div>
+                        </div>
+                        <i class="fas fa-sitemap fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/employee_departments">Manage Departments</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if canView('master_library', 'view_employee_sections') %}
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card text-white h-100" style="background-color: #d9480f !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">HR</div>
+                            <div class="text-lg fw-bold">Employee Sections</div>
+                        </div>
+                        <i class="fas fa-layer-group fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/employee_sections">Manage Sections</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if canView('master_library', 'view_employee_designations') %}
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card text-white h-100" style="background-color: #862e9c !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="me-3">
+                            <div class="text-white-75 small">HR</div>
+                            <div class="text-lg fw-bold">Employee Designations</div>
+                        </div>
+                        <i class="fas fa-id-badge fa-2x text-white-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between small">
+                    <a class="text-white stretched-link" href="{{ BASE_URL }}/master_library/employee_designations">Manage Designations</a>
+                    <div class="text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

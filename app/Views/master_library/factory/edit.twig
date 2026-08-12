@@ -1,0 +1,74 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Edit Factory | Master Library{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Edit Factory</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library/factories">Factories</a></li>
+        <li class="breadcrumb-item active">Edit Factory</li>
+    </ol>
+
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <h5 class="mb-0 text-primary"><i class="fas fa-edit me-1"></i> Edit Factory Details</h5>
+        </div>
+        <div class="card-body p-4">
+            <form action="{{ BASE_URL }}/master_library/factories/edit/{{ factory.factory_id }}" method="POST">
+    {{ csrf_field() | raw }}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                         <div class="form-floating mb-3 mb-md-0">
+                            <input class="form-control" id="factory_code" name="factory_code" type="text" placeholder="Enter factory code" required value="{{ factory.factory_code }}" />
+                            <label for="factory_code">Factory Code</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3 mb-md-0">
+                            <input class="form-control" id="factory_name" name="factory_name" type="text" placeholder="Enter factory name" required value="{{ factory.factory_name }}" />
+                            <label for="factory_name">Factory Name</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                         <div class="form-floating">
+                            <input class="form-control" id="location" name="location" type="text" placeholder="Enter location" value="{{ factory.location }}" />
+                            <label for="location">Location</label>
+                        </div>
+                    </div>
+                </div>
+
+                 <div class="row mb-3">
+                     <div class="col-md-6">
+                        <div class="form-floating mb-3 mb-md-0">
+                            <input class="form-control" id="manager_name" name="manager_name" type="text" placeholder="Enter manager name" value="{{ factory.manager_name }}" />
+                            <label for="manager_name">Manager Name</label>
+                        </div>
+                    </div>
+                     <div class="col-md-6">
+                        <div class="form-floating">
+                            <select class="form-select" id="status" name="status">
+                                <option value="active" {{ factory.status == 'active' ? 'selected' : '' }}>Active</option>
+                                <option value="inactive" {{ factory.status == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                            </select>
+                            <label for="status">Status</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 mb-0">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ BASE_URL }}/master_library/factories" class="btn btn-light me-md-2 px-4 rounded-pill border">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 rounded-pill">Update Factory</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

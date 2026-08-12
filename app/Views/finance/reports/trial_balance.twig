@@ -1,0 +1,69 @@
+{% extends "layouts/app.twig" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="card-title">Trial Balance</h4>
+                <div>
+                     <a href="#" class="btn btn-outline-secondary btn-sm" onclick="window.print()">Print</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="60%">Particulars</th>
+                                <th width="20%" class="text-end">Debit</th>
+                                <th width="20%" class="text-end">Credit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% import _self as macros %}
+                            
+                            {% for node in tree %}
+                                {{ macros.render_node(node, 0) }}
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="fw-bold bg-light">
+                                <td>Grand Total</td>
+                                <td class="text-end">{{ grandDebit|number_format(2) }}</td>
+                                <td class="text-end">{{ grandCredit|number_format(2) }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% macro render_node(node, level) %}
+    {% import _self as macros %}
+    
+    <tr class="{% if node.is_group %}fw-bold{% endif %}">
+        <td style="padding-left: {{ level * 20 + 10 }}px">
+            {{ node.account_name }}
+        </td>
+        <td class="text-end">
+             {% if node.net_balance > 0 %}
+                 {{ node.net_balance|abs|number_format(2) }}
+             {% endif %}
+        </td>
+        <td class="text-end">
+             {% if node.net_balance < 0 %}
+                 {{ node.net_balance|abs|number_format(2) }}
+             {% endif %}
+        </td>
+    </tr>
+    
+    {% if node.children %}
+        {% for child in node.children %}
+            {{ macros.render_node(child, level + 1) }}
+        {% endfor %}
+    {% endif %}
+{% endmacro %}
+{% endblock %}

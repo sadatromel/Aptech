@@ -1,0 +1,110 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Vehicle Management - RMG ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-truck text-primary me-2"></i>Vehicle Management
+        </h1>
+        <a href="{{ BASE_URL }}/vehicles?action=create" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> Add New Vehicle
+        </a>
+    </div>
+
+    {# Stats Row #}
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Vehicles</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-car fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% for status in stats.by_status %}
+        <div class="col-md-3">
+            <div class="card border-left-{{ status.name == 'Active' ? 'success' : (status.name == 'Maintenance' ? 'warning' : 'secondary') }} shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-{{ status.name == 'Active' ? 'success' : (status.name == 'Maintenance' ? 'warning' : 'secondary') }} text-uppercase mb-1">
+                                {{ status.name }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ status.count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-pie fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {# Vehicles Table #}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Fleet Overview</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="vehiclesTable" width="100%" cellspacing="0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Vehicle No.</th>
+                            <th>Type</th>
+                            <th>Make/Model</th>
+                            <th>License Plate</th>
+                            <th>Status</th>
+                            <th>Capacity</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vehicle in vehicles %}
+                        <tr>
+                            <td class="font-weight-bold">{{ vehicle.vehicle_number }}</td>
+                            <td>{{ vehicle.vehicle_type }}</td>
+                            <td>{{ vehicle.make }} {{ vehicle.model }} ({{ vehicle.year }})</td>
+                            <td>{{ vehicle.license_plate }}</td>
+                            <td>
+                                <span class="badge badge-{{ vehicle.status_name == 'Active' ? 'success' : (vehicle.status_name == 'Maintenance' ? 'warning' : 'secondary') }}">
+                                    {{ vehicle.status_name }}
+                                </span>
+                            </td>
+                            <td>{{ vehicle.capacity }}</td>
+                            <td>
+                                <a href="{{ BASE_URL }}/vehicles?action=edit&id={{ vehicle.vehicle_id }}" class="btn btn-sm btn-info" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{{ BASE_URL }}/vehicles?action=show&id={{ vehicle.vehicle_id }}" class="btn btn-sm btn-secondary" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                <i class="fas fa-box-open fa-3x mb-3"></i><br>
+                                No vehicles found. Add one to get started.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

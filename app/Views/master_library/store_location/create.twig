@@ -1,0 +1,243 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Add Store Locations | Master Library{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Add Store Locations</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library/store_locations">Store Locations</a></li>
+        <li class="breadcrumb-item active">Add Locations</li>
+    </ol>
+
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <h5 class="mb-0 text-primary"><i class="fas fa-plus-circle me-1"></i> New Store Locations</h5>
+        </div>
+        <div class="card-body p-4">
+            <form action="{{ BASE_URL }}/master_library/store_locations/create" method="POST" id="locationForm">
+                {{ csrf_field() | raw }}
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3">
+                            <select class="form-select" id="factory_id" name="factory_id" required>
+                                <option value="">-- Select Factory --</option>
+                                {% for factory in factories %}
+                                <option value="{{ factory.factory_id }}">{{ factory.factory_name }} ({{ factory.factory_code }})</option>
+                                {% endfor %}
+                            </select>
+                            <label for="factory_id">Factory <span class="text-danger">*</span></label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3">
+                            <select class="form-select" id="warehouse_id" name="warehouse_id" required disabled>
+                                <option value="">-- Select Store --</option>
+                            </select>
+                            <label for="warehouse_id">Store <span class="text-danger">*</span></label>
+                            <small id="storeHelp" class="form-text text-muted d-none">Please select a factory first.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border border-light shadow-sm rounded-3 mb-4">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold text-secondary"><i class="fas fa-list-ol me-2"></i>Location List</span>
+                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3" id="addRowBtn">
+                            <i class="fas fa-plus me-1"></i> Add Row
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="locationsTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="min-width: 150px;">Code <span class="text-danger">*</span></th>
+                                        <th style="min-width: 180px;">Name <span class="text-danger">*</span></th>
+                                        <th style="min-width: 100px;">Zone</th>
+                                        <th style="min-width: 100px;">Aisle</th>
+                                        <th style="min-width: 100px;">Level</th>
+                                        <th style="min-width: 100px;">Bin</th>
+                                        <th style="min-width: 120px;">Cap. Weight (kg)</th>
+                                        <th style="min-width: 120px;">Cap. Volume (m³)</th>
+                                        <th style="min-width: 120px;">Status</th>
+                                        <th style="width: 50px;" class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="locationRows">
+                                    <!-- First Row -->
+                                    <tr class="location-row">
+                                        <td>
+                                            <input type="text" name="locations[0][rack_code]" class="form-control" placeholder="e.g. A-01" required>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="locations[0][rack_name]" class="form-control" placeholder="e.g. Shelf A Row 1" required>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="locations[0][zone]" class="form-control" placeholder="A">
+                                        </td>
+                                        <td>
+                                            <input type="text" name="locations[0][aisle]" class="form-control" placeholder="1">
+                                        </td>
+                                        <td>
+                                            <input type="text" name="locations[0][level]" class="form-control" placeholder="1">
+                                        </td>
+                                        <td>
+                                            <input type="text" name="locations[0][bin]" class="form-control" placeholder="1">
+                                        </td>
+                                        <td>
+                                            <input type="number" name="locations[0][capacity_weight]" class="form-control" step="0.01" placeholder="0.00">
+                                        </td>
+                                        <td>
+                                            <input type="number" name="locations[0][capacity_volume]" class="form-control" step="0.01" placeholder="0.00">
+                                        </td>
+                                        <td>
+                                            <select name="locations[0][status]" class="form-select">
+                                                <option value="active" selected>Active</option>
+                                                <option value="inactive">Inactive</option>
+                                                <option value="maintenance">Maint.</option>
+                                            </select>
+                                        </td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-circle remove-row-btn" disabled>
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 mb-0">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ BASE_URL }}/master_library/store_locations" class="btn btn-light me-md-2 px-4 rounded-pill border">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 rounded-pill">Save Locations</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const factorySelect = document.getElementById('factory_id');
+    const warehouseSelect = document.getElementById('warehouse_id');
+    const storeHelp = document.getElementById('storeHelp');
+    const addRowBtn = document.getElementById('addRowBtn');
+    const locationRows = document.getElementById('locationRows');
+    
+    let rowIndex = 1;
+
+    // Handle dynamic dropdown cascade
+    if (factorySelect) {
+        factorySelect.addEventListener('change', function () {
+            const factoryId = this.value;
+            warehouseSelect.innerHTML = '<option value="">-- Loading Stores... --</option>';
+            warehouseSelect.disabled = true;
+
+            if (!factoryId) {
+                warehouseSelect.innerHTML = '<option value="">-- Select Store --</option>';
+                return;
+            }
+
+            fetch(`{{ BASE_URL }}/master_library/store_locations/get-stores?factory_id=${factoryId}`)
+                .then(response => response.json())
+                .then(data => {
+                    warehouseSelect.innerHTML = '<option value="">-- Select Store --</option>';
+                    if (data && data.length > 0) {
+                        data.forEach(store => {
+                            const option = document.createElement('option');
+                            option.value = store.location_id;
+                            option.textContent = `${store.location_name} (${store.location_code})`;
+                            warehouseSelect.appendChild(option);
+                        });
+                        warehouseSelect.disabled = false;
+                    } else {
+                        warehouseSelect.innerHTML = '<option value="">No Active Stores Found</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching stores:', error);
+                    warehouseSelect.innerHTML = '<option value="">Error Loading Stores</option>';
+                });
+        });
+    }
+
+    // Handle adding dynamic rows
+    if (addRowBtn) {
+        addRowBtn.addEventListener('click', function () {
+            const newRow = document.createElement('tr');
+            newRow.className = 'location-row';
+            newRow.innerHTML = `
+                <td>
+                    <input type="text" name="locations[${rowIndex}][rack_code]" class="form-control" placeholder="e.g. A-02" required>
+                </td>
+                <td>
+                    <input type="text" name="locations[${rowIndex}][rack_name]" class="form-control" placeholder="e.g. Shelf A Row 2" required>
+                </td>
+                <td>
+                    <input type="text" name="locations[${rowIndex}][zone]" class="form-control" placeholder="A">
+                </td>
+                <td>
+                    <input type="text" name="locations[${rowIndex}][aisle]" class="form-control" placeholder="1">
+                </td>
+                <td>
+                    <input type="text" name="locations[${rowIndex}][level]" class="form-control" placeholder="1">
+                </td>
+                <td>
+                    <input type="text" name="locations[${rowIndex}][bin]" class="form-control" placeholder="2">
+                </td>
+                <td>
+                    <input type="number" name="locations[${rowIndex}][capacity_weight]" class="form-control" step="0.01" placeholder="0.00">
+                </td>
+                <td>
+                    <input type="number" name="locations[${rowIndex}][capacity_volume]" class="form-control" step="0.01" placeholder="0.00">
+                </td>
+                <td>
+                    <select name="locations[${rowIndex}][status]" class="form-select">
+                        <option value="active" selected>Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="maintenance">Maint.</option>
+                    </select>
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-outline-danger btn-sm rounded-circle remove-row-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </td>
+            `;
+            locationRows.appendChild(newRow);
+            rowIndex++;
+            toggleRemoveButtons();
+        });
+    }
+
+    // Handle removing dynamic rows
+    locationRows.addEventListener('click', function (e) {
+        if (e.target.closest('.remove-row-btn')) {
+            const row = e.target.closest('tr');
+            row.remove();
+            toggleRemoveButtons();
+        }
+    });
+
+    function toggleRemoveButtons() {
+        const rows = locationRows.querySelectorAll('.location-row');
+        const removeButtons = locationRows.querySelectorAll('.remove-row-btn');
+        if (rows.length === 1) {
+            removeButtons[0].setAttribute('disabled', 'true');
+        } else {
+            removeButtons.forEach(btn => btn.removeAttribute('disabled'));
+        }
+    }
+});
+</script>
+{% endblock %}

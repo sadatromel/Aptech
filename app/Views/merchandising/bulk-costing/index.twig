@@ -1,0 +1,1256 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Bulk Costing — RMG ERP{% endblock %}
+
+{% block styles %}
+<style>
+    :root {
+        --text-muted: var(--text-tertiary);
+    }
+
+    /* ===== ANIMATION ===== */
+    .bulk-costing-page { animation: bcFadeIn 0.5s ease-out; }
+    @keyframes bcFadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== STAT CARDS - PREMIUM GRADIENT STYLE ===== */
+    .stat-card {
+        padding: 1.5rem;
+        border-radius: 1.25rem !important;
+        border: none;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 140px;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+    }
+    .stat-card i.position-absolute {
+        font-size: 4rem;
+        opacity: 0.15;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        transition: all 0.5s ease;
+    }
+    .stat-card:hover i.position-absolute {
+        transform: translateY(-50%) scale(1.1);
+        opacity: 0.25;
+    }
+    .stat-card .sc-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        opacity: 0.85;
+        margin-bottom: 0.5rem;
+        color: white !important;
+    }
+    .stat-card h2 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 0;
+        line-height: 1;
+        color: white !important;
+    }
+
+    /* ===== TABLE & CONTAINERS ===== */
+    .table-container {
+        background: var(--card-bg, #fff);
+        border-radius: 1.25rem;
+        border: none;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+    #costingListTable thead th {
+        background-color: var(--bs-tertiary-bg);
+        border: none;
+        text-transform: uppercase;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        color: var(--text-muted);
+        padding: 1.25rem 1rem;
+    }
+    #costingListTable tbody tr {
+        transition: all 0.2s ease;
+        border-bottom: 1px solid rgba(0,0,0,0.03);
+    }
+    #costingListTable tbody tr:hover {
+        background-color: var(--primary-light) !important;
+    }
+    #costingListTable td {
+        padding: 1.1rem 1rem;
+        border: none;
+    }
+
+    /* ===== PREMIUM BADGES ===== */
+    .badge-status-premium {
+        font-weight: 700;
+        padding: 0.4em 1.2em;
+        border-radius: 50px;
+        letter-spacing: 0.5px;
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .badge-success-premium { background-color: rgba(25, 135, 84, 0.1) !important; color: #198754 !important; border: 1px solid rgba(25, 135, 84, 0.2); }
+    .badge-warning-premium { background-color: rgba(242, 153, 74, 0.1) !important; color: #f2994a !important; border: 1px solid rgba(242, 153, 74, 0.2); }
+    .badge-info-premium { background-color: rgba(30, 60, 114, 0.1) !important; color: #1e3c72 !important; border: 1px solid rgba(30, 60, 114, 0.2); }
+
+    /* ===== FILTERS & LABELS ===== */
+    .filter-card {
+        background: var(--card-bg, #fff);
+        border-radius: 1.25rem !important;
+        border: none;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+    .form-label-premium {
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    /* ===== ENTRY FORM SECTIONS ===== */
+    .form-section-card {
+        background: var(--card-bg, #fff);
+        border-radius: 1.25rem !important;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+    .form-section-card .section-header-bar {
+        background-color: var(--bs-tertiary-bg);
+        border-bottom: 1px solid rgba(0,0,0,0.03);
+        padding: 1rem 1.5rem;
+    }
+    .form-section-card .section-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--primary);
+    }
+    .costing-table thead th {
+        background-color: rgba(0,0,0,0.02);
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 0.75rem;
+        border-bottom: 2px solid rgba(0,0,0,0.05);
+    }
+
+    /* ===== STICKY SUMMARY BAR ===== */
+    .sticky-summary-bar {
+        position: sticky;
+        bottom: 1rem;
+        z-index: 100;
+        background: var(--card-bg, #fff);
+        border-radius: 1.25rem;
+        padding: 1.25rem 2rem;
+        margin: 0 0 2rem 0;
+        box-shadow: 0 -10px 25px rgba(0,0,0,0.1), 0 10px 25px rgba(0,0,0,0.1);
+        border: 1px solid rgba(99, 102, 241, 0.1);
+    }
+    .summary-value-block .sv-label {
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-muted);
+        margin-bottom: 0.25rem;
+    }
+    .summary-value-block .sv-amount {
+        font-size: 1.5rem;
+        font-weight: 900;
+        color: var(--primary);
+    }
+
+    /* ===== BUYER AVATAR ===== */
+    .buyer-avatar-premium {
+        width: 32px; height: 32px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.8rem; font-weight: 800;
+        background: var(--primary-light);
+        color: var(--primary);
+        border: 1px solid rgba(99, 102, 241, 0.1);
+    }
+
+    [data-theme="dark"] .table-container, 
+    [data-theme="dark"] .filter-card,
+    [data-theme="dark"] .form-section-card,
+    [data-theme="dark"] .sticky-summary-bar { background: #1e293b; }
+    [data-theme="dark"] .costing-table thead th { background-color: rgba(255,255,255,0.05); }
+
+    /* ===== TOAST ===== */
+    .toast-container { z-index: 1095; }
+
+    /* form-control-sm overrides for tighter costing tables */
+    .costing-table .form-control-sm,
+    .costing-table .form-select-sm {
+        font-size: 0.8rem;
+        padding: 0.28rem 0.5rem;
+        border-radius: 6px;
+    }
+
+    /* ===== PER-ROW +/× BUTTONS ===== */
+    .row-action-btns {
+        display: inline-flex;
+        gap: 3px;
+        align-items: center;
+    }
+    .btn-row-add,
+    .btn-row-del {
+        width: 24px;
+        height: 24px;
+        border: none;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.65rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        padding: 0;
+        line-height: 1;
+    }
+    .btn-row-add {
+        background: rgba(99,102,241,0.1);
+        color: var(--primary, #6366f1);
+    }
+    .btn-row-add:hover {
+        background: var(--primary, #6366f1);
+        color: #fff;
+        transform: scale(1.1);
+    }
+    .btn-row-del {
+        background: rgba(220,53,69,0.1);
+        color: #dc3545;
+    }
+    .btn-row-del:hover {
+        background: #dc3545;
+        color: #fff;
+        transform: scale(1.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 pb-5 bulk-costing-page">
+
+    {# ─── Page Header ─── #}
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mt-4 mb-3">
+        <div>
+            <h1 class="h3 mb-1 fw-bold">Bulk Costing</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard" class="text-decoration-none">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ BASE_URL }}/merchandising" class="text-decoration-none">Merchandising</a></li>
+                    <li class="breadcrumb-item active fw-medium">Costing Analysis</li>
+                </ol>
+            </nav>
+        </div>
+        <div id="top-actions">
+            <button class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold" onclick="switchToTab('entry')" id="new-costing-btn">
+                <i class="fas fa-plus me-2"></i>New Costing Sheet
+            </button>
+        </div>
+    </div>
+
+    {# ─── Stat Cards ─── #}
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <i class="fas fa-file-invoice-dollar position-absolute"></i>
+                <p class="sc-label">Total Costing</p>
+                <h2>{{ stats.total }}</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card shadow-sm" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                <i class="fas fa-check-circle position-absolute"></i>
+                <p class="sc-label">Approved Sheets</p>
+                <h2>{{ stats.active }}</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card shadow-sm" style="background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%);">
+                <i class="fas fa-pencil-alt position-absolute"></i>
+                <p class="sc-label">Draft Mode</p>
+                <h2>{{ stats.draft }}</h2>
+            </div>
+        </div>
+    </div>
+
+    {# ─── Tabs ─── #}
+    <ul class="nav costing-tabs" id="costingTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" id="list-tab" data-bs-toggle="tab" data-bs-target="#list-pane" type="button" role="tab" onclick="setMode('list')">
+                <i class="fas fa-table-list me-2"></i>Browse Library
+                <span class="badge bg-primary bg-opacity-10 text-primary ms-2" style="font-size:0.7rem;">{{ stats.total }}</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="entry-tab" data-bs-toggle="tab" data-bs-target="#entry-pane" type="button" role="tab" onclick="setMode('entry')">
+                <i class="fas fa-file-pen me-2"></i>Costing Editor
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="costingTabsContent">
+
+        {# ══════════════════════════ TAB 1: LIST ══════════════════════════ #}
+        <div class="tab-pane fade show active" id="list-pane" role="tabpanel">
+
+            {# Filter Bar #}
+            <div class="card filter-card mb-4">
+                <div class="card-body p-4">
+                    <form action="{{ BASE_URL }}/merchandising/costing" method="GET" class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label-premium">Target Style</label>
+                            <select class="form-select bg-light border-0" name="style_id">
+                                <option value="">All Collections</option>
+                                {% for style in dropdowns.styles %}
+                                    <option value="{{ style.style_id }}" {% if filters.style_id == style.style_id %}selected{% endif %}>{{ style.style_code }} — {{ style.style_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label-premium">Review Status</label>
+                            <select class="form-select bg-light border-0" name="status">
+                                <option value="" {% if not filters.status %}selected{% endif %}>Any Status</option>
+                                <option value="approved" {% if filters.status == 'approved' %}selected{% endif %}>Approved</option>
+                                <option value="draft" {% if filters.status == 'draft' %}selected{% endif %}>Draft</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label-premium">Keyword Search</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted small"></i></span>
+                                <input type="text" class="form-control bg-light border-0 ps-0" name="search" value="{{ filters.search }}" placeholder="Search factory, buyer, article...">
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary rounded-pill flex-grow-1 shadow-sm">
+                                <i class="fas fa-filter me-1"></i>Apply
+                            </button>
+                            <a href="{{ BASE_URL }}/merchandising/costing" class="btn btn-outline-secondary rounded-pill shadow-sm" title="Reset">
+                                <i class="fas fa-undo"></i>
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {# List Table #}
+            <div class="table-container mb-4">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0" id="costingListTable">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">FACTORY</th>
+                                <th>STYLE</th>
+                                <th>PARTNER</th>
+                                <th>ALLOC NO</th>
+                                <th>DATE</th>
+                                <th>STATUS</th>
+                                <th class="text-end pe-4">ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if costings is not empty %}
+                                {% for costing in costings %}
+                                    <tr>
+                                        <td class="ps-4">
+                                            <div class="fw-bold" style="font-size:0.9rem;">{{ costing.factory_name ?? '—' }}</div>
+                                            {% if costing.sc_no %}
+                                                <div class="text-muted small">SC: {{ costing.sc_no }}</div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold" style="font-size:0.9rem;">{{ costing.style_code }}</div>
+                                            <div class="text-muted small text-truncate" style="max-width:140px;">{{ costing.style_name }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="buyer-avatar-premium">{{ costing.buyer_name|slice(0,1)|upper }}</div>
+                                                <span class="fw-semibold">{{ costing.buyer_name ?? '—' }}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if costing.allocation_no %}
+                                                <span class="badge bg-light text-muted border fw-bold" style="font-size:0.7rem; letter-spacing: 0.5px;">{{ costing.allocation_no }}</span>
+                                            {% else %}
+                                                <span class="text-muted small">—</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="small fw-bold opacity-75">
+                                                <i class="far fa-calendar-alt text-muted me-1"></i>
+                                                {{ costing.costing_date|date('d M Y') }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if costing.status == 'approved' %}
+                                                <span class="badge-status-premium badge-success-premium"><i class="fas fa-circle" style="font-size:0.4rem;"></i>Approved</span>
+                                            {% else %}
+                                                <span class="badge-status-premium badge-warning-premium"><i class="fas fa-circle" style="font-size:0.4rem;"></i>Draft</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <div class="btn-group btn-group-sm shadow-sm rounded-pill bg-white border p-1">
+                                                <button class="btn btn-link text-primary px-2" onclick="loadEdit({{ costing.costing_id }})" title="Edit Costing">
+                                                    <i class="fas fa-pen"></i>
+                                                </button>
+                                                <a href="{{ BASE_URL }}/merchandising/bulk-costing/{{ costing.costing_id }}/report" target="_blank" class="btn btn-link text-success px-2" title="Print Report">
+                                                    <i class="fas fa-print"></i>
+                                                </a>
+                                                <button class="btn btn-link text-danger px-2" onclick="deleteCosting({{ costing.costing_id }}, '{{ costing.style_code }}')" title="Delete">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-5">
+                                        <div class="py-5 opacity-50">
+                                            <i class="fas fa-file-invoice-dollar fa-4x mb-3"></i>
+                                            <h4 class="fw-light">No costing records</h4>
+                                            <p class="small mb-4">Adjust filters or start a new costing entry.</p>
+                                            {% if filters.search or filters.style_id or filters.status %}
+                                                <a href="{{ BASE_URL }}/merchandising/costing" class="btn btn-outline-primary btn-sm rounded-pill px-4">
+                                                    Reset All Filters
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>{# /list-pane #}
+
+        {# ══════════════════════════ TAB 2: ENTRY FORM ══════════════════════════ #}
+        <div class="tab-pane fade" id="entry-pane" role="tabpanel">
+            <form id="bulkCostingForm" autocomplete="off">
+                <input type="hidden" name="current_id" id="current_id" value="">
+
+                {# ── Header Info ── #}
+                <div class="form-section-card">
+                    <div class="section-header-bar d-flex justify-content-between align-items-center">
+                        <span class="section-title"><i class="fas fa-info-circle me-2"></i>Header Information</span>
+                        <span class="badge bg-light text-muted border" id="form-status-badge">NEW SHEET</span>
+                    </div>
+                    <div class="section-body p-4">
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <label class="form-label-premium">Production Factory <span class="text-danger">*</span></label>
+                                <select class="form-select bg-light border-0" name="factory_id" id="factory_id" required>
+                                    <option value="">Select Factory Partner</option>
+                                    {% for factory in dropdowns.factories %}
+                                        <option value="{{ factory.factory_id }}">{{ factory.factory_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label-premium">Customer / Buyer Partner</label>
+                                <select class="form-select bg-light border-0" name="buyer_id" id="buyer_id">
+                                    <option value="">Select Partner</option>
+                                    {% for buyer in dropdowns.buyers %}
+                                        <option value="{{ buyer.buyer_id }}">{{ buyer.buyer_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label-premium">Allocation Number</label>
+                                <input type="text" class="form-control bg-light border-0" name="allocation_no" id="allocation_no" placeholder="e.g. ALLOC/25/001">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label-premium">Sales Contract (SC)</label>
+                                <input type="text" class="form-control bg-light border-0" name="sc_no" id="sc_no" placeholder="SC-REF-123">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label-premium">Internal Job No</label>
+                                <input type="text" class="form-control bg-light border-0" name="job_no" id="job_no">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label-premium">Sheet Date</label>
+                                <input type="date" class="form-control bg-light border-0" name="costing_date" id="costing_date" value="{{ 'now'|date('Y-m-d') }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── Commission & Deductions ── #}
+                <div class="form-section-card">
+                    <div class="section-header-bar d-flex justify-content-between align-items-center">
+                        <span class="section-title"><i class="fas fa-hand-holding-dollar me-2"></i>Commissions & Taxes</span>
+                        <span class="text-muted small opacity-75">Applied to gross value</span>
+                    </div>
+                    <div class="section-body p-4">
+                        <div class="row g-4 align-items-end">
+                            <div class="col-md-3">
+                                <label class="form-label-premium">Local Agent %</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" min="0" max="100" class="form-control bg-light border-0" name="local_commission_pct" id="local_commission_pct" value="0.00" onchange="calcTotal()">
+                                    <span class="input-group-text bg-light border-0">%</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label-premium">Foreign Agent %</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" min="0" max="100" class="form-control bg-light border-0" name="foreign_commission_pct" id="foreign_commission_pct" value="0.00" onchange="calcTotal()">
+                                    <span class="input-group-text bg-light border-0">%</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label-premium">Early Bank Charges %</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" min="0" max="100" class="form-control bg-light border-0" name="early_payment_cost_pct" id="early_payment_cost_pct" value="0.00" onchange="calcTotal()">
+                                    <span class="input-group-text bg-light border-0">%</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label-premium text-primary">Calculated Order Value</label>
+                                <div class="input-group shadow-sm rounded">
+                                    <span class="input-group-text bg-primary text-white border-0">$</span>
+                                    <input type="number" class="form-control fw-bold border-0 bg-primary-light" id="display_order_value" readonly name="order_value" style="color:var(--primary);">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── Style & Order ── #}
+                <div class="form-section-card">
+                    <div class="section-header-bar d-flex justify-content-between align-items-center">
+                        <span class="section-title"><i class="fas fa-tags me-2"></i>Multiple Style &amp; Order Lines</span>
+                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold" data-bs-toggle="collapse" data-bs-target="#orderEntryArea">
+                            <i class="fas fa-plus me-1"></i>Add Order
+                        </button>
+                    </div>
+                    
+                    {# New Entry Facility #}
+                    <div class="collapse show" id="orderEntryArea">
+                        <div class="p-4 bg-light border-bottom">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-3">
+                                    <label class="form-label-premium">Target Style</label>
+                                    <select class="form-select form-select-sm select2" id="entry_style_id">
+                                        <option value="">Select Style...</option>
+                                        {% for style in dropdowns.styles %}
+                                            <option value="{{ style.style_id }}" data-code="{{ style.style_code }}" data-name="{{ style.style_name }}" data-buyer="{{ style.buyer_id }}">{{ style.style_code }} — {{ style.style_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label-premium">Order No</label>
+                                    <input type="text" class="form-control form-control-sm" id="entry_order_no" placeholder="PO-123">
+                                </div>
+                                <div class="col-md-1">
+                                    <label class="form-label-premium">Qty</label>
+                                    <input type="number" class="form-control form-control-sm" id="entry_quantity" placeholder="0">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label-premium">Unit Price</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" step="0.0001" class="form-control" id="entry_unit_price" placeholder="0.0000">
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label-premium">Shipment Date</label>
+                                    <input type="date" class="form-control form-control-sm" id="entry_shipment_date">
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-primary btn-sm w-100 fw-bold" onclick="addStyleOrderLine()">
+                                        <i class="fas fa-plus-circle me-1"></i>Add To List
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-body pb-2">
+                        <div class="table-responsive">
+                            <table class="table table-bordered costing-table" id="table-style">
+                                <thead>
+                                    <tr>
+                                        <th>Style Information</th>
+                                        <th width="150">Order No</th>
+                                        <th width="100">Qty (pcs)</th>
+                                        <th width="110">Unit Price $</th>
+                                        <th width="110">Amount $</th>
+                                        <th width="140">Shipment Date</th>
+                                        <th width="38"></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── Fabrics ── #}
+                <div class="form-section-card">
+                    <div class="section-header-bar d-flex justify-content-between align-items-center">
+                        <span class="section-title"><i class="fas fa-layer-group me-2"></i>Fabric Consumption</span>
+                        <div class="row-action-btns">
+                            <button type="button" class="btn btn-row-add" onclick="addRow('fabric')" title="Add Row"><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <div class="section-body p-0 pb-2">
+                        <div class="table-responsive">
+                            <table class="table table-hover costing-table mb-0" id="table-fabric">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-4">Item Name</th>
+                                        <th>Description</th>
+                                        <th width="80">Ref</th>
+                                        <th width="70">UOM</th>
+                                        <th width="80">Cons.</th>
+                                        <th width="80">Qty</th>
+                                        <th width="90">Price</th>
+                                        <th width="100">Total $</th>
+                                        <th width="38" class="pe-4"></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── Accessories ── #}
+                <div class="form-section-card">
+                    <div class="section-header-bar d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="section-title"><i class="fas fa-puzzle-piece me-2"></i>Materials & Accessories</span>
+                            <div id="template-loader-area" class="d-none align-items-center gap-2 bg-light p-1 rounded-pill border shadow-sm px-2">
+                                <i class="fas fa-file-invoice text-primary ms-1"></i>
+                                <select class="form-select form-select-sm border-0 bg-transparent" id="trims_template_id" style="min-width: 180px; font-size: 0.75rem; box-shadow: none;">
+                                    <option value="">-- Load Trims Template --</option>
+                                </select>
+                                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1" onclick="applyTrimsTemplate()" style="font-size: 0.7rem; font-weight: 700;">
+                                    <i class="fas fa-magic me-1"></i>Apply
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row-action-btns">
+                            <button type="button" class="btn btn-row-add" onclick="addRow('accessory')" title="Add Row"><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <div class="section-body p-0 pb-2">
+                        <div class="table-responsive">
+                            <table class="table table-hover costing-table mb-0" id="table-accessory">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-4">Description</th>
+                                        <th width="70">UOM</th>
+                                        <th width="80">Cons.</th>
+                                        <th width="80">Qty</th>
+                                        <th width="90">Price</th>
+                                        <th width="100">Total $</th>
+                                        <th width="38" class="pe-4"></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── Wash & Embellishment side by side ── #}
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <div class="form-section-card h-100">
+                            <div class="section-header-bar d-flex justify-content-between align-items-center">
+                                <span class="section-title"><i class="fas fa-tint me-2"></i>Wash Treatment</span>
+                                <button type="button" class="btn btn-row-add" onclick="addRow('wash')" title="Add Row"><i class="fas fa-plus"></i></button>
+                            </div>
+                            <div class="section-body p-0 pb-2">
+                                <div class="table-responsive">
+                                    <table class="table table-hover costing-table mb-0" id="table-wash">
+                                        <thead><tr>
+                                            <th class="ps-4">Wash Type</th>
+                                            <th width="80">Qty</th>
+                                            <th width="90">Price</th>
+                                            <th width="100">Total $</th>
+                                            <th width="38" class="pe-4"></th>
+                                        </tr></thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="form-section-card h-100">
+                            <div class="section-header-bar d-flex justify-content-between align-items-center">
+                                <span class="section-title"><i class="fas fa-star me-2"></i>Embellishment</span>
+                                <button type="button" class="btn btn-row-add" onclick="addRow('embl')" title="Add Row"><i class="fas fa-plus"></i></button>
+                            </div>
+                            <div class="section-body p-0 pb-2">
+                                <div class="table-responsive">
+                                    <table class="table table-hover costing-table mb-0" id="table-embl">
+                                        <thead><tr>
+                                            <th class="ps-4">Treatment</th>
+                                            <th width="80">Qty</th>
+                                            <th width="90">Price</th>
+                                            <th width="100">Total $</th>
+                                            <th width="38" class="pe-4"></th>
+                                        </tr></thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── Other & CM ── #}
+                <div class="form-section-card mt-4">
+                    <div class="section-header-bar d-flex justify-content-between align-items-center">
+                        <span class="section-title"><i class="fas fa-ellipsis-h me-2"></i>Other Costs & CM</span>
+                        <button type="button" class="btn btn-row-add" onclick="addRow('other')" title="Add Row"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <div class="section-body p-0 pb-2">
+                        <div class="table-responsive">
+                            <table class="table table-hover costing-table mb-0" id="table-other">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-4">Description</th>
+                                        <th width="70">UOM</th>
+                                        <th width="80">Qty</th>
+                                        <th width="90">Price</th>
+                                        <th width="100">Total $</th>
+                                        <th width="38" class="pe-4"></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── Sticky Summary ── #}
+                <div class="sticky-summary-bar mt-4 shadow-lg border">
+                    <div class="d-flex align-items-center flex-wrap gap-4">
+                        <div class="summary-value-block">
+                            <div class="sv-label text-danger fw-bold">Calculated Cost</div>
+                            <div class="sv-amount text-danger">$ <span id="summary_total_cost">0.00</span></div>
+                            <input type="hidden" name="total_costing_value" id="hidden_total_cost">
+                        </div>
+                        <div class="vr opacity-10"></div>
+                        <div class="summary-value-block">
+                            <div class="sv-label text-success fw-bold">Effective Value</div>
+                            <div class="sv-amount text-success">$ <span id="summary_order_value">0.00</span></div>
+                        </div>
+                        <div class="vr opacity-10"></div>
+                        <div class="summary-value-block">
+                            <div class="sv-label text-primary fw-bold">Projected Profit</div>
+                            <div class="sv-amount text-primary">$ <span id="summary_profit">0.00</span></div>
+                            <input type="hidden" name="profit_amount" id="hidden_profit">
+                        </div>
+                        <div class="vr opacity-10"></div>
+                        <div class="summary-value-block">
+                            <div class="sv-label fw-bold" style="color:#6366f1;">Gross Margin</div>
+                            <div class="sv-amount" style="color:#6366f1;"><span id="summary_margin">0.0</span>%</div>
+                        </div>
+                        <div class="ms-auto d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm" onclick="switchToTab('list')">
+                                <i class="fas fa-times me-2"></i>Discard
+                            </button>
+                            <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm" id="save-btn">
+                                <i class="fas fa-cloud-upload-alt me-2"></i>Publish Sheet
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </form>
+        </div>{# /entry-pane #}
+
+    </div>{# /tab-content #}
+</div>
+
+{# ─── Delete Confirm Modal ─── #}
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-body text-center p-4">
+                <div class="text-danger mb-3"><i class="fas fa-exclamation-triangle fa-3x opacity-75"></i></div>
+                <h5 class="mb-1 fw-bold">Delete Costing?</h5>
+                <p class="text-muted small mb-4">This will permanently delete the costing sheet for <strong id="delete-sheet-label"></strong>. This cannot be undone.</p>
+                <div class="d-flex justify-content-center gap-2">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger rounded-pill px-4 fw-bold" id="confirmDeleteBtn">
+                        <i class="fas fa-trash me-1"></i>Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ─── Toast ─── #}
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="systemToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body fw-semibold" id="systemToastBody"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* ─────────────────────────────────────────────
+   BULK COSTING — Interaction Script
+───────────────────────────────────────────── */
+let counters = { style: 0, fabric: 0, accessory: 0, wash: 0, embl: 0, other: 0 };
+let currentMode = 'list';
+let deleteTargetId = null;
+
+const toastEl   = document.getElementById('systemToast');
+const toastBody = document.getElementById('systemToastBody');
+const bsToast   = toastEl ? bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 3500 }) : null;
+
+function showToast(msg, type = 'success') {
+    if (!toastEl) return;
+    toastEl.className = `toast align-items-center text-white border-0 bg-${type}`;
+    toastBody.textContent = msg;
+    bsToast?.show();
+}
+
+/* ── Tab helpers ── */
+function setMode(mode) {
+    currentMode = mode;
+    document.getElementById('top-actions').style.display = mode === 'list' ? 'block' : 'none';
+}
+function switchToTab(tabName) {
+    const tabEl = document.querySelector(`#${tabName}-tab`);
+    bootstrap.Tab.getInstance(tabEl)?.show() || new bootstrap.Tab(tabEl).show();
+    if (tabName === 'entry' && !document.getElementById('current_id').value) {
+        resetForm();
+    }
+}
+
+/* ── Row builders ── */
+// Shared action buttons for every row: [+] insert below, [×] remove
+function rowActions(type) {
+    return `<div class="row-action-btns">
+        <button type="button" class="btn-row-add" onclick="insertRowAfter(this,'${type}')" title="Insert row below">
+            <i class="fas fa-plus"></i>
+        </button>
+        <button type="button" class="btn-row-del" onclick="removeRow(this)" title="Remove row">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>`;
+}
+
+// Insert a new blank row after the row containing `btn`
+function insertRowAfter(btn, type) {
+    const refTr = btn.closest('tr');
+    addRow(type, null, refTr);
+}
+
+// addRow(type, data?, afterTr?)
+// If afterTr is given the new row is inserted right after it; otherwise appended to tbody.
+function addRow(type, data = null, afterTr = null) {
+    const tbody = document.querySelector(`#table-${type} tbody`);
+    const count = counters[type]++;
+    let html = '';
+    const acts = rowActions(type);
+
+    if (type === 'style') {
+        html = `<tr>
+            <td>
+                <div class="fw-bold" style="font-size:0.85rem;">${data?.style_code || 'N/A'}</div>
+                <div class="text-muted small">${data?.style_name || 'N/A'}</div>
+                <input type="hidden" name="styles[${count}][style_id]" value="${data?.style_id || ''}">
+            </td>
+            <td><input type="text" class="form-control form-control-sm" name="styles[${count}][order_no]" value="${data?.order_no || ''}" placeholder="Order No"></td>
+            <td><input type="number" class="form-control form-control-sm qty-input" name="styles[${count}][quantity]" value="${data?.quantity || ''}" onchange="calcTotal()" placeholder="0"></td>
+            <td><input type="number" step="0.0001" class="form-control form-control-sm price-input" name="styles[${count}][unit_price]" value="${data?.unit_price || ''}" onchange="calcTotal()" placeholder="0.0000"></td>
+            <td><input type="text" class="form-control form-control-sm amount-display readonly-cell" readonly placeholder="0.00"></td>
+            <td><input type="date" class="form-control form-control-sm" name="styles[${count}][shipment_date]" value="${data?.shipment_date || ''}"></td>
+            <td class="text-center">
+                <button type="button" class="btn-row-del" onclick="removeRow(this)" title="Remove row">
+                    <i class="fas fa-times"></i>
+                </button>
+            </td>
+        </tr>`;
+    } else if (type === 'fabric') {
+        html = `<tr>
+            <td><input type="text" class="form-control form-control-sm" name="fabrics[${count}][item_name]" value="${data?.item_name || ''}" placeholder="Item name"></td>
+            <td><input type="text" class="form-control form-control-sm" name="fabrics[${count}][description]" value="${data?.description || ''}" placeholder="Description"></td>
+            <td><input type="text" class="form-control form-control-sm" name="fabrics[${count}][fabric_ref]" value="${data?.fabric_ref || ''}" placeholder="Ref"></td>
+            <td><input type="text" class="form-control form-control-sm" name="fabrics[${count}][uom]" value="${data?.uom || 'Yds'}" placeholder="Yds"></td>
+            <td><input type="number" step="0.0001" class="form-control form-control-sm cons-input" name="fabrics[${count}][consumption]" value="${data?.consumption || ''}" onchange="calcTotal()" placeholder="0"></td>
+            <td><input type="number" step="0.01" class="form-control form-control-sm qty-row-input" name="fabrics[${count}][quantity]" value="${data?.quantity || ''}" onchange="calcTotal()" placeholder="0"></td>
+            <td><input type="number" step="0.001" class="form-control form-control-sm price-row-input" name="fabrics[${count}][unit_price]" value="${data?.unit_price || ''}" onchange="calcTotal()" placeholder="0.000"></td>
+            <td><input type="text" class="form-control form-control-sm total-display readonly-cell" readonly placeholder="0.00"></td>
+            <td class="text-center">${acts}</td>
+        </tr>`;
+    } else {
+        const nameField = type === 'wash' ? 'wash_type' : (type === 'embl' ? 'embl_name' : 'description');
+        const hasUom    = (type === 'accessory' || type === 'other');
+        const hasCons   = (type === 'accessory');
+        html = `<tr>
+            <td><input type="text" class="form-control form-control-sm" name="${type}s[${count}][${nameField}]" value="${data?.[nameField] || ''}" placeholder="${type === 'wash' ? 'Wash type' : type === 'embl' ? 'Embl. name' : 'Description'}"></td>
+            ${hasUom  ? `<td><input type="text" class="form-control form-control-sm" name="${type}s[${count}][uom]" value="${data?.uom || 'Pcs'}" placeholder="UOM"></td>` : ''}
+            ${hasCons ? `<td><input type="number" step="0.0001" class="form-control form-control-sm cons-input" name="${type}s[${count}][consumption]" value="${data?.consumption || ''}" onchange="calcTotal()" placeholder="0"></td>` : ''}
+            <td><input type="number" class="form-control form-control-sm qty-row-input" name="${type}s[${count}][quantity]" value="${data?.quantity || ''}" onchange="calcTotal()" placeholder="0"></td>
+            <td><input type="number" step="0.01" class="form-control form-control-sm price-row-input" name="${type}s[${count}][unit_price]" value="${data?.unit_price || ''}" onchange="calcTotal()" placeholder="0.00"></td>
+            <td><input type="text" class="form-control form-control-sm total-display readonly-cell" readonly placeholder="0.00"></td>
+            <td class="text-center">${acts}</td>
+        </tr>`;
+    }
+
+    if (afterTr) {
+        afterTr.insertAdjacentHTML('afterend', html);
+    } else {
+        tbody.insertAdjacentHTML('beforeend', html);
+    }
+    calcTotal();
+}
+
+// Add style line from entry facility
+function addStyleOrderLine() {
+    const styleEl = document.getElementById('entry_style_id');
+    const orderNo = document.getElementById('entry_order_no').value;
+    const qty = document.getElementById('entry_quantity').value;
+    const price = document.getElementById('entry_unit_price').value;
+    const date = document.getElementById('entry_shipment_date').value;
+
+    if (!styleEl.value) { showToast('Please select a style.', 'warning'); return; }
+    if (!orderNo) { showToast('Please enter an order number.', 'warning'); return; }
+
+    const opt = styleEl.selectedOptions[0];
+    addRow('style', {
+        style_id: styleEl.value,
+        style_code: opt.dataset.code,
+        style_name: opt.dataset.name,
+        order_no: orderNo,
+        quantity: qty,
+        unit_price: price,
+        shipment_date: date
+    });
+
+    // Clear entry
+    document.getElementById('entry_order_no').value = '';
+    document.getElementById('entry_quantity').value = '';
+    document.getElementById('entry_unit_price').value = '';
+    document.getElementById('entry_shipment_date').value = '';
+    $(styleEl).val('').trigger('change');
+    showToast('Order line added!', 'success');
+}
+
+function removeRow(btn) {
+    btn.closest('tr').remove();
+    calcTotal();
+}
+
+/* ── Calculation ── */
+function calcTotal() {
+    let totalOrderValue = 0, totalCostingValue = 0;
+
+    document.querySelectorAll('#table-style tbody tr').forEach(row => {
+        const qty   = parseFloat(row.querySelector('.qty-input')?.value) || 0;
+        const price = parseFloat(row.querySelector('.price-input')?.value) || 0;
+        const amt   = qty * price;
+        const disp  = row.querySelector('.amount-display');
+        if (disp) disp.value = amt.toFixed(2);
+        totalOrderValue += amt;
+    });
+
+    document.querySelectorAll('.costing-table:not(#table-style) tbody tr').forEach(row => {
+        const qty   = parseFloat(row.querySelector('.qty-row-input')?.value) || 0;
+        const price = parseFloat(row.querySelector('.price-row-input')?.value) || 0;
+        const total = qty * price;
+        const disp  = row.querySelector('.total-display');
+        if (disp) disp.value = total.toFixed(2);
+        totalCostingValue += total;
+    });
+
+    const dedPct = ['local_commission_pct','foreign_commission_pct','early_payment_cost_pct']
+        .reduce((acc, n) => acc + (parseFloat(document.getElementById(n)?.value) || 0), 0);
+    const netOrderValue = totalOrderValue * (1 - dedPct / 100);
+    const profit  = netOrderValue - totalCostingValue;
+    const margin  = netOrderValue > 0 ? (profit / netOrderValue * 100) : 0;
+
+    document.getElementById('display_order_value').value  = netOrderValue.toFixed(2);
+    document.getElementById('summary_order_value').innerText = fmt(netOrderValue);
+    document.getElementById('summary_total_cost').innerText  = fmt(totalCostingValue);
+    document.getElementById('summary_profit').innerText      = fmt(profit);
+    document.getElementById('summary_margin').innerText      = margin.toFixed(1);
+    document.getElementById('hidden_total_cost').value = totalCostingValue;
+    document.getElementById('hidden_profit').value     = profit;
+
+    // Colour margin
+    const marginEl = document.getElementById('summary_margin').parentElement;
+    if (margin >= 10) marginEl.style.color = '#198754';
+    else if (margin >= 0) marginEl.style.color = '#d97706';
+    else marginEl.style.color = '#dc3545';
+}
+
+function fmt(n) {
+    return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/* ── Reset ── */
+function resetForm() {
+    document.getElementById('bulkCostingForm').reset();
+    document.getElementById('current_id').value = '';
+    document.getElementById('form-status-badge').textContent = 'NEW';
+    document.getElementById('form-status-badge').className = 'badge bg-light text-muted border';
+    document.getElementById('save-btn').innerHTML = '<i class="fas fa-save me-2"></i>Save Sheet';
+    ['fabric','accessory','wash','embl','other'].forEach(t => {
+        document.querySelector(`#table-${t} tbody`).innerHTML = '';
+        counters[t] = 0;
+    });
+    // For style table, we also clear it (user wants display-only table updated by facility)
+    document.querySelector('#table-style tbody').innerHTML = '';
+    counters['style'] = 0;
+
+    addRow('fabric'); addRow('accessory');
+    addRow('wash'); addRow('embl'); addRow('other');
+    calcTotal();
+}
+
+/* ── Load edit ── */
+async function loadEdit(id) {
+    try {
+        const resp = await fetch(`{{ BASE_URL }}/merchandising/bulk-costing/${id}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        if (!resp.ok) throw new Error('Server error');
+        const data = (await resp.json()).data;
+
+        resetForm();
+        document.getElementById('current_id').value = id;
+        document.getElementById('form-status-badge').textContent = (data.status === 'approved') ? 'APPROVED' : 'DRAFT';
+        document.getElementById('form-status-badge').className   = (data.status === 'approved')
+            ? 'badge bg-success bg-opacity-10 text-success border border-success border-opacity-25'
+            : 'badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25';
+        document.getElementById('save-btn').innerHTML = '<i class="fas fa-save me-2"></i>Update Sheet';
+
+        const form = document.getElementById('bulkCostingForm');
+        ['factory_id','style_id','buyer_id','allocation_no','sc_no','job_no','costing_date',
+         'local_commission_pct','foreign_commission_pct','early_payment_cost_pct'].forEach(f => {
+            if (form[f]) form[f].value = data[f] ?? '';
+        });
+
+        // Fill line items
+        const map = { style: data.styles, fabric: data.fabrics, accessory: data.accessories,
+                      wash: data.wash_costs, embl: data.embl_costs, other: data.other_costs };
+        Object.entries(map).forEach(([t, list]) => {
+            const tbody = document.querySelector(`#table-${t} tbody`);
+            tbody.innerHTML = ''; counters[t] = 0;
+            (list || []).forEach(item => addRow(t, item));
+            if (!list || list.length === 0) addRow(t);
+        });
+
+        switchToTab('entry');
+    } catch (e) {
+        showToast('Failed to load costing data. Please try again.', 'danger');
+    }
+}
+
+/* ── Delete ── */
+const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+function deleteCosting(id, label) {
+    deleteTargetId = id;
+    document.getElementById('delete-sheet-label').textContent = label || `#${id}`;
+    deleteModal.show();
+}
+document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('confirmDeleteBtn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Deleting…';
+    btn.disabled = true;
+    try {
+        const r = await fetch(`{{ BASE_URL }}/merchandising/bulk-costing/${deleteTargetId}`, { method: 'DELETE' });
+        const d = await r.json();
+        if (d.success) {
+            showToast('Costing sheet deleted.', 'success');
+            deleteModal.hide();
+            setTimeout(() => location.reload(), 900);
+        } else {
+            throw new Error(d.message);
+        }
+    } catch (e) {
+        showToast(e.message || 'Delete failed.', 'danger');
+        btn.innerHTML = '<i class="fas fa-trash me-1"></i>Delete';
+        btn.disabled = false;
+    }
+});
+
+/* ── Save (Create / Update) ── */
+document.getElementById('bulkCostingForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const id  = document.getElementById('current_id').value;
+    const btn = document.getElementById('save-btn');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving…';
+    btn.disabled  = true;
+
+    const formData = new FormData(this);
+    const payload  = {};
+    formData.forEach((v, k) => {
+        const p = k.split('[');
+        if (p.length === 1) { payload[k] = v; return; }
+        let cur = payload;
+        for (let i = 0; i < p.length; i++) {
+            let s = p[i].replace(']', '');
+            if (i === p.length - 1) { cur[s] = v; }
+            else {
+                if (!cur[s]) cur[s] = isNaN(p[i+1].replace(']','')) ? {} : [];
+                cur = cur[s];
+            }
+        }
+    });
+
+    try {
+        const resp = await fetch(`{{ BASE_URL }}/merchandising/bulk-costing${id ? '/'+id : ''}`, {
+            method: id ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const res = await resp.json();
+        if (res.success) {
+            showToast(id ? 'Costing sheet updated!' : 'New costing sheet saved!', 'success');
+            setTimeout(() => location.reload(), 900);
+        } else {
+            throw new Error(res.message || 'Save failed');
+        }
+    } catch (err) {
+        showToast(err.message, 'danger');
+        btn.innerHTML = orig;
+        btn.disabled  = false;
+    }
+});
+
+/* ── Auto-fill Buyer from Style ── */
+document.getElementById('entry_style_id').addEventListener('change', function() {
+    const opt = this.selectedOptions[0];
+    const buyerId = opt?.dataset?.buyer;
+    if (buyerId && !document.getElementById('buyer_id').value) {
+        document.getElementById('buyer_id').value = buyerId;
+        // Trigger buyer_id change manually
+        document.getElementById('buyer_id').dispatchEvent(new Event('change'));
+    }
+});
+
+/* ── Trims Template Integration ── */
+document.getElementById('buyer_id').addEventListener('change', function() {
+    loadTemplatesForBuyer(this.value);
+});
+
+async function loadTemplatesForBuyer(buyerId) {
+    const area = document.getElementById('template-loader-area');
+    const select = document.getElementById('trims_template_id');
+    
+    if (!buyerId) {
+        area.classList.add('d-none');
+        area.classList.remove('d-flex');
+        return;
+    }
+
+    try {
+        const resp = await fetch(`{{ BASE_URL }}/master_library/trims_costing_template/templates-by-buyer?buyer_id=${buyerId}`);
+        const res = await resp.json();
+        
+        if (res.success && res.data.length > 0) {
+            select.innerHTML = '<option value="">-- Load Trims Template --</option>';
+            res.data.forEach(t => {
+                select.innerHTML += `<option value="${t.template_id}">${t.template_name}</option>`;
+            });
+            area.classList.remove('d-none');
+            area.classList.add('d-flex');
+        } else {
+            area.classList.add('d-none');
+            area.classList.remove('d-flex');
+        }
+    } catch (e) {
+        console.error('Template load error', e);
+    }
+}
+
+async function applyTrimsTemplate() {
+    const templateId = document.getElementById('trims_template_id').value;
+    if (!templateId) {
+        showToast('Please select a template first.', 'warning');
+        return;
+    }
+
+    Swal.fire({
+        title: 'Apply Trims Template?',
+        text: 'This will add all items from the template to your accessories list. Existing items will remain.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#6366f1',
+        confirmButtonText: 'Yes, Apply Now'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                const resp = await fetch(`{{ BASE_URL }}/master_library/trims_costing_template/show?id=${templateId}`);
+                const res = await resp.json();
+                
+                if (res.success && res.data.items) {
+                    res.data.items.forEach(item => {
+                        addRow('accessory', {
+                            description: item.trims_group + ': ' + item.item_name,
+                            uom: item.uom,
+                            consumption: item.consumption,
+                            unit_price: item.unit_price,
+                            quantity: 0
+                        });
+                    });
+                    showToast(`${res.data.items.length} items applied from template!`, 'success');
+                } else {
+                    showToast('Template has no items or could not be loaded.', 'warning');
+                }
+            } catch (e) {
+                showToast('Failed to load template items.', 'danger');
+            }
+        }
+    });
+}
+
+/* ── Init ── */
+$(document).ready(function() {
+    $('.select2').select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        dropdownParent: $('#entry-pane')
+    });
+});
+resetForm();
+</script>
+{% endblock %}

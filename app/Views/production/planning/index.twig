@@ -1,0 +1,98 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Production Planning{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Production Planning</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <a href="{{ BASE_URL }}/production/planning/create" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus"></i> New Plan
+                </a>
+                <a href="{{ BASE_URL }}/capacity_planning" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-chart-line"></i> Capacity
+                </a>
+                <a href="{{ BASE_URL }}/line_loading" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-tasks"></i> Line Loading
+                </a>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle">
+                <span data-feather="calendar"></span>
+                This Week
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Total Planned</h5>
+                    <p class="card-text fs-4">{{ stats.total_planned|number_format }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Completed</h5>
+                    <p class="card-text fs-4">{{ stats.total_completed|number_format }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Pending</h5>
+                    <p class="card-text fs-4">{{ stats.total_pending|number_format }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Efficiency</h5>
+                    <p class="card-text fs-4">{{ stats.avg_efficiency }}%</p>
+                </div>
+            </div>
+        </div>
+    </div>            <div class="table-responsive">
+                <table class="table table-striped table-sm">
+                    <thead>
+                        <tr>
+                            <th>Plan Code</th>
+                            <th>Style</th>
+                            <th>Line</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Qty</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for plan in plans %}
+                        <tr>
+                            <td>{{ plan.plan_number }}</td>
+                            <td>{{ plan.style_name }}</td>
+                            <td>{{ plan.line_name }}</td>
+                            <td>{{ plan.planned_date }}</td>
+                            <td>-</td>
+                            <td>{{ plan.quantity }}</td>
+                            <td><span class="badge bg-{{ plan.status == 'planned' ? 'secondary' : (plan.status == 'in_progress' ? 'primary' : 'success') }}">{{ plan.status|capitalize }}</span></td>
+                            <td>
+                                <a href="{{ BASE_URL }}/production/planning?action=show&id={{ plan.id }}" class="btn btn-sm btn-info">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Placeholder for Gantt Chart if implemented -->
+            <div id="gantt_here" style="width:100%; height:400px; margin-top: 20px; background: #f8f9fa; border: 1px solid #ddd; text-align: center; line-height: 400px; color: #aaa;">
+                Gantt Chart Visualization Placeholder
+            </div>
+{% endblock %}

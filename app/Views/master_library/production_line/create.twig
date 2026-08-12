@@ -1,0 +1,79 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Add New Line | Master Library{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Add New Line</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library/production_lines">Production Lines</a></li>
+        <li class="breadcrumb-item active">Add New</li>
+    </ol>
+
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <h5 class="mb-0 text-primary"><i class="fas fa-plus me-1"></i> New Line Details</h5>
+        </div>
+        <div class="card-body p-4">
+            <form action="{{ BASE_URL }}/master_library/production_lines/create" method="POST">
+    {{ csrf_field() | raw }}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                         <div class="form-floating mb-3 mb-md-0">
+                            <input class="form-control" id="line_number" name="line_number" type="text" placeholder="Enter line number" required />
+                            <label for="line_number">Line Number</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3 mb-md-0">
+                            <input class="form-control" id="line_name" name="line_name" type="text" placeholder="Enter line name" />
+                            <label for="line_name">Line Name</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                         <div class="form-floating mb-3 mb-md-0">
+                             <select class="form-select" id="floor_id" name="floor_id" required>
+                                <option value="">Select Floor</option>
+                                {% for floor in floors %}
+                                <option value="{{ floor.floor_id }}">{{ floor.floor_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="floor_id">Production Floor</label>
+                        </div>
+                    </div>
+                     <div class="col-md-6">
+                        <div class="form-floating">
+                            <input class="form-control" id="daily_capacity" name="daily_capacity" type="number" placeholder="Enter daily capacity" />
+                            <label for="daily_capacity">Daily Capacity</label>
+                        </div>
+                    </div>
+                </div>
+
+                 <div class="row mb-3">
+                     <div class="col-md-6">
+                        <div class="form-floating">
+                            <select class="form-select" id="status" name="status">
+                                <option value="active" selected>Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                            <label for="status">Status</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 mb-0">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ BASE_URL }}/master_library/production_lines" class="btn btn-light me-md-2 px-4 rounded-pill border">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 rounded-pill">Save Line</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

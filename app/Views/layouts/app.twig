@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    {# CSRF token meta tag — read by the JS interceptor below for AJAX requests #}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}RMG ERP{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ ASSETS_URL }}/img/favicon.png">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Theme and Dashboard CSS -->
+    <link href="{{ ASSETS_URL }}/css/dashboard.css?v={{ date().timestamp }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ ASSETS_URL }}/css/theme.css?v={{ date().timestamp }}">
+    <link rel="stylesheet" href="{{ ASSETS_URL }}/css/dark-mode-enhanced.css?v={{ date().timestamp }}">
+    
+    <!-- Theme initialization script - Prevents flash of unstyled content -->
+    <script>
+    (function() {
+        const savedTheme = localStorage.getItem('aptech-theme');
+        const systemTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        const theme = savedTheme || systemTheme;
+        
+        if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.documentElement.classList.add('dark-theme', 'dark-mode');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+            document.documentElement.classList.remove('dark-theme', 'dark-mode');
+        }
+    })();
+    </script>
+    
+    <style>
+    :root {
+        /* Dynamic Theme Colors from Settings */
+        --primary: {{ settings.primary_color|default('#667eea') }};
+        /* Use a simple hex opacity for light variant or fallback */
+        --primary-light: {{ settings.primary_color|default('#667eea') }}1a; 
+        
+        /* Interactive State */
+        --primary-dark: {{ settings.hover_color|default('#5a67d8') }};
+        
+        /* Global UI Settings */
+        --font-family-base: '{{ settings.font_family|default('Inter') }}', sans-serif;
+        --border-radius: {{ settings.border_radius|default(8) }}px;
+        
+        /* Glassmorphism Configuration */
+        --glass-blur: {{ settings.glass_blur|default(20) }}px;
+        --glass-opacity: {{ settings.glass_opacity|default(80) / 100 }};
+    }
+
+    body { 
+        font-family: var(--font-family-base) !important; 
+        background: var(--bg-primary);
+    }
+    
+    /* Apply Border Radius Globally */
+    .card, .btn, .form-control, .dropdown-menu {
+        border-radius: var(--border-radius) !important;
+    }
+    
+    /* Apply Glass Effects if Enabled */
+    {% if settings.glass_effects == 'on' %}
+    .navbar, .sidebar, .card {
+        backdrop-filter: blur(var(--glass-blur));
+        -webkit-backdrop-filter: blur(var(--glass-blur));
+        background-color: rgba(255, 255, 255, var(--glass-opacity));
+    }
+    [data-theme="dark"] .navbar, [data-theme="dark"] .sidebar, [data-theme="dark"] .card {
+        background-color: rgba(30, 41, 59, var(--glass-opacity));
+    }
+    {% endif %}
+    </style>
+    
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <!-- Include Navigation Bar with Theme Switcher -->
+    {% include 'layouts/partials/header.twig' %}
+    
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <!-- Note: Wrapper <nav> removed because it is inside the sidebar partial -->
+            {% include 'layouts/partials/sidebar.twig' %}
+            
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                {# Flash Messages #}
+                {% if session.success_message %}
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success',
+                                text: '{{ session.success_message }}',
+                                timer: 3000,
+                                timerProgressBar: true,
+                                showConfirmButton: false
+                            });
+                        });
+                    </script>
+                    {# We can't clear session here easily without a helper, but this is better than nothing #}
+                {% endif %}
+
+                {% if session.error_message %}
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: '{{ session.error_message }}'
+                            });
+                        });
+                    </script>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Inline Scripts to ensure execution -->
+    <script>
+    /**
+     * CSRF Auto-Injection
+     * Reads the token from the <meta name="csrf-token"> tag and automatically
+     * appends X-CSRF-Token to every fetch() and XMLHttpRequest in the app.
+     * Individual forms still carry {{ csrf_field() | raw }} as a hidden input.
+     */
+    (function () {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        if (!csrfToken) return;
+
+        // Patch fetch()
+        const _fetch = window.fetch;
+        window.fetch = function (url, options = {}) {
+            options.headers = options.headers || {};
+            if (!(options.headers instanceof Headers)) {
+                options.headers['X-CSRF-Token'] = csrfToken;
+            } else {
+                options.headers.set('X-CSRF-Token', csrfToken);
+            }
+            return _fetch.call(this, url, options);
+        };
+
+        // Patch XMLHttpRequest
+        const _open = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function (...args) {
+            this._xhrMethod = args[0];
+            return _open.apply(this, args);
+        };
+        const _send = XMLHttpRequest.prototype.send;
+        XMLHttpRequest.prototype.send = function (...args) {
+            const method = (this._xhrMethod || '').toUpperCase();
+            if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+                this.setRequestHeader('X-CSRF-Token', csrfToken);
+            }
+            return _send.apply(this, args);
+        };
+    })();
+
+    /**
+     * Global Configuration
+     */
+    window.BASE_URL = '{{ BASE_URL }}';
+
+    /**
+     * Theme Manager
+     */
+    class ThemeManager {
+        constructor() {
+            this.storageKey = 'aptech-theme';
+            this.darkClass = 'dark-theme';
+            this.init();
+        }
+
+        init() {
+            this.setInitialTheme();
+            this.setupThemeToggle();
+            this.setupSystemThemeListener();
+        }
+
+        setInitialTheme() {
+            const savedTheme = localStorage.getItem(this.storageKey);
+            const systemTheme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+            const initialTheme = savedTheme || systemTheme;
+            this.applyTheme(initialTheme);
+            this.updateThemeToggle(initialTheme);
+        }
+
+        applyTheme(theme) {
+            const html = document.documentElement;
+            const body = document.body;
+            html.setAttribute('data-theme', theme);
+            if (theme === 'dark') {
+                html.classList.add('dark-theme', 'dark-mode');
+                if (body) body.classList.add('dark-theme', 'dark-mode');
+            } else {
+                html.classList.remove('dark-theme', 'dark-mode');
+                if (body) body.classList.remove('dark-theme', 'dark-mode');
+            }
+        }
+
+        toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            this.applyTheme(newTheme);
+            localStorage.setItem(this.storageKey, newTheme);
+            this.updateThemeToggle(newTheme);
+        }
+
+        setupThemeToggle() {
+            const toggles = document.querySelectorAll('[data-theme-toggle], #themeToggle');
+            toggles.forEach(toggle => {
+                toggle.onclick = (e) => {
+                    e.preventDefault();
+                    this.toggleTheme();
+                };
+            });
+        }
+
+        updateThemeToggle(theme) {
+            const toggles = document.querySelectorAll('[data-theme-toggle], #themeToggle');
+            toggles.forEach(toggle => {
+                const icon = theme === 'dark' ? 'fa-sun' : 'fa-moon';
+                // Update icon
+                const iconEl = toggle.querySelector('i');
+                if (iconEl) iconEl.className = `fas ${icon}`;
+                
+                // Update text if exists
+                const spanEl = toggle.querySelector('span');
+                if (spanEl) spanEl.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+            });
+        }
+
+        setupSystemThemeListener() {
+            if (window.matchMedia) {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                    if (!localStorage.getItem(this.storageKey)) {
+                        const newTheme = e.matches ? 'dark' : 'light';
+                        this.applyTheme(newTheme);
+                        this.updateThemeToggle(newTheme);
+                    }
+                });
+            }
+        }
+    }
+
+    /**
+     * Sidebar Manager
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Initializing App...');
+        
+        // Initialize Theme
+        window.themeManager = new ThemeManager();
+        
+        // Initialize Sidebar Active State
+        const currentUrl = window.location.href;
+        const searchParams = new URLSearchParams(window.location.search);
+        const page = searchParams.get('page');
+        
+        let activeLink = null;
+        
+        if (page) {
+            activeLink = document.querySelector(`.sidebar .nav-link[href*="page=${page}"]`);
+        }
+        
+        if (!activeLink) {
+             document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                if (link.href === currentUrl || currentUrl.startsWith(link.href)) {
+                    activeLink = link;
+                }
+            });
+        }
+        
+        if (activeLink) {
+            activeLink.classList.add('active');
+            
+            // Open parent submenus
+            let parent = activeLink.closest('.submenu');
+            while (parent) {
+                // Ensure it is visible using Bootstrap API
+                const bsCollapse = new bootstrap.Collapse(parent, { toggle: false });
+                bsCollapse.show();
+                
+                // Highlight parent toggle
+                const toggle = document.querySelector(`[data-bs-target="#${parent.id}"]`);
+                if (toggle) {
+                    toggle.classList.add('active');
+                    toggle.setAttribute('aria-expanded', 'true');
+                    const icon = toggle.querySelector('.dropdown-icon');
+                    if (icon) icon.style.transform = 'rotate(180deg)';
+                }
+                
+                parent = parent.parentElement.closest('.submenu');
+            }
+        }
+
+        // Initialize Sidebar Search Box
+        initSidebarSearch();
+
+        // Add rotation listeners for ALL collapses manually to ensure they work
+        document.querySelectorAll('.sidebar .collapse').forEach(collapse => {
+            collapse.addEventListener('show.bs.collapse', function() {
+                 const toggle = document.querySelector(`[data-bs-target="#${this.id}"]`);
+                 if (toggle) {
+                     const icon = toggle.querySelector('.dropdown-icon');
+                     if (icon) icon.style.transform = 'rotate(180deg)';
+                 }
+            });
+            collapse.addEventListener('hide.bs.collapse', function() {
+                 const toggle = document.querySelector(`[data-bs-target="#${this.id}"]`);
+                 if (toggle) {
+                     const icon = toggle.querySelector('.dropdown-icon');
+                     if (icon) icon.style.transform = 'rotate(0)';
+                 }
+            });
+        });
+    });
+
+    /**
+     * Sidebar Instant Search & Filtering
+     */
+    function initSidebarSearch() {
+        const searchInput = document.getElementById('sidebarSearchInput');
+        const clearBtn = document.getElementById('clearSidebarSearch');
+        const dropdown = document.getElementById('sidebarSearchResults');
+        const sidebarNav = document.getElementById('sidebarMenu');
+
+        if (!searchInput || !sidebarNav) return;
+
+        const navItems = [];
+
+        // Scrape all nav links in sidebar that lead to an actual page
+        const allLinks = sidebarNav.querySelectorAll('.nav-link');
+        allLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (!href || href === '#' || href.startsWith('javascript:')) return;
+
+            const clone = link.cloneNode(true);
+            clone.querySelectorAll('i').forEach(i => i.remove());
+            const text = clone.textContent.replace(/[\n\r]+/g, ' ').trim();
+            if (!text) return;
+
+            const iconEl = link.querySelector('i');
+            const iconClass = iconEl ? iconEl.className : 'fas fa-file-alt';
+
+            // Collect category names from parent submenus and main category
+            const categories = [];
+            let parentLi = link.closest('li.nav-item');
+            let parentSubmenu = parentLi ? parentLi.parentElement.closest('.submenu') : null;
+            
+            while (parentSubmenu) {
+                const toggle = sidebarNav.querySelector(`a[data-bs-target="#${parentSubmenu.id}"]`);
+                if (toggle) {
+                    const toggleClone = toggle.cloneNode(true);
+                    toggleClone.querySelectorAll('i').forEach(i => i.remove());
+                    const catText = toggleClone.textContent.replace(/[\n\r]+/g, ' ').trim();
+                    if (catText) {
+                        categories.unshift(catText);
+                    }
+                }
+                const subLi = parentSubmenu.closest('li.has-submenu');
+                parentSubmenu = subLi ? subLi.parentElement.closest('.submenu') : null;
+            }
+
+            const mainCategoryLi = link.closest('.nav > li.has-submenu');
+            let topCategoryName = 'Module';
+            if (mainCategoryLi) {
+                const catToggle = mainCategoryLi.querySelector(':scope > a.nav-link');
+                if (catToggle) {
+                    const catClone = catToggle.cloneNode(true);
+                    catClone.querySelectorAll('i').forEach(i => i.remove());
+                    topCategoryName = catClone.textContent.replace(/[\n\r]+/g, ' ').trim();
+                }
+            }
+
+            const fullCategoryText = categories.length > 0 ? categories.join(' > ') : topCategoryName;
+
+            navItems.push({
+                element: link,
+                liElement: link.closest('li.nav-item'),
+                text: text,
+                category: fullCategoryText,
+                categories: categories,
+                topCategoryName: topCategoryName,
+                href: href,
+                iconClass: iconClass
+            });
+        });
+
+        let activeResultIndex = -1;
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function highlightText(text, query) {
+            if (!query) return text;
+            const reg = new RegExp(`(${escapeRegExp(query)})`, 'gi');
+            return text.replace(reg, '<span class="sidebar-search-highlight">$1</span>');
+        }
+
+        function performSearch() {
+            const query = searchInput.value.trim();
+            const lowerQuery = query.toLowerCase();
+
+            if (query.length > 0) {
+                clearBtn.classList.remove('d-none');
+            } else {
+                clearBtn.classList.add('d-none');
+                dropdown.classList.add('d-none');
+                resetTreeFiltering();
+                return;
+            }
+
+            // 1. Filter sub-items and tree view
+            navItems.forEach(item => {
+                const matchesText = item.text.toLowerCase().includes(lowerQuery);
+                const matchesCat = item.category.toLowerCase().includes(lowerQuery);
+
+                if (matchesText || matchesCat) {
+                    item.liElement.style.display = '';
+                    
+                    // Reveal and expand all parent submenus and parent li elements
+                    let parent = item.liElement.parentElement;
+                    while (parent && parent !== sidebarNav) {
+                        if (parent.tagName === 'LI') {
+                            parent.style.display = '';
+                        }
+                        if (parent.classList && parent.classList.contains('submenu')) {
+                            parent.classList.add('show');
+                            const toggle = sidebarNav.querySelector(`a[data-bs-target="#${parent.id}"]`);
+                            if (toggle) {
+                                toggle.setAttribute('aria-expanded', 'true');
+                                const icon = toggle.querySelector('.dropdown-icon');
+                                if (icon) icon.style.transform = 'rotate(180deg)';
+                            }
+                        }
+                        parent = parent.parentElement;
+                    }
+                } else {
+                    item.liElement.style.display = 'none';
+                }
+            });
+
+            // Ensure main categories without any matching items are hidden
+            const mainCategories = sidebarNav.querySelectorAll('.nav > li.has-submenu');
+            mainCategories.forEach(catLi => {
+                const catToggle = catLi.querySelector(':scope > a.nav-link');
+                let catName = '';
+                if (catToggle) {
+                    const catClone = catToggle.cloneNode(true);
+                    catClone.querySelectorAll('i').forEach(i => i.remove());
+                    catName = catClone.textContent.toLowerCase().trim();
+                }
+                const matchesCatName = catName.includes(lowerQuery);
+
+                const hasVisibleChildren = catLi.querySelectorAll('.submenu li.nav-item:not([style*="display: none"])').length > 0;
+
+                if (hasVisibleChildren || matchesCatName) {
+                    catLi.style.display = '';
+                    if (matchesCatName) {
+                        catLi.querySelectorAll('.nav-item').forEach(li => li.style.display = '');
+                        catLi.querySelectorAll('.submenu').forEach(sub => sub.classList.add('show'));
+                    }
+                } else {
+                    catLi.style.display = 'none';
+                }
+            });
+
+            // 2. Build Overlay Dropdown Results
+            const matchingResults = navItems.filter(item => 
+                item.text.toLowerCase().includes(lowerQuery) || item.category.toLowerCase().includes(lowerQuery)
+            );
+
+            if (matchingResults.length === 0) {
+                dropdown.innerHTML = '<div class="sidebar-search-no-results"><i class="fas fa-search-minus me-1"></i> No matching page found</div>';
+            } else {
+                let html = '';
+                matchingResults.slice(0, 15).forEach((item, index) => {
+                    html += `
+                        <a href="${item.href}" class="sidebar-search-item" data-index="${index}">
+                            <i class="${item.iconClass} item-icon"></i>
+                            <span class="item-text">${highlightText(item.text, query)}</span>
+                            <span class="module-badge">${item.category}</span>
+                        </a>
+                    `;
+                });
+                dropdown.innerHTML = html;
+            }
+
+            dropdown.classList.remove('d-none');
+            activeResultIndex = -1;
+        }
+
+        function resetTreeFiltering() {
+            sidebarNav.querySelectorAll('li.nav-item').forEach(li => {
+                li.style.display = '';
+            });
+
+            sidebarNav.querySelectorAll('.submenu').forEach(submenu => {
+                if (!submenu.querySelector('.nav-link.active')) {
+                    submenu.classList.remove('show');
+                    const toggle = sidebarNav.querySelector(`a[data-bs-target="#${submenu.id}"]`);
+                    if (toggle) {
+                        toggle.setAttribute('aria-expanded', 'false');
+                        const icon = sidebarNav.querySelector(`a[data-bs-target="#${submenu.id}"] .dropdown-icon`);
+                        if (icon) icon.style.transform = 'rotate(0deg)';
+                    }
+                } else {
+                    submenu.classList.add('show');
+                    const toggle = sidebarNav.querySelector(`a[data-bs-target="#${submenu.id}"]`);
+                    if (toggle) {
+                        toggle.setAttribute('aria-expanded', 'true');
+                        const icon = sidebarNav.querySelector(`a[data-bs-target="#${submenu.id}"] .dropdown-icon`);
+                        if (icon) icon.style.transform = 'rotate(180deg)';
+                    }
+                }
+            });
+        }
+
+        // Event listeners
+        searchInput.addEventListener('input', performSearch);
+        searchInput.addEventListener('focus', () => {
+            if (searchInput.value.trim().length > 0) {
+                performSearch();
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            clearBtn.classList.add('d-none');
+            dropdown.classList.add('d-none');
+            resetTreeFiltering();
+            searchInput.focus();
+        });
+
+        // Keyboard navigation
+        searchInput.addEventListener('keydown', (e) => {
+            const items = dropdown.querySelectorAll('.sidebar-search-item');
+            if (!items.length) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeResultIndex = (activeResultIndex + 1) % items.length;
+                updateActiveResult(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeResultIndex = (activeResultIndex - 1 + items.length) % items.length;
+                updateActiveResult(items);
+            } else if (e.key === 'Enter') {
+                if (activeResultIndex >= 0 && items[activeResultIndex]) {
+                    e.preventDefault();
+                    window.location.href = items[activeResultIndex].getAttribute('href');
+                }
+            } else if (e.key === 'Escape') {
+                dropdown.classList.add('d-none');
+            }
+        });
+
+        function updateActiveResult(items) {
+            items.forEach((item, index) => {
+                if (index === activeResultIndex) {
+                    item.classList.add('active-result');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('active-result');
+                }
+            });
+        }
+
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const searchWrapper = sidebarNav.querySelector('.sidebar-search-wrapper');
+            if (searchWrapper && !searchWrapper.contains(e.target)) {
+                dropdown.classList.add('d-none');
+            }
+        });
+    }
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

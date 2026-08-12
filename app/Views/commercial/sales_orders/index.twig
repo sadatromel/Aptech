@@ -1,0 +1,46 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Sales Orders{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Sales Orders</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ BASE_URL }}/commercial/sales_orders/create" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-plus"></i> New Sales Order
+            </a>
+        </div>
+    </div>
+
+    <!-- Sales Orders Table -->
+    <div class="table-responsive">
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th>SO No</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Quotation</th>
+                    <th>Total Amount</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for so in salesOrders %}
+                <tr>
+                    <td>{{ so.so_no }}</td>
+                    <td>{{ so.order_date|date('Y-m-d') }}</td>
+                    <td>{{ so.customer_name }}</td>
+                    <td>{{ so.quotation_no }}</td>
+                    <td>{{ so.grand_total|number_format(2) }} {{ so.currency }}</td>
+                    <td><span class="badge bg-{{ so.status == 'draft' ? 'secondary' : 'success' }}">{{ so.status|capitalize }}</span></td>
+                    <td>
+                        <a href="{{ BASE_URL }}/commercial/sales_orders/show?id={{ so.so_id }}" class="btn btn-sm btn-info">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

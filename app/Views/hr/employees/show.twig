@@ -1,0 +1,194 @@
+{% extends "layouts/app.twig" %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4 p-4 rounded-3 text-white shadow-sm" style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);">
+        <div>
+            <span class="badge bg-white text-primary mb-2 font-monospace"><i class="fas fa-id-card me-1"></i> WORKFORCE PROFILE</span>
+            <h2 class="mb-1 font-weight-bold">{{ employee.first_name }} {{ employee.last_name }} ({{ employee.employee_code }})</h2>
+            <p class="mb-0 opacity-75">{{ employee.position_name|default('Operator') }} — {{ employee.department_name|default('General') }}</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ BASE_URL }}/hr/employees" class="btn btn-outline-light rounded-pill px-3"><i class="fas fa-arrow-left me-1"></i> Directory</a>
+            <a href="{{ BASE_URL }}/hr/employees/{{ employee.employee_id }}/edit" class="btn btn-light rounded-pill px-4 font-weight-bold text-primary shadow-sm"><i class="fas fa-edit me-1"></i> Edit Profile</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Basic Info & Contact -->
+        <div class="col-lg-4">
+            <!-- Profile Card -->
+            <div class="card shadow mb-4 text-center p-4">
+                <div class="card-body">
+                    <div class="avatar-circle mx-auto mb-3 bg-primary text-white fs-2" style="width: 80px; height: 80px; line-height: 80px;">
+                        {{ employee.first_name|first }}{{ employee.last_name|first }}
+                    </div>
+                    <h5 class="fw-bold mb-1">{{ employee.first_name }} {{ employee.last_name }}</h5>
+                    <p class="text-muted mb-2">{{ employee.position_title }}</p>
+                    <span class="badge bg-light text-dark border mb-3">{{ employee.employee_code }}</span>
+                    
+                    <div class="d-flex justify-content-center gap-2 mt-3">
+                        <a href="mailto:{{ employee.email }}" class="btn btn-sm btn-outline-primary rounded-circle"><i class="fas fa-envelope"></i></a>
+                        <a href="tel:{{ employee.phone }}" class="btn btn-sm btn-outline-success rounded-circle"><i class="fas fa-phone"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Contact Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted text-uppercase fw-bold">Email</small>
+                        <div class="text-dark">{{ employee.email }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted text-uppercase fw-bold">Phone</small>
+                        <div class="text-dark">{{ employee.phone }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted text-uppercase fw-bold">Present Address</small>
+                        <div class="text-dark">{{ employee.present_address ?: 'Not provided' }}</div>
+                    </div>
+                    <div class="mb-0">
+                        <small class="text-muted text-uppercase fw-bold">Emergency Contact</small>
+                        <div class="text-dark">{{ employee.emergency_contact_name }}</div>
+                        <div class="small text-muted">{{ employee.emergency_contact_phone }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Job, Attendance, Payroll -->
+        <div class="col-lg-8">
+            <!-- Job Details -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Employment Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <small class="text-muted text-uppercase fw-bold">Department</small>
+                            <div class="fs-6">{{ employee.department_name }}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <small class="text-muted text-uppercase fw-bold">Section / Line</small>
+                            <div class="fs-6">
+                                {{ employee.section_name ?: '-' }} 
+                                {% if employee.line_name %} / {{ employee.line_name }}{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <small class="text-muted text-uppercase fw-bold">Employment Type</small>
+                            <div class="fs-6">{{ employee.employment_type }}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <small class="text-muted text-uppercase fw-bold">Joining Date</small>
+                            <div class="fs-6">{{ employee.hire_date|date("F j, Y") }}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <small class="text-muted text-uppercase fw-bold">Basic Salary</small>
+                            <div class="fs-6 fw-bold text-success">${{ employee.salary|number_format(2) }}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <small class="text-muted text-uppercase fw-bold">Status</small>
+                            <div>
+                                {% if employee.status == 'active' %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-danger">{{ employee.status|capitalize }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attendance Overview (Recent) -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Attendance</h6>
+                    <a href="#" class="btn btn-sm btn-link">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Check In</th>
+                                    <th>Check Out</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in attendance %}
+                                <tr>
+                                    <td>{{ record.date|date("M j, Y") }}</td>
+                                    <td>{{ record.check_in|date("H:i") }}</td>
+                                    <td>{{ record.check_out|date("H:i") }}</td>
+                                    <td>
+                                        {% if record.status == 'Present' %}
+                                            <span class="badge bg-success-subtle text-success">Present</span>
+                                        {% elseif record.status == 'Absent' %}
+                                            <span class="badge bg-danger-subtle text-danger">Absent</span>
+                                        {% else %}
+                                            <span class="badge bg-warning-subtle text-warning">{{ record.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">No recent attendance records found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Payroll Overview (Recent) -->
+             <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Payroll</h6>
+                    <a href="#" class="btn btn-sm btn-link">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Period</th>
+                                    <th>Pay Date</th>
+                                    <th>Net Salary</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pay in payroll %}
+                                <tr>
+                                    <td>{{ pay.month }} {{ pay.year }}</td>
+                                    <td>{{ pay.pay_date|date("M j, Y") }}</td>
+                                    <td class="fw-bold">${{ pay.net_salary|number_format(2) }}</td>
+                                    <td><span class="badge bg-success rounded-pill">Paid</span></td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">No recent payroll records found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

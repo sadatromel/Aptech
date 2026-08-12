@@ -1,0 +1,325 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Merchandising Executive Dashboard • Aptech ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <!-- Header Section -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h1 class="h3 fw-bold text-dark mb-1">
+                <i class="fas fa-tshirt text-primary me-2"></i>Merchandising Dashboard
+            </h1>
+            <p class="text-muted small mb-0">Overview of active garment styles, production orders, sampling approvals, and milestone execution.</p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <a href="{{ BASE_URL }}/merchandising/styles/create" class="btn btn-primary rounded-pill px-3 shadow-sm btn-sm">
+                <i class="fas fa-plus me-1"></i>New Style
+            </a>
+            <a href="{{ BASE_URL }}/merchandising/tna" class="btn btn-outline-dark rounded-pill px-3 shadow-sm btn-sm">
+                <i class="fas fa-clock me-1"></i>T&A Calendar
+            </a>
+            <a href="{{ BASE_URL }}/merchandising/reports" class="btn btn-outline-primary rounded-pill px-3 shadow-sm btn-sm">
+                <i class="fas fa-file-alt me-1"></i>Reports Hub
+            </a>
+        </div>
+    </div>
+
+    <!-- Top Stats Bar -->
+    <div class="row g-3 mb-4">
+        <!-- Active Styles -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-gradient text-white" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-white-50 text-uppercase fw-semibold small">Active Styles</span>
+                            <h2 class="display-6 fw-bold mb-0 mt-1">{{ metrics.active_styles }}</h2>
+                            <small class="text-white-50">Out of {{ metrics.total_styles }} total styles</small>
+                        </div>
+                        <div class="rounded-circle bg-white bg-opacity-10 p-3">
+                            <i class="fas fa-drafting-compass fa-2x text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total PO Value -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-gradient text-white" style="background: linear-gradient(135deg, #0575E6 0%, #00F260 100%);">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-white-50 text-uppercase fw-semibold small">Total Order Value (FOB)</span>
+                            <h2 class="display-6 fw-bold mb-0 mt-1">${{ metrics.order_fob_sum|number_format(2) }}</h2>
+                            <small class="text-white-50">{{ metrics.order_qty_sum|number_format }} Pcs across {{ metrics.total_orders }} POs</small>
+                        </div>
+                        <div class="rounded-circle bg-white bg-opacity-10 p-3">
+                            <i class="fas fa-dollar-sign fa-2x text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sampling Approval Rate -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-gradient text-white" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-white-50 text-uppercase fw-semibold small">Sampling Approval</span>
+                            <h2 class="display-6 fw-bold mb-0 mt-1">{{ metrics.sample_approval_rate }}%</h2>
+                            <small class="text-white-50">{{ metrics.approved_samples }} Approved / {{ metrics.total_samples }} Total Requests</small>
+                        </div>
+                        <div class="rounded-circle bg-white bg-opacity-10 p-3">
+                            <i class="fas fa-check-circle fa-2x text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- T&A Alerts -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-gradient text-white" style="background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-white-50 text-uppercase fw-semibold small">T&A Delayed Milestones</span>
+                            <h2 class="display-6 fw-bold mb-0 mt-1">{{ metrics.tna_alerts }}</h2>
+                            <small class="text-white-50">Milestones requiring immediate action</small>
+                        </div>
+                        <div class="rounded-circle bg-white bg-opacity-10 p-3">
+                            <i class="fas fa-exclamation-triangle fa-2x text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Navigation Shortcuts -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <h6 class="fw-bold text-uppercase text-muted mb-2 small"><i class="fas fa-th-large me-1"></i>Merchandising Submodules</h6>
+        </div>
+        <div class="col-lg-2 col-md-4 col-6">
+            <a href="{{ BASE_URL }}/merchandising/styles" class="card card-hover border-0 shadow-sm rounded-3 text-decoration-none text-dark h-100">
+                <div class="card-body text-center p-3">
+                    <div class="avatar bg-primary-subtle text-primary mx-auto mb-2 rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="fas fa-drafting-compass fa-lg"></i>
+                    </div>
+                    <span class="fw-semibold d-block small">Styles Library</span>
+                </div>
+            </a>
+        </div>
+        <div class="col-lg-2 col-md-4 col-6">
+            <a href="{{ BASE_URL }}/merchandising/tech-packs" class="card card-hover border-0 shadow-sm rounded-3 text-decoration-none text-dark h-100">
+                <div class="card-body text-center p-3">
+                    <div class="avatar bg-info-subtle text-info mx-auto mb-2 rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="fas fa-file-invoice fa-lg"></i>
+                    </div>
+                    <span class="fw-semibold d-block small">Tech Packs</span>
+                </div>
+            </a>
+        </div>
+        <div class="col-lg-2 col-md-4 col-6">
+            <a href="{{ BASE_URL }}/merchandising/bom" class="card card-hover border-0 shadow-sm rounded-3 text-decoration-none text-dark h-100">
+                <div class="card-body text-center p-3">
+                    <div class="avatar bg-warning-subtle text-warning mx-auto mb-2 rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="fas fa-list-ol fa-lg"></i>
+                    </div>
+                    <span class="fw-semibold d-block small">BOM Center</span>
+                </div>
+            </a>
+        </div>
+        <div class="col-lg-2 col-md-4 col-6">
+            <a href="{{ BASE_URL }}/merchandising/tna" class="card card-hover border-0 shadow-sm rounded-3 text-decoration-none text-dark h-100">
+                <div class="card-body text-center p-3">
+                    <div class="avatar bg-danger-subtle text-danger mx-auto mb-2 rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="fas fa-calendar-alt fa-lg"></i>
+                    </div>
+                    <span class="fw-semibold d-block small">T&A Calendar</span>
+                </div>
+            </a>
+        </div>
+        <div class="col-lg-2 col-md-4 col-6">
+            <a href="{{ BASE_URL }}/merchandising/sampling" class="card card-hover border-0 shadow-sm rounded-3 text-decoration-none text-dark h-100">
+                <div class="card-body text-center p-3">
+                    <div class="avatar bg-success-subtle text-success mx-auto mb-2 rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="fas fa-cut fa-lg"></i>
+                    </div>
+                    <span class="fw-semibold d-block small">Sampling</span>
+                </div>
+            </a>
+        </div>
+        <div class="col-lg-2 col-md-4 col-6">
+            <a href="{{ BASE_URL }}/merchandising/production-orders" class="card card-hover border-0 shadow-sm rounded-3 text-decoration-none text-dark h-100">
+                <div class="card-body text-center p-3">
+                    <div class="avatar bg-secondary-subtle text-secondary mx-auto mb-2 rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="fas fa-industry fa-lg"></i>
+                    </div>
+                    <span class="fw-semibold d-block small">Production Orders</span>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Tables Row: Recent Styles & Recent Orders -->
+    <div class="row g-4 mb-4">
+        <!-- Recent Styles -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-tshirt text-primary me-2"></i>Recent Garment Styles</h6>
+                    <a href="{{ BASE_URL }}/merchandising/styles" class="btn btn-link btn-sm text-decoration-none">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-muted small">
+                                <tr>
+                                    <th class="ps-3">Style Code</th>
+                                    <th>Style Name</th>
+                                    <th>Buyer</th>
+                                    <th>Season</th>
+                                    <th>Status</th>
+                                    <th class="text-end pe-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if metrics.recent_styles is empty %}
+                                <tr><td colspan="6" class="text-center text-muted py-4">No styles found.</td></tr>
+                                {% else %}
+                                {% for style in metrics.recent_styles %}
+                                <tr>
+                                    <td class="ps-3 fw-bold text-primary">{{ style.style_code }}</td>
+                                    <td>{{ style.style_name }}</td>
+                                    <td><span class="badge bg-light text-dark border">{{ style.buyer_name ?? 'N/A' }}</span></td>
+                                    <td><small>{{ style.season ?? '-' }}</small></td>
+                                    <td>
+                                        <span class="badge rounded-pill {% if style.status == 'approved_for_production' or style.status == 'active' %}bg-success{% elseif style.status == 'draft' %}bg-secondary{% else %}bg-info{% endif %}">
+                                            {{ style.status|replace({'_': ' '})|capitalize }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <a href="{{ BASE_URL }}/merchandising/styles/{{ style.style_id }}" class="btn btn-sm btn-outline-primary rounded-circle" title="View Style">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ BASE_URL }}/merchandising/styles/{{ style.style_id }}/tech-pack" class="btn btn-sm btn-outline-dark rounded-circle ms-1" title="Tech Pack">
+                                            <i class="fas fa-file-invoice"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Production Orders -->
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-shopping-bag text-success me-2"></i>Recent Production Orders</h6>
+                    <a href="{{ BASE_URL }}/merchandising/production-orders" class="btn btn-link btn-sm text-decoration-none">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-muted small">
+                                <tr>
+                                    <th class="ps-3">PO Number</th>
+                                    <th>Style</th>
+                                    <th>Buyer</th>
+                                    <th>Qty (Pcs)</th>
+                                    <th>Delivery Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if metrics.recent_orders is empty %}
+                                <tr><td colspan="6" class="text-center text-muted py-4">No production orders logged.</td></tr>
+                                {% else %}
+                                {% for order in metrics.recent_orders %}
+                                <tr>
+                                    <td class="ps-3 fw-bold text-dark">{{ order.order_number }}</td>
+                                    <td><span class="badge bg-primary-subtle text-primary">{{ order.style_code ?? 'N/A' }}</span></td>
+                                    <td><small>{{ order.buyer_name ?? 'N/A' }}</small></td>
+                                    <td class="fw-semibold">{{ order.quantity|number_format }}</td>
+                                    <td><small class="text-muted">{{ order.delivery_date ? order.delivery_date|date('d M Y') : '-' }}</small></td>
+                                    <td>
+                                        <span class="badge rounded-pill {% if order.status == 'confirmed' or order.status == 'in_production' %}bg-primary{% elseif order.status == 'shipped' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                            {{ order.status|replace({'_': ' '})|capitalize }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- T&A Warnings Panel -->
+    {% if metrics.tna_warnings is not empty %}
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card border-danger border-opacity-25 shadow-sm rounded-4">
+                <div class="card-header bg-danger bg-opacity-10 border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold text-danger mb-0"><i class="fas fa-exclamation-circle me-2"></i>Urgent T&A Milestone Delays</h6>
+                    <a href="{{ BASE_URL }}/merchandising/tna" class="btn btn-sm btn-danger rounded-pill px-3">Open T&A Calendar</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-muted small">
+                                <tr>
+                                    <th class="ps-3">PO / Order</th>
+                                    <th>Style</th>
+                                    <th>Milestone</th>
+                                    <th>Responsible</th>
+                                    <th>Target Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for warning in metrics.tna_warnings %}
+                                <tr>
+                                    <td class="ps-3 fw-bold">{{ warning.order_number }}</td>
+                                    <td><span class="badge bg-light text-dark border">{{ warning.style_code }}</span></td>
+                                    <td class="fw-semibold">{{ warning.milestone_name }}</td>
+                                    <td><small>{{ warning.responsible_person ?? 'Unassigned' }}</small></td>
+                                    <td class="text-danger fw-bold"><small>{{ warning.target_date|date('d M Y') }}</small></td>
+                                    <td><span class="badge bg-danger">Delayed</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<style>
+.card-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+}
+</style>
+{% endblock %}

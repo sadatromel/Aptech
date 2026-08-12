@@ -1,0 +1,449 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}HR Enterprise Portal | Group Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4 page-container">
+    <!-- Premium Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary border-opacity-25">
+        <div>
+            <h1 class="fw-bold tracking-tight mb-1 page-title"><i class="fas fa-users-cog text-indigo-400 me-3"></i>HRMS Enterprise Portal</h1>
+            <p class="text-muted mb-0">Multi-Company RMG Group Employee Lifecycle Dashboard</p>
+        </div>
+        <div class="border border-indigo-500 border-opacity-30 rounded-3 px-3 py-2 text-end glass-card">
+            <span class="text-xs text-indigo-400 d-block uppercase fw-bold">Active Factory Shift</span>
+            <span class="fw-bold text-value"><i class="fas fa-clock text-warning me-2"></i>Day Shift (General)</span>
+        </div>
+    </div>
+
+    <!-- KPI Summary Row -->
+    <div class="row mb-4">
+        <!-- Total Headcount -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 rounded-4 glass-card overflow-hidden position-relative kpi-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0.05) 100%); border: 1px solid rgba(99, 102, 241, 0.2) !important;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted fw-semibold">Total Group Employees</span>
+                        <div class="p-2 bg-indigo-500 bg-opacity-25 rounded-3 text-indigo-400">
+                            <i class="fas fa-users fa-lg"></i>
+                        </div>
+                    </div>
+                    <div class="h2 fw-bold mb-1 text-value">{{ totalEmployees }}</div>
+                    <div class="text-xs text-indigo-400 fw-semibold">
+                        <span class="text-success me-1"><i class="fas fa-arrow-up"></i> +12%</span> vs last month
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Employees -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 rounded-4 glass-card overflow-hidden kpi-card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%); border: 1px solid rgba(16, 185, 129, 0.2) !important;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted fw-semibold">Active Workers</span>
+                        <div class="p-2 bg-emerald-500 bg-opacity-25 rounded-3 text-emerald-500">
+                            <i class="fas fa-user-check fa-lg"></i>
+                        </div>
+                    </div>
+                    <div class="h2 fw-bold mb-1 text-value">{{ activeEmployees }}</div>
+                    <div class="text-xs text-emerald-500 fw-semibold">
+                        <span class="text-value">{{ inactiveEmployees }}</span> inactive on leave/separated
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Today Attendance -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 rounded-4 glass-card overflow-hidden kpi-card" style="background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.05) 100%); border: 1px solid rgba(14, 165, 233, 0.2) !important;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted fw-semibold">Today Attendance</span>
+                        <div class="p-2 bg-sky-500 bg-opacity-25 rounded-3 text-sky-400">
+                            <i class="fas fa-clipboard-user fa-lg"></i>
+                        </div>
+                    </div>
+                    <div class="h2 fw-bold mb-1 text-value">{{ presentToday }} <span class="fs-6 text-muted fw-normal">Present</span></div>
+                    <div class="text-xs text-sky-400 fw-semibold d-flex justify-content-between">
+                        <span><i class="fas fa-clock text-warning"></i> {{ lateToday }} Late</span>
+                        <span><i class="fas fa-times-circle text-danger"></i> {{ absentToday }} Absent</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gender Ratio -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 rounded-4 glass-card overflow-hidden kpi-card" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(236, 72, 153, 0.05) 100%); border: 1px solid rgba(236, 72, 153, 0.2) !important;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted fw-semibold">Gender Balance</span>
+                        <div class="p-2 bg-pink-500 bg-opacity-25 rounded-3 text-pink-400">
+                            <i class="fas fa-venus-mars fa-lg"></i>
+                        </div>
+                    </div>
+                    <div class="h2 fw-bold mb-1 text-value">
+                        <i class="fas fa-male text-primary me-1"></i>{{ maleCount }} : <i class="fas fa-female text-pink me-1"></i>{{ femaleCount }}
+                    </div>
+                    <div class="progress bg-secondary bg-opacity-30 rounded-pill" style="height: 6px;">
+                        {% set total = maleCount + femaleCount %}
+                        {% set malePercent = total > 0 ? (maleCount / total * 100)|round : 50 %}
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ malePercent }}%" aria-valuenow="{{ malePercent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        <div class="progress-bar bg-pink" role="progressbar" style="width: {{ 100 - malePercent }}%" aria-valuenow="{{ 100 - malePercent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Middle Section: Multi-Company & Reminders -->
+    <div class="row mb-5">
+        <!-- Company-wise Employees -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100 border-0 rounded-4 glass-card p-4">
+                <h5 class="fw-bold mb-3 text-title"><i class="fas fa-city text-indigo-400 me-2"></i>Company-wise Heads & Present Rate</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" style="border-color: rgba(255,255,255,0.08);">
+                        <thead>
+                            <tr class="text-muted fs-7 border-bottom">
+                                <th>Group Enterprise / Factory</th>
+                                <th class="text-center">Headcount</th>
+                                <th class="text-end">Present Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for comp in companyStats %}
+                            <tr>
+                                <td class="fw-semibold text-value">{{ comp.company_name }}</td>
+                                <td class="text-center"><span class="badge bg-indigo-950 text-indigo-300 border border-indigo-800 px-3 py-2">{{ comp.employees }}</span></td>
+                                <td class="text-end fw-bold text-success">{{ comp.attendance }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reminders / Anniversaries -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100 border-0 rounded-4 glass-card p-4">
+                <h5 class="fw-bold mb-3 text-title"><i class="fas fa-gift text-indigo-400 me-2"></i>Upcoming Events & Anniversaries</h5>
+                <div class="row">
+                    <div class="col-md-6 border-end border-secondary border-opacity-25">
+                        <span class="text-xs text-muted d-block uppercase fw-semibold mb-3">Birthdays This Week</span>
+                        {% for birth in upcomingBirthdays %}
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="p-2 bg-indigo-950 text-indigo-400 rounded-circle me-3"><i class="fas fa-cake-candles"></i></div>
+                            <div>
+                                <h6 class="mb-0 fs-7 fw-bold text-value">{{ birth.name }}</h6>
+                                <span class="text-xs text-muted">{{ birth.dept }} &bull; {{ birth.date }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6 ps-md-4">
+                        <span class="text-xs text-muted d-block uppercase fw-semibold mb-3">New Employees Joined</span>
+                        {% for join in newJoiners %}
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="p-2 bg-emerald-950 text-emerald-400 rounded-circle me-3"><i class="fas fa-circle-plus"></i></div>
+                            <div>
+                                <h6 class="mb-0 fs-7 fw-bold text-value">{{ join.name }}</h6>
+                                <span class="text-xs text-muted">{{ join.designation }} &bull; {{ join.join_date }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Hub (The 22 Sections Grid) -->
+    <h3 class="fw-bold mb-4 text-title"><i class="fas fa-shapes text-indigo-400 me-2"></i>HRMS Module Components</h3>
+    
+    <div class="row">
+        <!-- 1. Employee Management -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 rounded-4 glass-card card-hover p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="p-3 bg-primary bg-opacity-25 text-primary-400 rounded-4"><i class="fas fa-user-gear fa-xl"></i></div>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fs-8">Active DB</span>
+                </div>
+                <h5 class="fw-bold text-value">Employee Directory</h5>
+                <p class="text-muted fs-8 mb-4">Employee life cycle, joining, confirmation, contracts, profiles, documents, and family info.</p>
+                <a href="{{ BASE_URL }}/hr/employees" class="btn btn-outline-light rounded-pill btn-sm mt-auto action-btn">Open Registry</a>
+            </div>
+        </div>
+
+        <!-- 2. Attendance -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 rounded-4 glass-card card-hover p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="p-3 bg-emerald-500 bg-opacity-25 text-emerald-400 rounded-4"><i class="fas fa-calendar-check fa-xl"></i></div>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fs-8">Active DB</span>
+                </div>
+                <h5 class="fw-bold text-value">Attendance Register</h5>
+                <p class="text-muted fs-8 mb-4">Daily registers, check-in, check-out status, manual modifications, and biometric log updates.</p>
+                <a href="{{ BASE_URL }}/hr/attendance" class="btn btn-outline-light rounded-pill btn-sm mt-auto action-btn">Mark Attendance</a>
+            </div>
+        </div>
+
+        <!-- 3. Payroll -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 rounded-4 glass-card card-hover p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="p-3 bg-warning bg-opacity-25 text-warning rounded-4"><i class="fas fa-money-check-dollar fa-xl"></i></div>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fs-8">Active DB</span>
+                </div>
+                <h5 class="fw-bold text-value">Payroll & Payslips</h5>
+                <p class="text-muted fs-8 mb-4">Salary structure setup, monthly payroll runs, approvals, bank advice letters, and pay slip downloads.</p>
+                <a href="{{ BASE_URL }}/hr/payroll" class="btn btn-outline-light rounded-pill btn-sm mt-auto action-btn">Process Salary</a>
+            </div>
+        </div>
+
+        <!-- 4. Leave Management -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 rounded-4 glass-card card-hover p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="p-3 bg-danger bg-opacity-25 text-danger rounded-4"><i class="fas fa-plane-departure fa-xl"></i></div>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fs-8">Active DB</span>
+                </div>
+                <h5 class="fw-bold text-value">Leave Management</h5>
+                <p class="text-muted fs-8 mb-4">Annual, medical, maternity leaves tracking. Leave allocations, applications, and status workflows.</p>
+                <div class="d-flex flex-wrap gap-2 mt-auto">
+                    <a href="{{ BASE_URL }}/hr/leave-entry" class="btn btn-success rounded-pill btn-sm action-btn"><i class="fas fa-plus-circle me-1"></i>Leave Entry</a>
+                    <a href="{{ BASE_URL }}/hr/leave" class="btn btn-outline-light rounded-pill btn-sm action-btn">Manage</a>
+                    <a href="{{ BASE_URL }}/hr/leave-delete" class="btn btn-outline-danger rounded-pill btn-sm action-btn"><i class="fas fa-trash-alt me-1"></i>Delete</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. RMG Compliance -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 rounded-4 glass-card card-hover p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="p-3 bg-info bg-opacity-25 text-info rounded-4"><i class="fas fa-scale-balanced fa-xl"></i></div>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fs-8">Active DB</span>
+                </div>
+                <h5 class="fw-bold text-value">RMG Compliance</h5>
+                <p class="text-muted fs-8 mb-4">Working hours compliance, maternity benefit payments, wage audit prep, and bonus rules checks.</p>
+                <a href="{{ BASE_URL }}/hr/rmg-compliance" class="btn btn-outline-light rounded-pill btn-sm mt-auto action-btn">Verify Compliance</a>
+            </div>
+        </div>
+
+        <!-- 6. Recruitment & Hiring (Simulation) -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 rounded-4 glass-card card-hover p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="p-3 bg-purple bg-opacity-25 text-purple-400 rounded-4"><i class="fas fa-briefcase fa-xl"></i></div>
+                    <span class="badge bg-secondary-subtle text-muted border border-secondary-subtle px-2 py-1 fs-8">Simulated</span>
+                </div>
+                <h5 class="fw-bold text-value">Recruitment & CV Bank</h5>
+                <p class="text-muted fs-8 mb-4">Manpower requisitions, vacancy circulars, CV bank, candidate evaluation matrices, and offer letters.</p>
+                <a href="{{ BASE_URL }}/hr/showcase/recruitment/cv-bank" class="btn btn-outline-indigo rounded-pill btn-sm mt-auto">CV Repository</a>
+            </div>
+        </div>
+
+        <!-- 7. Shift Management (Simulation) -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 rounded-4 glass-card card-hover p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="p-3 bg-teal bg-opacity-25 text-teal-400 rounded-4"><i class="fas fa-business-time fa-xl"></i></div>
+                    <span class="badge bg-secondary-subtle text-muted border border-secondary-subtle px-2 py-1 fs-8">Simulated</span>
+                </div>
+                <h5 class="fw-bold text-value">Shift & Weekly Offs</h5>
+                <p class="text-muted fs-8 mb-4">Shift calendars, roster changes, rotation cycles, day-off swaps, and grace time adjustments.</p>
+                <a href="{{ BASE_URL }}/hr/showcase/shift-management/shift-master" class="btn btn-outline-indigo rounded-pill btn-sm mt-auto">Setup Shifts</a>
+            </div>
+        </div>
+
+        <!-- 8. Overtime Management (Simulation) -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 rounded-4 glass-card card-hover p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="p-3 bg-pink bg-opacity-25 text-pink-400 rounded-4"><i class="fas fa-calculator fa-xl"></i></div>
+                    <span class="badge bg-secondary-subtle text-muted border border-secondary-subtle px-2 py-1 fs-8">Simulated</span>
+                </div>
+                <h5 class="fw-bold text-value">Overtime Registry</h5>
+                <p class="text-muted fs-8 mb-4">Line-wise OT hours approval, automated OT sheets, wage calculations, and compliance checks.</p>
+                <a href="{{ BASE_URL }}/hr/showcase/overtime/ot-approval" class="btn btn-outline-indigo rounded-pill btn-sm mt-auto">Review OT Sheets</a>
+            </div>
+        </div>
+
+        <!-- 9. RMG Operator Special registers (Simulation) -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 rounded-4 glass-card card-hover p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="p-3 bg-indigo bg-opacity-25 text-indigo-400 rounded-4"><i class="fas fa-vest fa-xl"></i></div>
+                    <span class="badge bg-secondary-subtle text-muted border border-secondary-subtle px-2 py-1 fs-8">Simulated</span>
+                </div>
+                <h5 class="fw-bold text-value">Line Operator Specialty</h5>
+                <p class="text-muted fs-8 mb-4">Sewing line worker mapping, operator skill matrix, grading cards, and line-loading metrics.</p>
+                <a href="{{ BASE_URL }}/hr/showcase/rmg-specific/sewing-line-operators" class="btn btn-outline-indigo rounded-pill btn-sm mt-auto">Skill Matrix</a>
+            </div>
+        </div>
+
+        <!-- 10. Worker Age Verification (Simulation) -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 rounded-4 glass-card card-hover p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="p-3 bg-amber bg-opacity-25 text-amber rounded-4"><i class="fas fa-child-reaching fa-xl"></i></div>
+                    <span class="badge bg-secondary-subtle text-muted border border-secondary-subtle px-2 py-1 fs-8">Simulated</span>
+                </div>
+                <h5 class="fw-bold text-value">Child Labor Prevention</h5>
+                <p class="text-muted fs-8 mb-4">Worker age checks, birth certificate logs, doctor review certifications, and audit prep files.</p>
+                <a href="{{ BASE_URL }}/hr/showcase/rmg-specific/worker-age-verification" class="btn btn-outline-indigo rounded-pill btn-sm mt-auto">Age Verification</a>
+            </div>
+        </div>
+
+        <!-- 11. Performance Appraisal (Simulation) -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 rounded-4 glass-card card-hover p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="p-3 bg-cyan bg-opacity-25 text-cyan-400 rounded-4"><i class="fas fa-award fa-xl"></i></div>
+                    <span class="badge bg-secondary-subtle text-muted border border-secondary-subtle px-2 py-1 fs-8">Simulated</span>
+                </div>
+                <h5 class="fw-bold text-value">KPI & Goal Management</h5>
+                <p class="text-muted fs-8 mb-4">KPI metrics, performance evaluations, supervisor scorecards, and increments recomendations.</p>
+                <a href="{{ BASE_URL }}/hr/showcase/performance/appraisals" class="btn btn-outline-indigo rounded-pill btn-sm mt-auto">Appraisals</a>
+            </div>
+        </div>
+
+        <!-- 12. Training (Simulation) -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 rounded-4 glass-card card-hover p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="p-3 bg-lime bg-opacity-25 text-lime rounded-4"><i class="fas fa-graduation-cap fa-xl"></i></div>
+                    <span class="badge bg-secondary-subtle text-muted border border-secondary-subtle px-2 py-1 fs-8">Simulated</span>
+                </div>
+                <h5 class="fw-bold text-value">Training & Safety Matrices</h5>
+                <p class="text-muted fs-8 mb-4">Buyer compliance trainings, fire drill registers, trainer list, and certification tracking.</p>
+                <a href="{{ BASE_URL }}/hr/showcase/training/schedule" class="btn btn-outline-indigo rounded-pill btn-sm mt-auto">Trainings</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Theme Adaptability styles */
+    .page-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        color: var(--text-primary);
+        transition: background 0.3s ease, color 0.3s ease;
+    }
+    .page-title {
+        color: #0f172a;
+    }
+    .text-title {
+        color: #1e293b;
+    }
+    .text-value {
+        color: #0f172a;
+    }
+    .glass-card {
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        color: var(--text-primary);
+    }
+    .kpi-card {
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+    .action-btn {
+        color: #4f46e5;
+        border-color: rgba(79, 70, 229, 0.4);
+    }
+    .action-btn:hover {
+        background: #4f46e5;
+        color: #fff;
+        border-color: #4f46e5;
+    }
+
+    /* Dark Mode specific overrides */
+    [data-theme="dark"] .page-container {
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        color: #f1f5f9;
+    }
+    [data-theme="dark"] .page-title {
+        color: #ffffff;
+    }
+    [data-theme="dark"] .text-title {
+        color: #cbd5e1;
+    }
+    [data-theme="dark"] .text-value {
+        color: #ffffff;
+    }
+    [data-theme="dark"] .glass-card {
+        background: rgba(30, 41, 59, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        color: #f1f5f9;
+    }
+    [data-theme="dark"] .action-btn {
+        color: #f1f5f9;
+        border-color: rgba(255, 255, 255, 0.4);
+    }
+    [data-theme="dark"] .action-btn:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+    }
+
+    .card-hover {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+    }
+    .card-hover:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+    }
+    [data-theme="dark"] .card-hover:hover {
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+        border-color: rgba(99, 102, 241, 0.4) !important;
+    }
+
+    .btn-outline-indigo {
+        color: #4f46e5;
+        border-color: rgba(79, 70, 229, 0.4);
+        background: transparent;
+        transition: all 0.2s ease;
+    }
+    .btn-outline-indigo:hover {
+        background: #4f46e5;
+        color: #fff;
+        border-color: #4f46e5;
+    }
+    [data-theme="dark"] .btn-outline-indigo {
+        color: #818cf8;
+        border-color: rgba(129, 140, 248, 0.4);
+    }
+    [data-theme="dark"] .btn-outline-indigo:hover {
+        background: #4f46e5;
+        color: #fff;
+        border-color: #4f46e5;
+    }
+
+    .text-pink {
+        color: #ec4899;
+    }
+    .bg-pink {
+        background-color: #ec4899;
+    }
+    .text-indigo-400 {
+        color: #818cf8;
+    }
+    .bg-indigo-950 {
+        background-color: #1e1b4b;
+    }
+    .border-indigo-800 {
+        border-color: #3730a3;
+    }
+    .fs-7 {
+        font-size: 0.85rem;
+    }
+    .fs-8 {
+        font-size: 0.75rem;
+    }
+</style>
+{% endblock %}

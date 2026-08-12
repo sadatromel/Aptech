@@ -1,0 +1,383 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Commercial • New Sales Contract{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Create Sales Contract</h1>
+            <p class="text-muted">Generate a new sales contract by selecting production orders from allocations.</p>
+        </div>
+        <a href="{{ BASE_URL }}/commercial/sales-contracts" class="btn btn-outline-secondary rounded-pill">
+            <i class="fas fa-arrow-left me-2"></i>Back to List
+        </a>
+    </div>
+
+    <form id="salesContractForm" method="POST" action="{{ BASE_URL }}/commercial/sales-contracts">
+    {{ csrf_field() | raw }}
+        <div class="row">
+            <!-- Left Column: Contract Header -->
+            <div class="col-xl-4 col-lg-5">
+                <div class="card shadow-sm border-0 mb-4 sticky-top" style="top: 1rem; z-index: 10;">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h5 class="card-title mb-0"><i class="fas fa-file-contract me-2"></i>Contract Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Contract Number</label>
+                            <input type="text" class="form-control" name="contract_no" placeholder="e.g. SC-2024-001" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Customer</label>
+                            <select class="form-select select2" name="customer_id" required>
+                                <option value="">Select Customer</option>
+                                {% for customer in customers %}
+                                    <option value="{{ customer.customer_id }}">{{ customer.customer_name }} ({{ customer.customer_code }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-bold">Contract Date</label>
+                                <input type="date" class="form-control" name="contract_date" value="{{ 'now'|date('Y-m-d') }}" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-bold">Valid Until</label>
+                                <input type="date" class="form-control" name="valid_until">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Currency</label>
+                            <select class="form-select" name="currency" required>
+                                {% for currency in currencies %}
+                                    <option value="{{ currency.currency_code }}" {{ currency.currency_code == 'USD' ? 'selected' }}>
+                                        {{ currency.currency_code }} - {{ currency.currency_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Shipping Terms</label>
+                            <input type="text" class="form-control" name="shipping_terms" placeholder="e.g. FOB, CIF">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Payment Terms</label>
+                            <input type="text" class="form-control" name="payment_terms" placeholder="e.g. LC at Sight, TT">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Terms & Conditions</label>
+                            <textarea class="form-control" name="notes" rows="4" placeholder="Additional terms and conditions..."></textarea>
+                        </div>
+                        <div class="mt-4 p-3 bg-light rounded-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted">Total Orders:</span>
+                                <span class="fw-bold" id="totalOrdersCount">0</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted">Total Amount:</span>
+                                <span class="h4 mb-0 text-primary fw-bold" id="totalContractAmountDisplay">$0.00</span>
+                                <input type="hidden" name="total_amount" id="total_amount_hidden" value="0">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 mt-4 py-2 rounded-pill shadow-sm">
+                            <i class="fas fa-save me-2"></i>Save Sales Contract
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Order Selection -->
+            <div class="col-xl-8 col-lg-7">
+                <!-- Search Allocation -->
+                <div class="card shadow-sm border-0 mb-4 bg-gradient-light">
+                    <div class="card-body">
+                        <div class="row align-items-end g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Search Allocation</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                                    <input type="text" id="allocationSearchInput" class="form-control border-start-0" placeholder="Enter Allocation Number...">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" id="fetchOrdersBtn" class="btn btn-success w-100 py-2 rounded-pill">
+                                    <i class="fas fa-sync-alt me-2"></i>Add Order Information
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Available Orders -->
+                    <div class="col-md-6">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div class="card-header bg-white py-3">
+                                <h6 class="mb-0 fw-bold"><i class="fas fa-list-ul me-2 text-info"></i>Available Orders</h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive" style="max-height: 500px;">
+                                    <table class="table table-hover align-middle mb-0" id="availableOrdersTable">
+                                        <thead class="bg-light sticky-top" style="top: 0; z-index: 5;">
+                                            <tr>
+                                                <th width="40"><input type="checkbox" class="form-check-input" id="selectAllAvailable"></th>
+                                                <th>Style & Order</th>
+                                                <th class="text-end">Qty</th>
+                                                <th class="text-end">Value</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="availableOrdersList">
+                                            <tr>
+                                                <td colspan="4" class="text-center py-5 text-muted">
+                                                    <i class="fas fa-info-circle fa-2x mb-3 d-block opacity-25"></i>
+                                                    Search an allocation to view orders
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="p-3 border-top d-flex justify-content-end">
+                                    <button type="button" id="addSelectedToContractBtn" class="btn btn-primary btn-sm rounded-pill px-4" disabled>
+                                        Add Order <i class="fas fa-arrow-right ms-2"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Selected Orders -->
+                    <div class="col-md-6">
+                        <div class="card shadow-sm border-0 h-100 border-start border-primary border-4">
+                            <div class="card-header bg-white py-3">
+                                <h6 class="mb-0 fw-bold"><i class="fas fa-check-circle me-2 text-primary"></i>Contract Items</h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive" style="max-height: 500px;">
+                                    <table class="table table-hover align-middle mb-0" id="selectedOrdersTable">
+                                        <thead class="bg-light sticky-top" style="top: 0; z-index: 5;">
+                                            <tr>
+                                                <th>Style & Order</th>
+                                                <th class="text-end">Qty</th>
+                                                <th class="text-end">Value</th>
+                                                <th width="40"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="selectedOrdersList">
+                                            <tr class="empty-placeholder">
+                                                <td colspan="4" class="text-center py-5 text-muted">
+                                                    <i class="fas fa-shopping-cart fa-2x mb-3 d-block opacity-25"></i>
+                                                    No orders added to contract yet
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <input type="hidden" name="items" id="items_json">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ parent() }}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const fetchOrdersBtn = document.getElementById('fetchOrdersBtn');
+        const allocationInput = document.getElementById('allocationSearchInput');
+        const availableList = document.getElementById('availableOrdersList');
+        const selectedList = document.getElementById('selectedOrdersList');
+        const addBtn = document.getElementById('addSelectedToContractBtn');
+        const selectAllAvailable = document.getElementById('selectAllAvailable');
+        const totalOrdersCount = document.getElementById('totalOrdersCount');
+        const totalAmountDisplay = document.getElementById('totalContractAmountDisplay');
+        const totalAmountHidden = document.getElementById('total_amount_hidden');
+        const itemsJsonInput = document.getElementById('items_json');
+        const contractForm = document.getElementById('salesContractForm');
+
+        let availableOrders = [];
+        let selectedOrders = [];
+
+        // Fetch Orders by Allocation
+        fetchOrdersBtn.addEventListener('click', async () => {
+            const allocation = allocationInput.value.trim();
+            if (!allocation) {
+                alert('Please enter an allocation number');
+                return;
+            }
+
+            fetchOrdersBtn.disabled = true;
+            fetchOrdersBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Loading...';
+
+            try {
+                const response = await fetch(`{{ BASE_URL }}/commercial/sales-contracts/allocation/${allocation}`);
+                availableOrders = await response.json();
+                renderAvailable();
+            } catch (error) {
+                console.error('Error:', error);
+                availableList.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error loading orders</td></tr>';
+            } finally {
+                fetchOrdersBtn.disabled = false;
+                fetchOrdersBtn.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Add Order Information';
+            }
+        });
+
+        function renderAvailable() {
+            if (availableOrders.length === 0) {
+                availableList.innerHTML = '<tr><td colspan="4" class="text-center py-4">No orders found for this allocation</td></tr>';
+                addBtn.disabled = true;
+                return;
+            }
+
+            availableList.innerHTML = availableOrders.map(order => {
+                const isSelected = selectedOrders.some(so => so.po_id === order.po_id);
+                if (isSelected) return ''; // Don't show already selected
+
+                const value = (parseFloat(order.unit_price) * parseInt(order.quantity_ordered)).toFixed(2);
+                return `
+                    <tr>
+                        <td><input type="checkbox" class="form-check-input order-check" data-id="${order.po_id}"></td>
+                        <td>
+                            <div class="fw-bold">${order.style_code}</div>
+                            <small class="text-muted">${order.po_number}</small>
+                        </td>
+                        <td class="text-end">${order.quantity_ordered}</td>
+                        <td class="text-end">$${value}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Filter out empty strings if all were selected
+            if (availableList.innerHTML.trim() === '') {
+                availableList.innerHTML = '<tr><td colspan="4" class="text-center py-4">All orders from this allocation are already added</td></tr>';
+            }
+
+            addBtn.disabled = false;
+            attachCheckListeners();
+        }
+
+        function attachCheckListeners() {
+            const checks = document.querySelectorAll('.order-check');
+            checks.forEach(check => {
+                check.addEventListener('change', () => {
+                    const anyChecked = Array.from(checks).some(c => c.checked);
+                    addBtn.disabled = !anyChecked;
+                });
+            });
+        }
+
+        selectAllAvailable.addEventListener('change', () => {
+            document.querySelectorAll('.order-check').forEach(c => c.checked = selectAllAvailable.checked);
+            addBtn.disabled = !selectAllAvailable.checked;
+        });
+
+        // Add Selected to Contract
+        addBtn.addEventListener('click', () => {
+            const checkedIds = Array.from(document.querySelectorAll('.order-check:checked')).map(c => c.dataset.id);
+            const toAdd = availableOrders.filter(o => checkedIds.includes(o.po_id.toString()));
+            
+            selectedOrders = [...selectedOrders, ...toAdd];
+            availableOrders = availableOrders.filter(o => !checkedIds.includes(o.po_id.toString()));
+            
+            selectAllAvailable.checked = false;
+            renderAvailable();
+            renderSelected();
+            updateContractTotals();
+        });
+
+        function renderSelected() {
+            if (selectedOrders.length === 0) {
+                selectedList.innerHTML = `
+                    <tr class="empty-placeholder">
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            <i class="fas fa-shopping-cart fa-2x mb-3 d-block opacity-25"></i>
+                            No orders added to contract yet
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            selectedList.innerHTML = selectedOrders.map(order => {
+                const value = (parseFloat(order.unit_price) * parseInt(order.quantity_ordered)).toFixed(2);
+                return `
+                    <tr>
+                        <td>
+                            <div class="fw-bold text-primary">${order.style_code}</div>
+                            <small class="text-muted">${order.po_number}</small>
+                        </td>
+                        <td class="text-end">${order.quantity_ordered}</td>
+                        <td class="text-end fw-bold">$${value}</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-link btn-sm text-danger p-0 remove-order" data-id="${order.po_id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.querySelectorAll('.remove-order').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.dataset.id;
+                    selectedOrders = selectedOrders.filter(o => o.po_id.toString() !== id);
+                    renderSelected();
+                    updateContractTotals();
+                    renderAvailable(); 
+                });
+            });
+        }
+
+        function updateContractTotals() {
+            const count = selectedOrders.length;
+            const total = selectedOrders.reduce((sum, o) => sum + (parseFloat(o.unit_price) * parseInt(o.quantity_ordered)), 0);
+            
+            totalOrdersCount.textContent = count;
+            totalAmountDisplay.textContent = `$${total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            totalAmountHidden.value = total;
+            itemsJsonInput.value = JSON.stringify(selectedOrders);
+        }
+
+        // Form Submission
+        contractForm.addEventListener('submit', (e) => {
+            if (selectedOrders.length === 0) {
+                e.preventDefault();
+                alert('Please add at least one order to the contract.');
+            }
+        });
+    });
+</script>
+
+<style>
+    .bg-gradient-light {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    .card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1) !important;
+    }
+    .table-responsive::-webkit-scrollbar {
+        width: 6px;
+    }
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 3px;
+    }
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #aaa;
+    }
+    .sticky-top {
+        background: white;
+    }
+</style>
+{% endblock %}

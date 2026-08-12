@@ -1,0 +1,209 @@
+{% extends "layouts/app.twig" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0 text-gray-800">Vehicle Requisitions</h1>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newRequisitionModal">
+            <i class="fas fa-plus"></i> New Requisition
+        </button>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Vehicle Requisitions</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Requisition #</th>
+                            <th>Requested By</th>
+                            <th>Purpose</th>
+                            <th>Trip Type</th>
+                            <th>Priority</th>
+                            <th>Route</th>
+                            <th>Departure</th>
+                            <th>Passengers</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if requisitions is empty %}
+                            <tr>
+                                <td colspan="10" class="text-center">No data available in table</td>
+                            </tr>
+                        {% else %}
+                            {% for req in requisitions %}
+                                <tr>
+                                    <td>{{ req.requisition_number }}</td>
+                                    <td>{{ req.requested_by_name }}</td>
+                                    <td>{{ req.purpose }}</td>
+                                    <td>{{ req.trip_type|capitalize }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ req.priority == 'urgent' ? 'danger' : (req.priority == 'high' ? 'warning' : 'info') }}">
+                                            {{ req.priority|capitalize }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {{ req.origin_location }} <i class="fas fa-arrow-right"></i> {{ req.destination_location }}
+                                        <br>
+                                        <small class="text-muted">{{ req.estimated_distance_km }} km</small>
+                                    </td>
+                                    <td>
+                                        {{ req.departure_date|date('d M Y') }}
+                                        <br>
+                                        <small>{{ req.departure_time|date('H:i') }}</small>
+                                    </td>
+                                    <td>
+                                        <i class="fas fa-users"></i> {{ req.total_passengers }}
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-{{ req.status == 'approved' ? 'success' : (req.status == 'rejected' ? 'danger' : 'secondary') }}">
+                                            {{ req.status_name|default(req.status|capitalize) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-info" title="View">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            {% if req.status == 'pending' or req.status == 'submitted' %}
+                                                <button type="button" class="btn btn-sm btn-danger" title="Cancel">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Requisition Modal -->
+<div class="modal fade" id="newRequisitionModal" tabindex="-1" role="dialog" aria-labelledby="newRequisitionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newRequisitionModalLabel">New Vehicle Requisition</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ base_url }}/vehicle_requisition/create" method="POST">
+    {{ csrf_field() | raw }}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label for="purpose">Purpose of Trip <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="purpose" name="purpose" placeholder="e.g., Client meeting" required>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label for="trip_type">Trip Type</label>
+                            <select class="form-control" id="trip_type" name="trip_type">
+                                <option value="official">Official</option>
+                                <option value="personal">Personal</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                     <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label for="priority">Priority</label>
+                            <select class="form-control" id="priority" name="priority">
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label for="preferred_vehicle_type">Preferred Vehicle Type</label>
+                            <select class="form-control" id="preferred_vehicle_type" name="preferred_vehicle_type">
+                                <option value="any">Any</option>
+                                <option value="sedan">Sedan</option>
+                                <option value="suv">SUV</option>
+                                <option value="van">Van</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label for="origin_location">Origin Location <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="origin_location" name="origin_location" placeholder="e.g., Office" required>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label for="destination_location">Destination <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="destination_location" name="destination_location" placeholder="e.g., Client Office" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label for="departure_date">Departure Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="departure_date" name="departure_date" required>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label for="departure_time">Departure Time</label>
+                            <input type="time" class="form-control" id="departure_time" name="departure_time">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label for="return_date">Return Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="return_date" name="return_date">
+                        </div>
+                         <div class="col-md-6 form-group">
+                            <label for="return_time">Return Time</label>
+                            <input type="time" class="form-control" id="return_time" name="return_time">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 form-group">
+                            <label for="estimated_distance">Est. Distance (km)</label>
+                            <input type="number" step="0.1" class="form-control" id="estimated_distance" name="estimated_distance" placeholder="e.g., 25.5">
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label for="required_seats">Req. Seats</label>
+                            <input type="number" class="form-control" id="required_seats" name="required_seats" value="1">
+                        </div>
+                         <div class="col-md-4 form-group">
+                            <label for="total_passengers">Total Passengers</label>
+                            <input type="number" class="form-control" id="total_passengers" name="total_passengers" value="1">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="passenger_names">Passenger Names (Manual Input)</label>
+                        <textarea class="form-control" id="passenger_names" name="passenger_names" rows="3">{{ session.full_name }}</textarea>
+                        <small class="form-text text-muted">Logged-in user info included by default. Add others on new lines.</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="estimated_cost">Estimated Cost</label>
+                         <input type="number" step="0.01" class="form-control" id="estimated_cost" name="estimated_cost" placeholder="e.g., 150.00">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="special_requirements">Special Requirements</label>
+                        <textarea class="form-control" id="special_requirements" name="special_requirements" rows="2" placeholder="e.g., Air conditioning, GPS"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Submit Requisition
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

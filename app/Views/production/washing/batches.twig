@@ -1,0 +1,41 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Washing Batches{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Washing Batches</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ BASE_URL }}/washing/batches/create" class="btn btn-sm btn-primary">
+                <i class="fas fa-plus"></i> New Batch
+            </a>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th>Batch #</th>
+                    <th>Style</th>
+                    <th>Machine</th>
+                    <th>Qty</th>
+                    <th>Start Time</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in batches %}
+                <tr>
+                    <td>{{ b.batch_no }}</td>
+                    <td>{{ b.style_code }}</td>
+                    <td>{{ b.machine_no }}</td>
+                    <td>{{ b.quantity }}</td>
+                    <td>{{ b.start_time }}</td>
+                    <td><span class="badge bg-info">{{ b.status|capitalize }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

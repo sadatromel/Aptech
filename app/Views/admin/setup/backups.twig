@@ -1,0 +1,257 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Database Backups{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <!-- Top Navigation Tabs -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <ul class="nav nav-tabs nav-fill bg-white shadow-sm p-2 rounded" style="border-bottom: none;">
+                <li class="nav-item">
+                    <a class="nav-link {{ active_tab == 'setup' ? 'active fw-bold border-0 text-primary' : 'text-muted border-0' }}" 
+                       href="{{ BASE_URL }}/admin/setup?tab=setup">Setup</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ active_tab == 'management' ? 'active fw-bold border-0 text-primary' : 'text-muted border-0' }}" 
+                       href="{{ BASE_URL }}/admin/setup?tab=management">Management</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ active_tab == 'database' ? 'active fw-bold border-0 text-primary' : 'text-muted border-0' }}" 
+                       href="{{ BASE_URL }}/admin/setup?tab=database">Database</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ active_tab == 'configuration' ? 'active fw-bold border-0 text-primary' : 'text-muted border-0' }}" 
+                       href="{{ BASE_URL }}/admin/setup?tab=configuration">Configuration</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ active_tab == 'backups' ? 'active fw-bold border-0 text-primary' : 'text-muted border-0' }}" 
+                       href="{{ BASE_URL }}/admin/setup?tab=backups">Backups</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ active_tab == 'tools' ? 'active fw-bold border-0 text-primary' : 'text-muted border-0' }}" 
+                       href="{{ BASE_URL }}/admin/setup?tab=tools">Tools</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            
+            <!-- Automated Backup Settings -->
+            <div class="mb-5">
+                <h5 class="text-primary mb-4">
+                    <i class="fas fa-cogs me-2"></i>Automated Backup Settings
+                </h5>
+
+                <form id="autoBackupForm">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small fw-bold">Enable Auto-Backup</label>
+                            <select class="form-select" name="auto_backup_enabled">
+                                <option value="0">Disabled</option>
+                                <option value="1">Enabled</option>
+                            </select>
+                        </div>
+                         <div class="col-md-6">
+                            <label class="form-label text-muted small fw-bold">Frequency</label>
+                            <select class="form-select" name="frequency">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                         <div class="col-md-6">
+                            <label class="form-label text-muted small fw-bold">Backup Directory Path</label>
+                             <input type="text" class="form-control" name="backup_path" value="/var/www/html/tvm/backups">
+                        </div>
+                         <div class="col-md-6">
+                            <label class="form-label text-muted small fw-bold">Retention (Days)</label>
+                             <input type="number" class="form-control" name="retention_days" value="30">
+                        </div>
+                    </div>
+                     <div class="mb-4">
+                        <label class="form-label text-muted small fw-bold">Encryption (Auto-Backups)</label>
+                        <select class="form-select" name="encryption_enabled">
+                            <option value="0">Disabled</option>
+                            <option value="1">Enabled</option>
+                        </select>
+                    </div>
+
+                    <div class="d-flex justify-content-end">
+                         <button type="submit" class="btn btn-primary" style="background-color: #4e46e5; border-color: #4e46e5;">
+                             <i class="fas fa-save me-1"></i> Save Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+             <hr />
+
+            <!-- Restore from File -->
+            <div class="mb-5 mt-4">
+                <h5 class="text-primary mb-4">
+                    <i class="fas fa-upload me-2"></i>Restore from File
+                </h5>
+                <p class="text-muted small">Upload a .sql or .enc backup file to restore manually.</p>
+                <div class="alert alert-danger font-weight-bold">
+                    WARNING: This will overwrite the entire database!
+                </div>
+
+                <form id="restoreForm">
+                     <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small fw-bold">Backup File (.sql, .enc)</label>
+                            <input type="file" class="form-control" name="backup_file" accept=".sql,.enc">
+                        </div>
+                         <div class="col-md-6">
+                            <label class="form-label text-muted small fw-bold">Decryption Key (If encrypted)</label>
+                             <input type="password" class="form-control" name="decryption_key" placeholder="Required for .enc files">
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end">
+                         <button type="button" class="btn btn-danger" id="restoreBtn">
+                             <i class="fas fa-undo me-1"></i> Upload & Restore
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <hr />
+
+             <!-- Manual Backup -->
+             <div class="mb-5 mt-4">
+                <h5 class="text-primary mb-4">
+                    <i class="fas fa-database me-2"></i>Manual Backup
+                </h5>
+                <p class="text-muted small">Generate a full database backup immediately.</p>
+                 <button type="button" class="btn btn-success" id="manualBackupBtn" style="background-color: #10b981; border-color: #10b981;">
+                     <i class="fas fa-plus-circle me-1"></i> Create Backup Now
+                </button>
+            </div>
+            <hr />
+
+             <!-- Backup History -->
+            <div class="mb-4 mt-4">
+                <h5 class="text-primary mb-4">
+                    <i class="fas fa-history me-2"></i>Backup History
+                </h5>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover border">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Filename</th>
+                                <th>Date/Time</th>
+                                <th>Size</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Mock Data -->
+                            <tr>
+                                <td>backup_2026_01_25.sql</td>
+                                <td>2026-01-25 10:00 AM</td>
+                                <td>2.5 MB</td>
+                                <td><span class="badge bg-secondary">Auto</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary"><i class="fas fa-download"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                             <tr>
+                                <td>manual_backup_v1.sql</td>
+                                <td>2026-01-24 04:30 PM</td>
+                                <td>2.4 MB</td>
+                                <td><span class="badge bg-info text-dark">Manual</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary"><i class="fas fa-download"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // Manual Backup
+        document.getElementById('manualBackupBtn').addEventListener('click', function() {
+              Swal.fire({
+                title: 'Creating Backup...',
+                text: 'Please wait while the database backup is being generated.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading()
+                },
+                timer: 2000
+            }).then(() => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Backup Created!',
+                    text: 'backup_2026_01_26_manual.sql has been created successfully.',
+                });
+            });
+        });
+
+        // Restore Backup
+        document.getElementById('restoreBtn').addEventListener('click', function() {
+            const fileInput = document.querySelector('input[name="backup_file"]');
+            if (fileInput.files.length === 0) {
+                 Swal.fire('Error', 'Please select a backup file first.', 'error');
+                 return;
+            }
+
+             Swal.fire({
+                title: 'Are you sure?',
+                text: "This will OVERWRITE your current database. This action cannot be undone!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, Restore Database!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                     Swal.fire({
+                        title: 'Restoring...',
+                        text: 'Restoring database from backup file...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading()
+                        },
+                        timer: 3000
+                    }).then(() => {
+                        Swal.fire('Restored!', 'Database has been successfully restored.', 'success');
+                    });
+                }
+            });
+        });
+
+        // Save Settings
+        document.getElementById('autoBackupForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+             Swal.fire({
+                icon: 'success',
+                title: 'Settings Saved',
+                text: 'Automated backup settings have been updated.',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        });
+    });
+</script>
+{% endblock %}

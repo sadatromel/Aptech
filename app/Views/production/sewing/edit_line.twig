@@ -1,0 +1,66 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Edit Sewing Line{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Edit Sewing Line: {{ line.line_name }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ BASE_URL }}/production/sewing/lines" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Lines
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+             {% if errors is defined %}
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        {% for error in errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            {% if error is defined %}
+                <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+
+            <form action="{{ BASE_URL }}/production/sewing/lines/{{ line.production_line_id }}" method="POST">
+    {{ csrf_field() | raw }}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="line_name" class="form-label">Line Name</label>
+                        <input type="text" class="form-control" id="line_name" name="line_name" value="{{ line.line_name }}" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="line_code" class="form-label">Line Code</label>
+                        <input type="text" class="form-control" id="line_code" name="line_code" value="{{ line.line_code }}" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="line_type" class="form-label">Line Type</label>
+                        <select class="form-select" id="line_type" name="line_type" required>
+                            <option value="lean" {{ line.line_type == 'lean' ? 'selected' : '' }}>Lean</option>
+                            <option value="traditional" {{ line.line_type == 'traditional' ? 'selected' : '' }}>Traditional</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="capacity_per_day" class="form-label">Daily Capacity (Pcs)</label>
+                        <input type="number" class="form-control" id="capacity_per_day" name="capacity_per_day" value="{{ line.capacity_per_day }}" min="1" required>
+                    </div>
+
+                    <div class="col-12 mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Update Line
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

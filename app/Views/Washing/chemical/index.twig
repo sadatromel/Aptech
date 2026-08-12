@@ -1,0 +1,304 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Chemical Controls{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Page Header -->
+    <div class="col-12 mb-4">
+        <div class="page-header d-flex justify-content-between align-items-center p-4 bg-white rounded shadow-sm">
+            <div class="page-title">
+                <h1 class="h3 text-primary fw-bold mb-1">Chemical Controls</h1>
+                <p class="text-muted mb-0">Manage washing chemicals and inventory control</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addChemicalModal">
+                    <i class="fas fa-plus me-2"></i>Add Chemical
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="col-12 mb-4">
+        <div class="stats-grid">
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.total_chemicals }}</h3>
+                <p class="text-muted mb-0">Total Chemicals</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.low_stock }}</h3>
+                <p class="text-muted mb-0">Low Stock</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.out_of_stock }}</h3>
+                <p class="text-muted mb-0">Out of Stock</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">${{ stats.total_value|number_format(2) }}</h3>
+                <p class="text-muted mb-0">Total Value</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chemicals Table -->
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fas fa-flask me-2"></i>Chemical Inventory</span>
+                <input type="text" class="form-control form-control-sm w-auto" id="searchInput" placeholder="Search chemicals...">
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="chemicalsTable">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="p-3 border-0">Chemical</th>
+                                <th class="p-3 border-0">Category</th>
+                                <th class="p-3 border-0">Supplier</th>
+                                <th class="p-3 border-0">Stock Level</th>
+                                <th class="p-3 border-0">Stock Status</th>
+                                <th class="p-3 border-0">Safety Level</th>
+                                <th class="p-3 border-0">Unit Cost</th>
+                                <th class="p-3 border-0">Total Value</th>
+                                <th class="p-3 border-0">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for chemical in chemicals %}
+                            {% set stock_percentage = chemical.min_stock_level > 0 ? (chemical.current_stock / chemical.min_stock_level) * 100 : 100 %}
+                            {% set progress_class = chemical.stock_status == 'In Stock' ? 'bg-success' : (chemical.stock_status == 'Low Stock' ? 'bg-warning' : 'bg-danger') %}
+                            <tr>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ chemical.chemical_name }}</div>
+                                    <small class="text-muted">{{ chemical.chemical_code }} ({{ chemical.unit_of_measure }})</small>
+                                </td>
+                                <td class="p-3">{{ chemical.category }}</td>
+                                <td class="p-3">{{ chemical.supplier }}</td>
+                                <td class="p-3">
+                                    {{ chemical.current_stock|number_format(2) }}
+                                    <div class="progress mt-1" style="height: 6px;">
+                                        <div class="progress-bar {{ progress_class }}" role="progressbar" style="width: {{ stock_percentage > 100 ? 100 : stock_percentage }}%"></div>
+                                    </div>
+                                </td>
+                                <td class="p-3">
+                                    <span class="badge rounded-pill {{ chemical.stock_status == 'In Stock' ? 'bg-success' : 'bg-warning text-dark' }}">
+                                        {{ chemical.stock_status }}
+                                    </span>
+                                </td>
+                                <td class="p-3">{{ chemical.safety_level }}</td>
+                                <td class="p-3">${{ chemical.unit_cost|number_format(2) }}</td>
+                                <td class="p-3">${{ chemical.total_value|number_format(2) }}</td>
+                                <td class="p-3">
+                                    <button class="btn btn-sm btn-outline-info" onclick="updateStock({{ chemical.chemical_id }})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <form action="/washing/chemicals/{{ chemical.chemical_id }}/delete" method="POST" onsubmit="return confirm('Delete this chemical?')" style="display:inline;">
+    {{ csrf_field() | raw }}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center p-4 text-muted">No chemicals found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="col-12 mt-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-light p-3">
+                <i class="fas fa-history me-2"></i>Recent Stock Transactions
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th class="p-2 ps-3">Date</th>
+                                <th class="p-2">Chemical</th>
+                                <th class="p-2">Type</th>
+                                <th class="p-2">Change</th>
+                                <th class="p-2">Previous</th>
+                                <th class="p-2">New</th>
+                                <th class="p-2 pe-3">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions %}
+                            <tr>
+                                <td class="p-2 ps-3">{{ transaction.created_at|date('M j, Y H:i') }}</td>
+                                <td class="p-2">{{ transaction.chemical_name }}</td>
+                                <td class="p-2">{{ transaction.transaction_type }}</td>
+                                <td class="p-2 {{ transaction.quantity_change > 0 ? 'text-success' : 'text-danger' }}">
+                                    {{ transaction.quantity_change > 0 ? '+' : '' }}{{ transaction.quantity_change|number_format(2) }} {{ transaction.unit_of_measure }}
+                                </td>
+                                <td class="p-2">{{ transaction.previous_stock|number_format(2) }}</td>
+                                <td class="p-2">{{ transaction.new_stock|number_format(2) }}</td>
+                                <td class="p-2 pe-3">{{ transaction.notes }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center p-3 text-muted">No recent transactions.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Chemical Modal -->
+<div class="modal fade" id="addChemicalModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form action="/washing/chemicals" method="POST" class="modal-content">
+    {{ csrf_field() | raw }}
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Add Chemical</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Chemical Name *</label>
+                        <input type="text" class="form-control" name="chemical_name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Chemical Code</label>
+                        <input type="text" class="form-control" name="chemical_code">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Category *</label>
+                        <select class="form-select" name="category" required>
+                            <option value="">Select Category</option>
+                            <option value="Detergent">Detergent</option>
+                            <option value="Bleach">Bleach</option>
+                            <option value="Enzyme">Enzyme</option>
+                            <option value="Softener">Softener</option>
+                            <option value="Acid">Acid</option>
+                            <option value="Alkali">Alkali</option>
+                            <option value="Fixing Agent">Fixing Agent</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Supplier</label>
+                        <input type="text" class="form-control" name="supplier">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Safety Level *</label>
+                        <select class="form-select" name="safety_level" required>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Storage Requirements</label>
+                        <input type="text" class="form-control" name="storage_requirements" placeholder="e.g., Cool, dry place">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Unit of Measure *</label>
+                        <select class="form-select" name="unit_of_measure" required>
+                            <option value="Liters">Liters</option>
+                            <option value="Kilograms">Kilograms</option>
+                            <option value="Grams">Grams</option>
+                            <option value="Milliliters">Milliliters</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Reorder Level</label>
+                        <input type="number" class="form-control" name="min_stock_level" min="0" step="0.01" value="0">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Current Stock *</label>
+                        <input type="number" class="form-control" name="current_stock" min="0" step="0.01" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Unit Cost *</label>
+                        <input type="number" class="form-control" name="unit_cost" min="0" step="0.01" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Add Chemical</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Update Stock Modal -->
+<div class="modal fade" id="updateStockModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="" method="POST" class="modal-content" id="updateStockForm">
+    {{ csrf_field() | raw }}
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Update Chemical Stock</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Current Stock</label>
+                    <input type="text" class="form-control" id="currentStockDisplay" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">New Stock *</label>
+                    <input type="number" class="form-control" name="new_stock" min="0" step="0.01" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Transaction Type *</label>
+                    <select class="form-select" name="transaction_type" required>
+                        <option value="Purchase">Purchase</option>
+                        <option value="Usage">Usage</option>
+                        <option value="Adjustment">Adjustment</option>
+                        <option value="Return">Return</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-control" name="notes" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Update Stock</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function(e) {
+    const term = e.target.value.toLowerCase();
+    document.querySelectorAll('#chemicalsTable tbody tr').forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+    });
+});
+
+function updateStock(id) {
+    fetch(`/washing/chemicals/${id}/data`)
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('updateStockForm').action = `/washing/chemicals/${id}/stock`;
+            document.getElementById('currentStockDisplay').value = data.current_stock;
+            new bootstrap.Modal(document.getElementById('updateStockModal')).show();
+        });
+}
+</script>
+{% endblock %}

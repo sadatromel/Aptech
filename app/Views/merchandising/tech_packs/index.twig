@@ -1,0 +1,119 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Merchandising • Technical Specification (Tech Packs){% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <!-- Breadcrumb & Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ BASE_URL }}/merchandising/dashboard">Merchandising</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Tech Packs</li>
+                </ol>
+            </nav>
+            <h1 class="h3 fw-bold text-dark mb-0">
+                <i class="fas fa-file-invoice text-primary me-2"></i>Garment Technical Specification Packages (Tech Packs)
+            </h1>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ BASE_URL }}/merchandising/styles" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm btn-sm">
+                <i class="fas fa-drafting-compass me-1"></i>Styles Library
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-3">
+            <form method="get" action="{{ BASE_URL }}/merchandising/tech-packs" class="row g-3 align-items-end">
+                <div class="col-lg-4 col-md-6">
+                    <label class="form-label small fw-semibold text-muted mb-1">Search Tech Packs</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" name="search" class="form-control bg-light border-start-0" placeholder="Style Code, Name or Article #..." value="{{ filters.search }}">
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label small fw-semibold text-muted mb-1">Buyer</label>
+                    <select name="buyer_id" class="form-select bg-light">
+                        <option value="">All Buyers</option>
+                        {% for b in dropdowns.buyers %}
+                        <option value="{{ b.buyer_id }}" {% if filters.buyer_id == b.buyer_id %}selected{% endif %}>{{ b.buyer_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label small fw-semibold text-muted mb-1">Season</label>
+                    <input type="text" name="season" class="form-control bg-light" placeholder="e.g. SS26, FW26" value="{{ filters.season }}">
+                </div>
+                <div class="col-lg-2 col-md-6 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill"><i class="fas fa-filter me-1"></i>Filter</button>
+                    <a href="{{ BASE_URL }}/merchandising/tech-packs" class="btn btn-outline-secondary rounded-pill" title="Reset"><i class="fas fa-undo"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tech Packs Grid -->
+    <div class="row g-4">
+        {% if styles is empty %}
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4 p-5 text-center text-muted">
+                <i class="fas fa-file-excel fa-3x mb-3 opacity-25"></i>
+                <h5>No Style Tech Packs Found</h5>
+                <p class="small mb-0">Try adjusting search filters or create a new garment style first.</p>
+            </div>
+        </div>
+        {% else %}
+        {% for style in styles %}
+        <div class="col-xl-3 col-lg-4 col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 card-hover">
+                <div class="card-body p-3 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-primary rounded-pill px-3 py-1">{{ style.style_code }}</span>
+                            <span class="badge bg-light text-dark border">{{ style.buyer_name ?? 'N/A' }}</span>
+                        </div>
+                        <h6 class="fw-bold text-dark mb-1">{{ style.style_name }}</h6>
+                        <p class="small text-muted mb-2">
+                            <i class="fas fa-tag me-1"></i>{{ style.garment_type ?? 'Garment' }} · {{ style.season ?? 'Standard' }}
+                        </p>
+                        <div class="bg-light p-2 rounded-3 small mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Target Price:</span>
+                                <span class="fw-bold text-success">${{ style.price|number_format(2) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <span class="text-muted">Status:</span>
+                                <span class="fw-semibold text-dark">{{ style.status|replace({'_': ' '})|capitalize }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-2 pt-2 border-top">
+                        <a href="{{ BASE_URL }}/merchandising/styles/{{ style.style_id }}/tech-pack" class="btn btn-primary btn-sm rounded-pill w-100">
+                            <i class="fas fa-file-invoice me-1"></i>View Tech Pack
+                        </a>
+                        <a href="{{ BASE_URL }}/merchandising/styles/{{ style.style_id }}" class="btn btn-outline-secondary btn-sm rounded-pill" title="Style Details">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.card-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.12) !important;
+}
+</style>
+{% endblock %}

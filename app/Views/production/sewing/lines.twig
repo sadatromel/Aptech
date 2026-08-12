@@ -1,0 +1,86 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Sewing Lines{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Sewing Lines</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ BASE_URL }}/production/sewing/lines/create" class="btn btn-sm btn-primary">
+                <i class="fas fa-plus"></i> New Line
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats or Summary could go here -->
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-transparent py-3">
+            <h5 class="mb-0 text-secondary"><i class="fas fa-list me-2"></i>Production Lines List</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Line Name</th>
+                        <th>Code</th>
+                        <th>Type</th>
+                        <th>Daily Capacity</th>
+                        <th>Supervisor</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for line in lines %}
+                    <tr>
+                        <td class="fw-bold">{{ line.line_name }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ line.line_code|default('N/A') }}</span></td>
+                        <td>{{ line.line_type|capitalize|default('Traditional') }}</td>
+                        <td>{{ line.capacity_per_day }} pcs</td>
+                        <td>
+                            {% if line.supervisor_name %}
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle me-2 bg-primary text-white" style="width: 24px; height: 24px; font-size: 10px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                                        {{ line.supervisor_name|slice(0, 1)|upper }}
+                                    </div>
+                                    {{ line.supervisor_name }}
+                                </div>
+                            {% else %}
+                                <span class="text-muted fst-italic">Not Assigned</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if line.status == 'active' %}
+                                <span class="status-badge status-completed">Active</span>
+                            {% else %}
+                                <span class="status-badge status-design">{{ line.status|capitalize }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group">
+                                <a href="{{ BASE_URL }}/production/sewing/lines/{{ line.production_line_id }}/edit" class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form action="{{ BASE_URL }}/production/sewing/lines/{{ line.production_line_id }}/delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this line?');">
+    {{ csrf_field() | raw }}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="fas fa-industry fa-3x mb-3 text-secondary opacity-50"></i>
+                            <p>No sewing lines found. Create one to get started.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

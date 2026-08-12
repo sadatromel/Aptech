@@ -1,0 +1,54 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}HR Reports Hub{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h3 mb-1 font-weight-bold text-gray-800">
+                <i class="fas fa-chart-pie text-primary me-2"></i>HR Reports Hub
+            </h2>
+            <p class="text-muted small mb-0">Access all Human Resource, Attendance, Payroll & Compliance Reports</p>
+        </div>
+        <div>
+            <a href="{{ BASE_URL }}/hr/dashboard" class="btn btn-outline-secondary btn-sm me-2">
+                <i class="fas fa-arrow-left me-1"></i> HR Dashboard
+            </a>
+            <a href="{{ BASE_URL }}/hr/reports/monthly-detailed-attendance" class="btn btn-primary btn-sm">
+                <i class="fas fa-calendar-alt me-1"></i> Monthly Detailed Attendance
+            </a>
+        </div>
+    </div>
+
+    <!-- Reports Grid -->
+    <div class="row">
+        {% for report in reports %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm border-0 hover-lift">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="icon-shape bg-{{ report.color }} text-white rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                            <i class="{{ report.icon }} fa-lg"></i>
+                        </div>
+                        <div>
+                            <span class="badge bg-soft-{{ report.color }} text-{{ report.color }} mb-1">{{ report.badge }}</span>
+                            <h5 class="card-title h6 font-weight-bold mb-0 text-dark">{{ report.title }}</h5>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted small mb-3">
+                        {{ report.description }}
+                    </p>
+                </div>
+                <div class="card-footer bg-transparent border-top-0 pt-0 pb-3">
+                    <a href="{{ BASE_URL }}{{ report.url }}" class="btn btn-sm btn-outline-{{ report.color }} w-100">
+                        View Report <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

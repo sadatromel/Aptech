@@ -1,0 +1,528 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Dashboard - RMG ERP{% endblock %}
+
+{% block styles %}
+<style>
+    .main-content {
+        background-color: var(--bg-secondary);
+        padding: 20px;
+        font-family: 'Inter', sans-serif;
+        min-height: calc(100vh - 60px);
+    }
+
+    .chart-card {
+        background: var(--bg-card);
+        border-radius: 8px;
+        padding: 24px;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 24px;
+        border: 1px solid var(--border-color);
+    }
+
+    .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .report-title {
+        text-transform: uppercase;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .filter-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+    }
+
+    .filter-select {
+        padding: 5px 10px;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-primary);
+        font-size: 0.875rem;
+        min-width: 200px;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .filter-select:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 2px var(--primary-light);
+    }
+
+    .charts-row {
+        display: flex;
+        gap: 24px;
+        margin-bottom: 30px;
+        align-items: flex-start;
+    }
+
+    .bar-chart-col {
+        flex: 0 0 60%;
+        min-width: 0;
+    }
+
+    .pie-chart-col {
+        flex: 0 0 calc(40% - 24px);
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .pie-chart-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        text-transform: uppercase;
+        text-align: center;
+        margin-bottom: 12px;
+        letter-spacing: 0.04em;
+    }
+
+    .chart-legend {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-bottom: 15px;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .legend-box {
+        width: 40px;
+        height: 15px;
+        background-color: #3b82f6;
+    }
+
+    .chart-wrapper {
+        height: 400px;
+        width: 100%;
+    }
+
+    .pie-chart-wrapper {
+        height: 340px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .pie-legend {
+        margin-top: 14px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        max-height: 200px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    .pie-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+    }
+
+    .pie-legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        flex-shrink: 0;
+    }
+
+    .pie-legend-label {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .pie-legend-val {
+        font-weight: 600;
+        color: var(--text-primary);
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 900px) {
+        .charts-row {
+            flex-direction: column;
+        }
+        .bar-chart-col, .pie-chart-col {
+            flex: 1 1 100%;
+            width: 100%;
+        }
+    }
+
+    .breakdown-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.825rem;
+        background: var(--bg-card);
+        color: var(--text-primary);
+    }
+
+    .breakdown-table th, .breakdown-table td {
+        border: 1px solid var(--border-color);
+        padding: 6px 10px;
+        text-align: right;
+    }
+
+    .breakdown-table th {
+        background-color: var(--bg-tertiary);
+        color: var(--text-primary);
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .breakdown-table td:first-child {
+        text-align: left;
+        background-color: var(--bg-tertiary);
+        font-weight: 500;
+        width: 200px;
+        color: var(--text-primary);
+    }
+
+    .total-col, .total-row {
+        font-weight: bold;
+        background-color: var(--primary-light) !important;
+        color: var(--primary) !important;
+    }
+
+    [data-theme="dark"] .total-col, [data-theme="dark"] .total-row {
+        background-color: rgba(59, 130, 246, 0.2) !important;
+        color: #60a5fa !important;
+    }
+
+    .highlight-red { color: #ef4444; font-weight: bold; }
+    .highlight-orange { color: #f97316; font-weight: bold; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="chart-card">
+        <div class="report-header">
+            <h2 class="report-title">BUYER WISE ORDER INHAND REPORT</h2>
+            
+            <div class="filter-group">
+                <span class="filter-label">Factory:</span>
+                <select id="factoryFilter" class="filter-select">
+                    <option value="">All Factories</option>
+                    {% for factory in factories %}
+                        <option value="{{ factory.factory_id }}" {{ selectedFactory == factory.factory_id ? 'selected' : '' }}>
+                            {{ factory.factory_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        
+        <div class="chart-legend">
+            <div class="legend-item">
+                <div class="legend-box"></div>
+                <span>ORDER QTY(PCS) — Monthly</span>
+            </div>
+        </div>
+
+        <div class="charts-row">
+            <div class="bar-chart-col">
+                <div class="chart-wrapper">
+                    <canvas id="buyerChart"></canvas>
+                </div>
+            </div>
+            <div class="pie-chart-col">
+                <div class="pie-chart-title">Buyer Wise Order Qty</div>
+                <div class="pie-chart-wrapper">
+                    <canvas id="buyerPieChart"></canvas>
+                </div>
+                <div class="pie-legend" id="pieLegend"></div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="breakdown-table" id="orderTable">
+                <thead>
+                    <tr id="tableHeader">
+                        <th>All Buyer</th>
+                        <!-- Months will be injected here -->
+                        <th>Total Qty</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Data will be injected here -->
+                </tbody>
+                <tfoot>
+                    <tr id="tableFooter" class="total-row">
+                        <td>Total Qty</td>
+                        <!-- Totals will be injected here -->
+                        <td id="grandTotal">0</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle Factory Filter Change
+    const factoryFilter = document.getElementById('factoryFilter');
+    factoryFilter.addEventListener('change', function() {
+        const factoryId = this.value;
+        const url = new URL(window.location.href);
+        if (factoryId) {
+            url.searchParams.set('factory_id', factoryId);
+        } else {
+            url.searchParams.delete('factory_id');
+        }
+        window.location.href = url.toString();
+    });
+
+    const rawData = {{ buyerMonthlyOrders|raw }};
+    const months = [
+        'Feb 26', 'Mar 26', 'Apr 26', 'May 26', 'Jun 26', 
+        'Jul 26', 'Aug 26', 'Sep 26', 'Oct 26', 'Nov 26', 'Dec 26', 'Jan 27'
+    ];
+    const monthKeys = [
+        '2026-02', '2026-03', '2026-04', '2026-05', '2026-06',
+        '2026-07', '2026-08', '2026-09', '2026-10', '2026-11', '2026-12', '2027-01'
+    ];
+
+    const buyers = [...new Set(rawData.map(item => item.buyer_name))].sort();
+    
+    // Inject Month Headers
+    const headerRow = document.getElementById('tableHeader');
+    const totalQtyHeader = headerRow.lastElementChild;
+    months.forEach(month => {
+        const th = document.createElement('th');
+        th.textContent = month;
+        headerRow.insertBefore(th, totalQtyHeader);
+    });
+
+    // Prepare Data Matrix
+    const matrix = {};
+    buyers.forEach(buyer => {
+        matrix[buyer] = {};
+        monthKeys.forEach(mKey => {
+            const entry = rawData.find(d => d.buyer_name === buyer && d.month_year === mKey);
+            matrix[buyer][mKey] = entry ? parseInt(entry.total_quantity) : 0;
+        });
+    });
+
+    // Inject Table Body
+    const tableBody = document.getElementById('tableBody');
+    const monthlyTotals = monthKeys.reduce((acc, m) => ({...acc, [m]: 0}), {});
+    let grandTotal = 0;
+
+    buyers.forEach((buyer, index) => {
+        const tr = document.createElement('tr');
+        const nameTd = document.createElement('td');
+        nameTd.textContent = buyer;
+        tr.appendChild(nameTd);
+
+        let buyerTotal = 0;
+        monthKeys.forEach(mKey => {
+            const val = matrix[buyer][mKey];
+            const td = document.createElement('td');
+            if (val > 0) {
+                td.textContent = val.toLocaleString();
+                if (val > 100000) td.classList.add('highlight-orange');
+                else if (val > 4000) td.classList.add('highlight-red');
+            } else {
+                td.textContent = '';
+            }
+            tr.appendChild(td);
+            buyerTotal += val;
+            monthlyTotals[mKey] += val;
+        });
+
+        const totalTd = document.createElement('td');
+        totalTd.textContent = buyerTotal.toLocaleString();
+        totalTd.classList.add('total-col');
+        tr.appendChild(totalTd);
+        
+        tableBody.appendChild(tr);
+        grandTotal += buyerTotal;
+    });
+
+    // Inject Footer Totals
+    const footerRow = document.getElementById('tableFooter');
+    const grandTotalTd = document.getElementById('grandTotal');
+    monthKeys.forEach(mKey => {
+        const td = document.createElement('td');
+        td.textContent = monthlyTotals[mKey] > 0 ? monthlyTotals[mKey].toLocaleString() : '';
+        footerRow.insertBefore(td, grandTotalTd);
+    });
+    grandTotalTd.textContent = grandTotal.toLocaleString();
+
+    // ── Pie Chart: Buyer Wise Total Order Qty ────────────────────────────
+    const buyerTotals = {};
+    rawData.forEach(item => {
+        const name = item.buyer_name;
+        buyerTotals[name] = (buyerTotals[name] || 0) + parseInt(item.total_quantity || 0);
+    });
+    const pieBuyers = Object.keys(buyerTotals).sort((a, b) => buyerTotals[b] - buyerTotals[a]);
+    const pieValues = pieBuyers.map(b => buyerTotals[b]);
+
+    const PIE_PALETTE = [
+        '#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6',
+        '#06b6d4','#f97316','#ec4899','#84cc16','#6366f1',
+        '#14b8a6','#fb923c','#a855f7','#22d3ee','#e11d48',
+        '#16a34a','#dc2626','#7c3aed','#0891b2','#ca8a04'
+    ];
+    const pieColors = pieBuyers.map((_, i) => PIE_PALETTE[i % PIE_PALETTE.length]);
+
+    // Build custom pie legend
+    const pieLegendEl = document.getElementById('pieLegend');
+    const grandPieTotal = pieValues.reduce((s, v) => s + v, 0);
+    pieBuyers.forEach((buyer, i) => {
+        const pct = grandPieTotal > 0 ? ((pieValues[i] / grandPieTotal) * 100).toFixed(1) : '0.0';
+        const item = document.createElement('div');
+        item.className = 'pie-legend-item';
+        item.innerHTML = `
+            <span class="pie-legend-dot" style="background:${pieColors[i]}"></span>
+            <span class="pie-legend-label" title="${buyer}">${buyer}</span>
+            <span class="pie-legend-val">${pieValues[i].toLocaleString()} <small style="font-weight:400;opacity:.7">(${pct}%)</small></span>
+        `;
+        pieLegendEl.appendChild(item);
+    });
+
+    // ── Bar Chart: Chart.js Configuration ────────────────────────────────
+    let buyerChart;
+    const chartData = monthKeys.map(mKey => monthlyTotals[mKey]);
+    const ctx = document.getElementById('buyerChart').getContext('2d');
+    const pieCtx = document.getElementById('buyerPieChart').getContext('2d');
+
+    function getChartColors() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        return {
+            text: isDark ? '#94a3b8' : '#64748b',
+            grid: isDark ? '#334155' : '#f1f5f9',
+            bar: '#3b82f6'
+        };
+    }
+
+    function initChart() {
+        const colors = getChartColors();
+        buyerChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: 'ORDER QTY(PCS)',
+                    data: chartData,
+                    backgroundColor: colors.bar,
+                    borderColor: '#2563eb',
+                    borderWidth: 1,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: colors.grid },
+                        ticks: {
+                            color: colors.text,
+                            callback: (val) => val === 0 ? '0' : val.toLocaleString()
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: colors.text }
+                    }
+                }
+            }
+        });
+    }
+
+    function initPieChart() {
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: pieBuyers,
+                datasets: [{
+                    data: pieValues,
+                    backgroundColor: pieColors,
+                    borderColor: 'transparent',
+                    borderWidth: 2,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                const val = ctx.parsed;
+                                const pct = grandPieTotal > 0 ? ((val / grandPieTotal) * 100).toFixed(1) : '0.0';
+                                return ` ${val.toLocaleString()} pcs (${pct}%)`;
+                            }
+                        }
+                    }
+                },
+                animation: { animateScale: true, animateRotate: true }
+            }
+        });
+    }
+
+    initChart();
+    initPieChart();
+
+    // Listen for theme changes to update chart
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
+                const colors = getChartColors();
+                buyerChart.options.scales.y.grid.color = colors.grid;
+                buyerChart.options.scales.y.ticks.color = colors.text;
+                buyerChart.options.scales.x.ticks.color = colors.text;
+                buyerChart.update();
+            }
+        });
+    });
+
+    observer.observe(document.documentElement, { attributes: true });
+});
+</script>
+{% endblock %}

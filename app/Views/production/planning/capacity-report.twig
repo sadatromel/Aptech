@@ -1,0 +1,74 @@
+{% extends "layouts/app.twig" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1>Capacity Report</h1>
+    </div>
+    <div class="col-md-6 text-end">
+        <a href="{{ BASE_URL }}/production/planning" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+            <!-- <input type="hidden" name="page" value="production_planning/capacity_report"> -->
+            <input type="hidden" name="action" value="capacity_report">
+            <div class="col-md-4">
+                <label class="form-label">Date From</label>
+                <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Date To</label>
+                <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary">Refresh Report</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Line</th>
+                        <th>Daily Capacity</th>
+                        <th>Working Days</th>
+                        <th>Total Capacity</th>
+                        <th>Planned Qty</th>
+                        <th>Completed Qty</th>
+                        <th>Utilization (%)</th>
+                        <th>Efficiency (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in capacityData %}
+                    <tr>
+                        <td>{{ row.line }}</td>
+                        <td>{{ row.daily_capacity }}</td>
+                        <td>{{ row.working_days }}</td>
+                        <td>{{ row.total_capacity }}</td>
+                        <td>{{ row.planned_quantity }}</td>
+                        <td>{{ row.completed_quantity }}</td>
+                        <td>
+                            <div class="progress">
+                                <div class="progress-bar bg-{{ row.utilization > 100 ? 'danger' : 'success' }}" role="progressbar" style="width: {{ row.utilization }}%">
+                                    {{ row.utilization|number_format(1) }}%
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ row.efficiency|number_format(1) }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

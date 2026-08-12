@@ -1,0 +1,55 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Journal Entry{% endblock %}
+
+{% block content %}
+    <div class="pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Record Journal Entry</h1>
+    </div>
+
+    <form action="{{ BASE_URL }}/finance/transactions/store" method="POST">
+    {{ csrf_field() | raw }}
+         <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Date</label>
+                <input type="date" class="form-control" name="date" required value="{{ 'now'|date('Y-m-d') }}">
+            </div>
+             <div class="col-md-6">
+                <label class="form-label">Reference</label>
+                <input type="text" class="form-control" name="reference">
+            </div>
+         </div>
+         
+         <div class="row mb-3">
+            <div class="col-md-5">
+                <label class="form-label">Debit Account</label>
+                <select class="form-select" name="debit_account" required>
+                    <option value="">Select Account</option>
+                    {% for acc in accounts %}
+                    <option value="{{ acc.account_id }}">{{ acc.account_code }} - {{ acc.account_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+             <div class="col-md-5">
+                <label class="form-label">Credit Account</label>
+                 <select class="form-select" name="credit_account" required>
+                    <option value="">Select Account</option>
+                     {% for acc in accounts %}
+                    <option value="{{ acc.account_id }}">{{ acc.account_code }} - {{ acc.account_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+             <div class="col-md-2">
+                <label class="form-label">Amount</label>
+                <input type="number" step="0.01" class="form-control" name="amount" required>
+            </div>
+         </div>
+         
+         <div class="mb-3">
+              <label class="form-label">Description</label>
+              <input type="text" class="form-control" name="description">
+         </div>
+
+        <button type="submit" class="btn btn-primary">Post Transaction</button>
+    </form>
+{% endblock %}

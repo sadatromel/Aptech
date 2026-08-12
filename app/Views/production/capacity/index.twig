@@ -1,0 +1,72 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Capacity Planning - Production{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Capacity Planning</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <form action="" method="get" class="d-flex gap-2">
+                 <input type="hidden" name="page" value="capacity_planning">
+                 <select name="view" class="form-select form-select-sm">
+                     <option value="daily" {{ view == 'daily' ? 'selected' : '' }}>Daily View</option>
+                     <option value="weekly" {{ view == 'weekly' ? 'selected' : '' }}>Weekly View</option>
+                     <option value="monthly" {{ view == 'monthly' ? 'selected' : '' }}>Monthly View</option>
+                 </select>
+                 <input type="date" name="date" class="form-control form-control-sm" value="{{ date }}">
+                 <button type="submit" class="btn btn-sm btn-outline-primary">Update</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Capacity Overview -->
+    <div class="row g-4 mb-4">
+        {% for line in capacityData %}
+        <div class="col-xl-4 col-md-6">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold">{{ line.line_name }}</h6>
+                    <span class="badge bg-{{ line.utilization > 100 ? 'danger' : (line.utilization > 80 ? 'warning' : 'success') }}">
+                        {{ line.utilization|number_format(1) }}% Utilized
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Available Capacity:</span>
+                        <span class="fw-bold">{{ line.available_capacity|number_format }} pcs</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">Current Load:</span>
+                        <span class="fw-bold">{{ line.current_load|number_format }} pcs</span>
+                    </div>
+
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ min(line.utilization, 100) }}%"></div>
+                    </div>
+
+                    {% if line.orders|length > 0 %}
+                        <h6 class="text-muted font-size-sm mt-3 mb-2">Assigned Plans</h6>
+                        <ul class="list-group list-group-flush small">
+                            {% for order in line.orders %}
+                            <li class="list-group-item px-0 py-1 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="fw-bold">#{{ order.plan_number }}</span>
+                                    <span class="text-muted ms-1">({{ order.style_code }})</span>
+                                </div>
+                                <span class="badge bg-light text-dark border">{{ order.quantity }} pcs</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted small mt-3 mb-0">No plans assigned for this period.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <p class="text-muted">No production lines found.</p>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

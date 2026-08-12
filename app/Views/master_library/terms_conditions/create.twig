@@ -1,0 +1,150 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Add New Term &amp; Condition | Master Library{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Add New Term &amp; Condition</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library/terms_conditions">Terms &amp; Conditions</a></li>
+        <li class="breadcrumb-item active">Add New</li>
+    </ol>
+
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <h5 class="mb-0"><i class="fas fa-plus me-2 text-primary"></i>New Commercial Term / Condition</h5>
+        </div>
+
+        <div class="card-body p-4">
+            <form action="{{ BASE_URL }}/master_library/terms_conditions/create" method="POST" id="createTermForm">
+    {{ csrf_field() | raw }}
+
+                {# ── Row 1 : Code | Name ── #}
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="form-floating">
+                            <input class="form-control text-uppercase font-monospace"
+                                   id="term_code" name="term_code" type="text"
+                                   placeholder="e.g. T001" maxlength="50" required />
+                            <label for="term_code">Term Code <span class="text-danger">*</span></label>
+                        </div>
+                        <div class="form-text">Short unique identifier (e.g. T001, PAY-30).</div>
+                    </div>
+                    <div class="col-md-9">
+                        <div class="form-floating">
+                            <input class="form-control"
+                                   id="term_name" name="term_name" type="text"
+                                   placeholder="Term Name" maxlength="255" required />
+                            <label for="term_name">Term Name <span class="text-danger">*</span></label>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── Row 2 : Type | Applies To | Mandatory ── #}
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            <select class="form-select" id="term_type" name="term_type" required>
+                                {% for type in termTypes %}
+                                <option value="{{ type }}">{{ type }}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="term_type">Term Type <span class="text-danger">*</span></label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            <select class="form-select" id="applies_to" name="applies_to" required>
+                                {% for opt in appliesTo %}
+                                <option value="{{ opt }}">{{ opt }}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="applies_to">Applies To <span class="text-danger">*</span></label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            <select class="form-select" id="is_mandatory" name="is_mandatory">
+                                <option value="No" selected>No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                            <label for="is_mandatory">Mandatory</label>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── Row 3 : Description ── #}
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="form-floating">
+                            <textarea class="form-control"
+                                      id="description" name="description"
+                                      placeholder="Enter full clause or description"
+                                      style="height: 130px;"></textarea>
+                            <label for="description">Description / Clause Text</label>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── Row 4 : Effective Dates | Status ── #}
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            <input class="form-control" id="effective_from" name="effective_from" type="date" placeholder="Effective From" />
+                            <label for="effective_from">Effective From</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            <input class="form-control" id="effective_to" name="effective_to" type="date" placeholder="Effective To" />
+                            <label for="effective_to">Effective To</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            <select class="form-select" id="status" name="status">
+                                <option value="Active" selected>Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                            <label for="status">Status</label>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── Buttons ── #}
+                <div class="mt-4 mb-0">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ BASE_URL }}/master_library/terms_conditions"
+                           class="btn btn-light me-md-2 px-4 rounded-pill border">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary px-4 rounded-pill">
+                            <i class="fas fa-save me-1"></i>Save Term
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-uppercase the term code field as user types
+document.getElementById('term_code').addEventListener('input', function () {
+    this.value = this.value.toUpperCase().replace(/[^A-Z0-9\-_]/g, '');
+});
+
+// Validate effective dates
+document.getElementById('createTermForm').addEventListener('submit', function (e) {
+    const from = document.getElementById('effective_from').value;
+    const to   = document.getElementById('effective_to').value;
+    if (from && to && to < from) {
+        e.preventDefault();
+        alert('Effective To date cannot be earlier than Effective From date.');
+        document.getElementById('effective_to').focus();
+    }
+});
+</script>
+{% endblock %}

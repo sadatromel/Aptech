@@ -1,0 +1,311 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Export Documents{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Page Header -->
+    <div class="col-12 mb-4">
+        <div class="page-header d-flex justify-content-between align-items-center p-4 bg-white rounded shadow-sm">
+            <div class="page-title">
+                <h1 class="h3 text-primary fw-bold mb-1">Export Documents</h1>
+                <p class="text-muted mb-0">Manage shipping documents and export paperwork</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDocumentModal">
+                    <i class="fas fa-plus me-2"></i>New Document
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="col-12 mb-4">
+        <div class="stats-grid">
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.total_documents }}</h3>
+                <p class="text-muted mb-0">Total Documents</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">${{ stats.total_value|number_format(2) }}</h3>
+                <p class="text-muted mb-0">Total Value</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.total_cartons }}</h3>
+                <p class="text-muted mb-0">Total Cartons</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.monthly_documents }}</h3>
+                <p class="text-muted mb-0">This Month</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Documents Table -->
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fas fa-file-export me-2"></i>Export Documents</span>
+                <input type="text" class="form-control form-control-sm w-auto" id="searchInput" placeholder="Search documents...">
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="documentsTable">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="p-3 border-0">Document #</th>
+                                <th class="p-3 border-0">Order/Style</th>
+                                <th class="p-3 border-0">Type</th>
+                                <th class="p-3 border-0">Export Date</th>
+                                <th class="p-3 border-0">Buyer</th>
+                                <th class="p-3 border-0">Value</th>
+                                <th class="p-3 border-0">Cartons</th>
+                                <th class="p-3 border-0">Shipment</th>
+                                <th class="p-3 border-0">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for document in documents %}
+                            <tr>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ document.document_number }}</div>
+                                    <small class="text-muted">Inv: {{ document.invoice_number }}</small>
+                                </td>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ document.order_number }}</div>
+                                    <small class="text-muted">{{ document.style_code }}</small>
+                                </td>
+                                <td class="p-3">
+                                    <span class="badge rounded-pill bg-light text-dark border">{{ document.document_type }}</span>
+                                </td>
+                                <td class="p-3">{{ document.export_date|date('M j, Y') }}</td>
+                                <td class="p-3">{{ document.buyer_name }}</td>
+                                <td class="p-3">
+                                    {{ document.currency }} {{ document.invoice_value|number_format(2) }}
+                                    <div class="small text-muted">{{ document.payment_terms }}</div>
+                                </td>
+                                <td class="p-3">
+                                    {{ document.carton_count }} cartons
+                                    <div class="small text-muted">{{ document.total_quantity|number_format }} pcs</div>
+                                </td>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ document.vessel_name }}</div>
+                                    <small class="text-muted">{{ document.port_of_loading }} → {{ document.port_of_discharge }}</small>
+                                </td>
+                                <td class="p-3">
+                                    <button class="btn btn-sm btn-outline-info" onclick="viewDocument({{ document.document_id }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <form action="/packing/documents/{{ document.document_id }}/delete" method="POST" onsubmit="return confirm('Delete this document?')" style="display:inline;">
+    {{ csrf_field() | raw }}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center p-4 text-muted">No export documents found. Add your first document to get started.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Document Modal -->
+<div class="modal fade" id="addDocumentModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <form action="/packing/documents" method="POST" class="modal-content">
+    {{ csrf_field() | raw }}
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">New Export Document</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Document Number</label>
+                        <input type="text" class="form-control" name="document_number" value="EXP-{{ 'now'|date('Y-m-d') }}-001" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Order *</label>
+                        <select class="form-select" name="order_id" required>
+                            <option value="">Select Order</option>
+                            {% for order in orders %}
+                            <option value="{{ order.order_id }}">{{ order.order_number }} ({{ order.style_code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Document Type *</label>
+                        <select class="form-select" name="document_type" required>
+                            <option value="Commercial Invoice">Commercial Invoice</option>
+                            <option value="Packing List">Packing List</option>
+                            <option value="Bill of Lading">Bill of Lading</option>
+                            <option value="Certificate of Origin">Certificate of Origin</option>
+                            <option value="Air Waybill">Air Waybill</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Export Date *</label>
+                        <input type="date" class="form-control" name="export_date" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Buyer *</label>
+                        <select class="form-select" name="buyer_id" required>
+                            <option value="">Select Buyer</option>
+                            {% for buyer in buyers %}
+                            <option value="{{ buyer.buyer_id }}">{{ buyer.buyer_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Invoice Number</label>
+                        <input type="text" class="form-control" name="invoice_number">
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Consignee Name</label>
+                        <input type="text" class="form-control" name="consignee_name">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Consignee Address</label>
+                        <textarea class="form-control" name="consignee_address" rows="1"></textarea>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Value</label>
+                        <input type="number" class="form-control" name="invoice_value" step="0.01">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Currency</label>
+                        <select class="form-select" name="currency">
+                            <option value="USD">USD</option>
+                            <option value="EUR">EUR</option>
+                            <option value="GBP">GBP</option>
+                            <option value="BDT">BDT</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Port of Loading</label>
+                        <input type="text" class="form-control" name="port_of_loading" placeholder="e.g., Chittagong">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Port of Discharge</label>
+                        <input type="text" class="form-control" name="port_of_discharge" placeholder="e.g., Hamburg">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Vessel Name</label>
+                        <input type="text" class="form-control" name="vessel_name">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Voyage</label>
+                        <input type="text" class="form-control" name="voyage_number">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Payment Terms</label>
+                        <select class="form-select" name="payment_terms">
+                            <option value="LC">Letter of Credit</option>
+                            <option value="TT">Telegraphic Transfer</option>
+                            <option value="CAD">Cash Against Documents</option>
+                            <option value="DA">Documents Against Acceptance</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Shipment Terms</label>
+                        <select class="form-select" name="shipment_terms">
+                            <option value="FOB">FOB</option>
+                            <option value="CIF">CIF</option>
+                            <option value="CFR">CFR</option>
+                            <option value="EXW">EXW</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                     <h6>Carton Details</h6>
+                     <div id="cartonsContainer">
+                        <div class="row g-2 mb-2 carton-row">
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted">Carton #</label>
+                                <input type="text" class="form-control" name="cartons[0][carton_number]" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small text-muted">Quantity</label>
+                                <input type="number" class="form-control" name="cartons[0][quantity]" min="1" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-muted">Description</label>
+                                <input type="text" class="form-control" name="cartons[0][description]" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small text-muted">HS Code</label>
+                                <input type="text" class="form-control" name="cartons[0][hs_code]">
+                            </div>
+                            <div class="col-md-1 d-flex align-items-end">
+                                <button type="button" class="btn btn-outline-danger btn-sm mb-1" onclick="this.closest('.carton-row').remove()">×</button>
+                            </div>
+                        </div>
+                     </div>
+                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addCarton()">+ Add Carton Details</button>
+                </div>
+
+                <div class="mt-3">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-control" name="notes" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Create Document</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let cartonIndex = 1;
+
+function addCarton() {
+    const html = `
+    <div class="row g-2 mb-2 carton-row">
+        <div class="col-md-3">
+            <input type="text" class="form-control" name="cartons[${cartonIndex}][carton_number]" required>
+        </div>
+        <div class="col-md-2">
+            <input type="number" class="form-control" name="cartons[${cartonIndex}][quantity]" min="1" required>
+        </div>
+        <div class="col-md-4">
+            <input type="text" class="form-control" name="cartons[${cartonIndex}][description]" required>
+        </div>
+        <div class="col-md-2">
+            <input type="text" class="form-control" name="cartons[${cartonIndex}][hs_code]">
+        </div>
+        <div class="col-md-1">
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.carton-row').remove()">×</button>
+        </div>
+    </div>`;
+    document.getElementById('cartonsContainer').insertAdjacentHTML('beforeend', html);
+    cartonIndex++;
+}
+
+document.getElementById('searchInput').addEventListener('keyup', function(e) {
+    const term = e.target.value.toLowerCase();
+    document.querySelectorAll('#documentsTable tbody tr').forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+    });
+});
+
+function viewDocument(id) {
+    fetch(`/packing/documents/${id}/data`).then(r => r.json()).then(d => {
+        console.log("Viewing Document", d);
+        alert(`Document: ${d.document_number}\nBuyer: ${d.buyer_name}`);
+    });
+}
+</script>
+{% endblock %}

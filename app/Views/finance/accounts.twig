@@ -1,0 +1,355 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Chart of Accounts & Daybook{% endblock %}
+
+{% block styles %}
+<style>
+    .nav-tabs-custom {
+        border-bottom: 2px solid var(--border-color);
+    }
+    .nav-tabs-custom .nav-link {
+        border: none;
+        color: var(--text-muted);
+        font-weight: 600;
+        padding: 12px 20px;
+    }
+    .nav-tabs-custom .nav-link.active {
+        color: var(--primary-color);
+        border-bottom: 3px solid var(--primary-color);
+        background: transparent;
+    }
+    
+    .account-tree-item {
+        border-left: 2px dashed rgba(0, 0, 0, 0.1);
+        padding-left: 15px;
+        margin-left: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 bg-transparent px-0">
+                <li class="breadcrumb-item"><a href="{{ BASE_URL }}/finance/dashboard" class="text-decoration-none">Finance</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Chart of Accounts</li>
+            </ol>
+        </nav>
+        <h4 class="mb-0 font-weight-bold">Chart of Accounts & Daybook</h4>
+    </div>
+
+    <!-- Alert Messages -->
+    {% if session.success_message %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ session.success_message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+    {% if session.error_message %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ session.error_message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs nav-tabs-custom mb-4" id="coaTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tree-tab" data-bs-toggle="tab" data-bs-target="#tree-pane" type="button" role="tab"><i class="fas fa-sitemap me-2"></i>Chart of Accounts</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="daybook-tab" data-bs-toggle="tab" data-bs-target="#daybook-pane" type="button" role="tab"><i class="fas fa-book-open me-2"></i>Daybook (Transactions)</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="audit-tab" data-bs-toggle="tab" data-bs-target="#audit-pane" type="button" role="tab"><i class="fas fa-history me-2"></i>Audit Trail & Locking</button>
+        </li>
+    </ul>
+
+    <!-- Tabs Content -->
+    <div class="tab-content" id="coaTabsContent">
+        
+        <!-- CHART OF ACCOUNTS TREE -->
+        <div class="tab-pane fade show active" id="tree-pane" role="tabpanel">
+            <div class="row g-4">
+                <!-- COA Tree View -->
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="mb-0 font-weight-bold">Account Structure Tree</h5>
+                            <button class="btn btn-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#addAccountModal">
+                                <i class="fas fa-plus me-1"></i> Add Account
+                            </button>
+                        </div>
+
+                        <!-- Tree by Categories -->
+                        {% set types = ['Asset', 'Liability', 'Equity', 'Income', 'Expense'] %}
+                        {% for type in types %}
+                        <div class="mb-3">
+                            <h6 class="font-weight-bold text-uppercase text-secondary mb-2">
+                                <i class="fas fa-folder me-2"></i>{{ type }} Accounts
+                            </h6>
+                            <div class="ps-3">
+                                {% for acc in accounts %}
+                                    {% if acc.account_type == type %}
+                                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-light">
+                                        <div>
+                                            <span class="badge bg-light text-dark font-weight-bold me-2">{{ acc.account_code }}</span>
+                                            <span class="font-weight-bold">{{ acc.account_name }}</span>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge {% if acc.status == 'active' %}bg-success{% else %}bg-secondary{% endif %} me-3">{{ acc.status|upper }}</span>
+                                            <button class="btn btn-xs btn-outline-primary me-1" onclick="openOpeningModal({{ acc.account_id }}, '{{ acc.account_name }}')">
+                                                <i class="fas fa-coins me-1"></i> Opening Bal
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- COA Configurations and Summary -->
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm p-4 mb-4">
+                        <h5 class="mb-3 font-weight-bold">COA Summary</h5>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Total Accounts:</span>
+                            <span class="font-weight-bold text-primary">{{ accounts|length }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Active Accounts:</span>
+                            <span class="font-weight-bold text-success">{{ accounts|length }}</span>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm p-4">
+                        <h5 class="mb-3 font-weight-bold">Fiscal Period Lock</h5>
+                        <p class="text-muted font-size-13">Prevent adjustments or voucher postings in closed months.</p>
+                        <form action="{{ BASE_URL }}/finance/accounts/fiscal-year" method="POST">
+                            {{ csrf_field() | raw }}
+                            <div class="mb-3">
+                                <label class="form-label font-weight-bold">Active Fiscal Year</label>
+                                <select class="form-select" name="year_label">
+                                    {% for fy in fiscalYears %}
+                                    <option value="{{ fy.year_label }}" {% if fy.status == 'Active' %}selected{% endif %}>{{ fy.year_label }} ({{ fy.status }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-outline-danger w-100 rounded-pill">
+                                <i class="fas fa-lock me-1"></i> Lock/Reopen Period
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DAYBOOK (TRANSACTIONS) -->
+        <div class="tab-pane fade" id="daybook-pane" role="tabpanel">
+            <div class="card border-0 shadow-sm p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="mb-0 font-weight-bold">Transaction Daybook</h5>
+                    <div class="d-flex gap-2">
+                        <input type="text" id="daybookSearch" class="form-control form-control-sm rounded-pill" placeholder="Search accounts or narrative...">
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr class="text-muted">
+                                <th>Date</th>
+                                <th>Voucher #</th>
+                                <th>Account</th>
+                                <th>Description</th>
+                                <th>Cost Center</th>
+                                <th class="text-end">Debit</th>
+                                <th class="text-end">Credit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if daybook is empty %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">No transactions logged in the Daybook.</td>
+                            </tr>
+                            {% else %}
+                                {% for day in daybook %}
+                                <tr>
+                                    <td>{{ day.transaction_date|date('d-M-Y') }}</td>
+                                    <td><span class="badge bg-info text-dark font-weight-bold">{{ day.reference_type }}-{{ day.reference_id }}</span></td>
+                                    <td><span class="font-weight-bold text-primary">{{ day.account_code }}</span> - {{ day.account_name }}</td>
+                                    <td>{{ day.description }}</td>
+                                    <td><span class="text-muted">{{ day.cost_center_name ?: '-' }}</span></td>
+                                    <td class="text-end font-weight-bold text-success">{% if day.debit_amount > 0 %}${{ day.debit_amount|number_format(2) }}{% else %}-{% endif %}</td>
+                                    <td class="text-end font-weight-bold text-danger">{% if day.credit_amount > 0 %}${{ day.credit_amount|number_format(2) }}{% else %}-{% endif %}</td>
+                                </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- AUDIT TRAIL & LOCKING -->
+        <div class="tab-pane fade" id="audit-pane" role="tabpanel">
+            <div class="row g-4">
+                <!-- Audit Activity Logs -->
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm p-4">
+                        <h5 class="mb-3 font-weight-bold"><i class="fas fa-shield-alt text-warning me-2"></i>Audit Trail Log</h5>
+                        <div class="list-group list-group-flush">
+                            {% for log in auditLogs %}
+                            <div class="list-group-item bg-transparent px-0 py-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="font-weight-bold">{{ log.action }}</span>
+                                    <span class="text-muted font-size-12">{{ log.date }}</span>
+                                </div>
+                                <p class="mb-1 text-secondary font-size-13">{{ log.details }}</p>
+                                <small class="text-primary font-weight-bold"><i class="fas fa-user me-1"></i>{{ log.user }}</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fiscal Period List -->
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm p-4">
+                        <h5 class="mb-3 font-weight-bold"><i class="fas fa-calendar-alt text-info me-2"></i>Fiscal Period Status</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle table-borderless">
+                                <thead>
+                                    <tr class="text-muted font-size-12">
+                                        <th>Period</th>
+                                        <th>Start Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for fy in fiscalYears %}
+                                    <tr>
+                                        <td><strong>{{ fy.year_label }}</strong></td>
+                                        <td>{{ fy.start_date }}</td>
+                                        <td>
+                                            <span class="badge {% if fy.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %}">
+                                                {{ fy.status }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Add Account -->
+<div class="modal fade" id="addAccountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ BASE_URL }}/finance/accounts/store" method="POST">
+            {{ csrf_field() | raw }}
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold">Create Ledger Account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Account Code</label>
+                        <input type="text" class="form-control" name="account_code" placeholder="e.g. 1001" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Account Name</label>
+                        <input type="text" class="form-control" name="account_name" placeholder="e.g. Cash in Hand" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Account Group/Type</label>
+                        <select class="form-select" name="account_type">
+                            <option value="Asset">Asset</option>
+                            <option value="Liability">Liability</option>
+                            <option value="Equity">Equity</option>
+                            <option value="Income">Income / Revenue</option>
+                            <option value="Expense">Expense</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Create Account</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Opening Balance -->
+<div class="modal fade" id="openingBalanceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ BASE_URL }}/finance/accounts/opening-balance" method="POST">
+            {{ csrf_field() | raw }}
+            <input type="hidden" name="account_id" id="openingAccountId">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold">Set Opening Balance</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Account</label>
+                        <input type="text" class="form-control bg-light" id="openingAccountName" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Amount ($)</label>
+                        <input type="number" step="0.01" class="form-control" name="amount" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Balance Nature</label>
+                        <select class="form-select" name="balance_type">
+                            <option value="debit">Debit Balance (Asset / Expense)</option>
+                            <option value="credit">Credit Balance (Liability / Equity / Income)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Save Balance</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openOpeningModal(id, name) {
+    document.getElementById('openingAccountId').value = id;
+    document.getElementById('openingAccountName').value = name;
+    var modal = new bootstrap.Modal(document.getElementById('openingBalanceModal'));
+    modal.show();
+}
+
+// Local search filtering for daybook table
+document.getElementById('daybookSearch').addEventListener('keyup', function() {
+    var val = this.value.toLowerCase();
+    var rows = document.querySelectorAll('#daybook-pane tbody tr');
+    rows.forEach(function(row) {
+        if(row.innerText.toLowerCase().indexOf(val) > -1) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

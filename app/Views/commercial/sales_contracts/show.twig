@@ -1,0 +1,134 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Sales Contract • {{ contract.contract_no }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Action Bar (Hidden on print) -->
+    <div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
+        <a href="{{ BASE_URL }}/commercial/sales-contracts" class="btn btn-outline-secondary rounded-pill px-3 btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>Back to Contracts List
+        </a>
+        <button onclick="window.print()" class="btn btn-primary rounded-pill px-4 btn-sm shadow-sm">
+            <i class="fas fa-print me-1"></i>Print Contract
+        </button>
+    </div>
+
+    <!-- Printable Sales Contract Spec Card -->
+    <div class="card border-0 shadow-lg rounded-4 p-4 print-container">
+        <!-- Header -->
+        <div class="row border-bottom pb-3 mb-4">
+            <div class="col-8">
+                <h2 class="fw-bold text-dark mb-1">EXPORT SALES CONTRACT</h2>
+                <h5 class="text-primary fw-semibold mb-0">CONTRACT #: {{ contract.contract_no }}</h5>
+                <small class="text-muted">Aptech Garments & Textile Export ERP</small>
+            </div>
+            <div class="col-4 text-end">
+                <div class="badge bg-success fs-6 px-3 py-2">EXPORT CONTRACT</div>
+                <small class="d-block text-muted mt-1">Date: {{ contract.contract_date ? contract.contract_date|date('d M Y') : 'N/A' }}</small>
+            </div>
+        </div>
+
+        <!-- Buyer & Terms Summary -->
+        <div class="row g-4 mb-4">
+            <div class="col-6">
+                <div class="p-3 bg-light rounded-3 border">
+                    <h6 class="fw-bold text-uppercase text-secondary small mb-2"><i class="fas fa-user-tie me-1"></i>Buyer / Customer Information</h6>
+                    <table class="table table-sm table-borderless mb-0 small">
+                        <tr><td class="text-muted" style="width: 35%;">Buyer Name:</td><td class="fw-bold">{{ contract.customer_name ?? 'N/A' }}</td></tr>
+                        <tr><td class="text-muted">Customer Code:</td><td class="fw-bold text-primary">{{ contract.customer_code ?? 'N/A' }}</td></tr>
+                        <tr><td class="text-muted">Email:</td><td>{{ contract.email ?: '-' }}</td></tr>
+                        <tr><td class="text-muted">Address:</td><td>{{ contract.address ?: '-' }}</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="p-3 bg-light rounded-3 border">
+                    <h6 class="fw-bold text-uppercase text-secondary small mb-2"><i class="fas fa-file-contract me-1"></i>Contract & Payment Terms</h6>
+                    <table class="table table-sm table-borderless mb-0 small">
+                        <tr><td class="text-muted" style="width: 35%;">Contract Value:</td><td class="fw-bold text-success fs-6">${{ contract.total_amount|number_format(2) }} {{ contract.currency ?: 'USD' }}</td></tr>
+                        <tr><td class="text-muted">Payment Terms:</td><td class="fw-bold text-dark">{{ contract.payment_terms ?: 'L/C at Sight' }}</td></tr>
+                        <tr><td class="text-muted">Shipping Terms:</td><td class="fw-bold">{{ contract.shipping_terms ?: 'FOB' }}</td></tr>
+                        <tr><td class="text-muted">Valid Until:</td><td class="fw-bold">{{ contract.valid_until ? contract.valid_until|date('d M Y') : 'N/A' }}</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Production Orders Breakdown Table -->
+        <div class="card border mb-4">
+            <div class="card-header bg-light fw-bold small text-uppercase"><i class="fas fa-list me-1"></i>Contract Order Allocation Items</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle mb-0">
+                        <thead class="bg-secondary text-white small">
+                            <tr>
+                                <th class="ps-3">#</th>
+                                <th>PO Number</th>
+                                <th>Allocation #</th>
+                                <th>Style Code</th>
+                                <th class="text-end">Quantity (Pcs)</th>
+                                <th class="text-end">Unit Price</th>
+                                <th class="text-end pe-3">Subtotal ($)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if items is empty %}
+                            <tr><td colspan="7" class="text-center text-muted py-3">No orders linked to this sales contract.</td></tr>
+                            {% else %}
+                            {% for item in items %}
+                            <tr>
+                                <td class="ps-3">{{ loop.index }}</td>
+                                <td class="fw-bold text-primary">{{ item.po_number ?? 'N/A' }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ item.allocation_number ?: '-' }}</span></td>
+                                <td><span class="fw-semibold">{{ item.style_code ?: '-' }}</span></td>
+                                <td class="text-end fw-bold">{{ item.contract_quantity|number_format }}</td>
+                                <td class="text-end">${{ item.contract_unit_price|number_format(2) }}</td>
+                                <td class="text-end fw-bold text-success pe-3">
+                                    ${{ (item.contract_quantity * item.contract_unit_price)|number_format(2) }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% endif %}
+                        </tbody>
+                        <tfoot class="bg-light fw-bold">
+                            <tr>
+                                <td colspan="4" class="ps-3 text-end">TOTAL CONTRACT VALUE:</td>
+                                <td class="text-end text-primary">${{ contract.total_amount|number_format(2) }} {{ contract.currency ?: 'USD' }}</td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {% if contract.notes %}
+        <div class="card border-0 bg-light p-3 mb-4">
+            <h6 class="fw-bold small text-uppercase text-muted mb-1">Contract Special Terms / Notes:</h6>
+            <p class="small mb-0 text-dark">{{ contract.notes }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Signature Block -->
+        <div class="row pt-5 mt-5 border-top">
+            <div class="col-6 text-center">
+                <div class="border-top border-dark pt-2 small fw-bold">Seller Authorized Representative</div>
+                <small class="text-muted">(Aptech Commercial Department)</small>
+            </div>
+            <div class="col-6 text-center">
+                <div class="border-top border-dark pt-2 small fw-bold">Buyer Authorized Signature & Seal</div>
+                <small class="text-muted">({{ contract.customer_name }})</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .d-print-none { display: none !important; }
+    body { background-color: #fff !important; }
+    .print-container { box-shadow: none !important; border: none !important; }
+}
+</style>
+{% endblock %}

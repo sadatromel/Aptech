@@ -1,0 +1,57 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}New BOM | Merchandising{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">New Bill of Materials</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/merchandising/bom">BOMs</a></li>
+        <li class="breadcrumb-item active">New BOM</li>
+    </ol>
+
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+             <div class="h5 mb-0 text-primary"><i class="fas fa-layer-group me-2"></i>Create New BOM</div>
+        </div>
+        <div class="card-body p-4">
+            <form action="{{ BASE_URL }}/merchandising/bom/store" method="POST">
+    {{ csrf_field() | raw }}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Style <span class="text-danger">*</span></label>
+                        <select class="form-select" name="style_id" required autofocus>
+                            <option value="">Select Style</option>
+                            {% for style in styles %}
+                                <option value="{{ style.style_id }}">{{ style.style_code }} - {{ style.style_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Version <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="version" value="1.0" required placeholder="e.g., 1.0">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status">
+                            <option value="draft" selected>Draft</option>
+                            <option value="approved">Approved</option>
+                            <option value="archived">Archived</option>
+                        </select>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Remarks</label>
+                        <textarea class="form-control" name="remarks" rows="3" placeholder="Optional notes"></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-end gap-2">
+                    <a href="{{ BASE_URL }}/merchandising/bom" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Create BOM</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

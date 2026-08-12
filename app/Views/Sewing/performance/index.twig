@@ -1,0 +1,244 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Line Performance{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Page Header -->
+    <div class="col-12 mb-4">
+        <div class="page-header d-flex justify-content-between align-items-center p-4 bg-white rounded shadow-sm">
+            <div class="page-title">
+                <h1 class="h3 text-primary fw-bold mb-1">Line Performance</h1>
+                <p class="text-muted mb-0">Track sewing line efficiency and productivity</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPerformanceModal">
+                    <i class="fas fa-plus me-2"></i>Add Performance
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="col-12 mb-4">
+        <div class="stats-grid">
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.total_records }}</h3>
+                <p class="text-muted mb-0">Total Records</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.avg_efficiency|number_format(1) }}%</h3>
+                <p class="text-muted mb-0">Avg Efficiency</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.avg_achievement|number_format(1) }}%</h3>
+                <p class="text-muted mb-0">Avg Achievement</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.avg_rejection|number_format(1) }}%</h3>
+                <p class="text-muted mb-0">Avg Rejection</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Table -->
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fas fa-chart-line me-2"></i>Performance Records</span>
+                <input type="text" class="form-control form-control-sm w-auto" id="searchInput" placeholder="Search records...">
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="performanceTable">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="p-3 border-0">Date</th>
+                                <th class="p-3 border-0">Line</th>
+                                <th class="p-3 border-0">Shift</th>
+                                <th class="p-3 border-0">Output</th>
+                                <th class="p-3 border-0">Achievement</th>
+                                <th class="p-3 border-0">Efficiency</th>
+                                <th class="p-3 border-0">Quality</th>
+                                <th class="p-3 border-0">Rating</th>
+                                <th class="p-3 border-0">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in records %}
+                            {% set efficiency_class = record.efficiency >= 75 ? 'bg-success' : (record.efficiency >= 60 ? 'bg-warning' : 'bg-danger') %}
+                            <tr>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ record.date|date('M j, Y') }}</div>
+                                    <small class="text-muted">{{ record.shift_name }} ({{ record.shift_time }})</small>
+                                </td>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ record.line_name }}</div>
+                                    <small class="text-muted">{{ record.line_code }}</small>
+                                </td>
+                                <td class="p-3">{{ record.shift_name }}</td>
+                                <td class="p-3">
+                                    {{ record.actual_output|number_format }} / {{ record.planned_output|number_format }}
+                                    <div class="small text-muted">{{ record.rejection_quantity }} Rej, {{ record.repair_quantity }} Rep</div>
+                                </td>
+                                <td class="p-3">
+                                    {{ record.achievement_rate|number_format(1) }}%
+                                    <div class="progress mt-1" style="height: 6px;">
+                                        <div class="progress-bar {{ efficiency_class }}" style="width:{{ min(record.achievement_rate, 100) }}%"></div>
+                                    </div>
+                                </td>
+                                <td class="p-3">
+                                    {{ record.efficiency|number_format(1) }}%
+                                    <div class="progress mt-1" style="height: 6px;">
+                                        <div class="progress-bar {{ efficiency_class }}" style="width:{{ min(record.efficiency, 100) }}%"></div>
+                                    </div>
+                                </td>
+                                <td class="p-3">
+                                    {{ record.rejection_rate|number_format(1) }}% Rejection
+                                    <div class="small text-muted">{{ record.downtime_minutes }} min downtime</div>
+                                </td>
+                                <td class="p-3">
+                                    <span class="status-badge status-{{ record.performance_rating == 'Excellent' or record.performance_rating == 'Good' ? 'completed' : (record.performance_rating == 'Average' ? 'approved-for-production' : 'cancelled') }}">
+                                        {{ record.performance_rating }}
+                                    </span>
+                                </td>
+                                <td class="p-3">
+                                    <button class="btn btn-sm btn-outline-info me-1" onclick="viewPerformance({{ record.performance_id }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <form action="{{ BASE_URL }}/sewing/performance/{{ record.performance_id }}/delete" method="POST" onsubmit="return confirm('Delete this record?')" style="display:inline;">
+    {{ csrf_field() | raw }}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center p-4 text-muted">No performance records found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal fade" id="addPerformanceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form action="{{ BASE_URL }}/sewing/performance" method="POST" class="modal-content">
+    {{ csrf_field() | raw }}
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Add Line Performance</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Line</label>
+                        <select class="form-select" name="line_id" required>
+                            <option value="">Select Line</option>
+                            {% for line in lines %}
+                            <option value="{{ line.line_id }}">{{ line.line_name }} ({{ line.line_code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Date</label>
+                        <input type="date" class="form-control" name="date" value="{{ today }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Shift</label>
+                        <select class="form-select" name="shift" required>
+                            <option value="">Select Shift</option>
+                            {% for shift in shifts %}
+                            <option value="{{ shift.shift_id }}">{{ shift.shift_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Supervisor</label>
+                        <select class="form-select" name="supervisor_id">
+                            <option value="">Select Supervisor</option>
+                            {% for sv in supervisors %}
+                            <option value="{{ sv.employee_id }}">{{ sv.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-2">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Planned Output</label>
+                        <input type="number" class="form-control" name="planned_output" min="0" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Actual Output</label>
+                        <input type="number" class="form-control" name="actual_output" min="0" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Rejections</label>
+                        <input type="number" class="form-control" name="rejection_quantity" min="0" value="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Repairs</label>
+                        <input type="number" class="form-control" name="repair_quantity" min="0" value="0">
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-2">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Efficiency (%)</label>
+                        <input type="number" class="form-control" name="efficiency" min="0" max="200" step="0.1" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Downtime (min)</label>
+                        <input type="number" class="form-control" name="downtime_minutes" min="0" value="0">
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <label class="form-label fw-bold">Notes</label>
+                    <textarea class="form-control" name="notes" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Add Performance</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function(e) {
+    const term = e.target.value.toLowerCase();
+    document.querySelectorAll('#performanceTable tbody tr').forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+    });
+});
+
+document.querySelector('input[name="actual_output"]').addEventListener('input', updateEfficiency);
+document.querySelector('input[name="planned_output"]').addEventListener('input', updateEfficiency);
+
+function updateEfficiency() {
+    const planned = parseFloat(document.querySelector('input[name="planned_output"]').value) || 0;
+    const actual = parseFloat(document.querySelector('input[name="actual_output"]').value) || 0;
+    const eff = planned > 0 ? (actual / planned) * 100 : 0;
+    document.querySelector('input[name="efficiency"]').value = eff.toFixed(1);
+}
+
+function viewPerformance(id) {
+    fetch(`{{ BASE_URL }}/sewing/performance/${id}/data`)
+        .then(r => r.json())
+        .then(data => {
+            alert(`Performance Details:\n\nDate: ${data.date}\nLine: ${data.line_name}\nEfficiency: ${data.efficiency}%\nSupervisor: ${data.supervisor_name}`);
+        });
+}
+</script>
+
+{% endblock %}

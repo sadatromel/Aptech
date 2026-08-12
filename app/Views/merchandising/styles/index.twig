@@ -1,0 +1,1286 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Merchandising • Styles{% endblock %}
+
+{% block styles %}
+<style>
+    .merchandising-styles {
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Premium Stat Cards - New Gradient Style */
+    .stat-card {
+        padding: 1.5rem;
+        border-radius: 1.25rem !important;
+        border: none;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        color: white;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 140px;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+    }
+
+    .stat-card i.position-absolute {
+        font-size: 4rem;
+        opacity: 0.15;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        transition: all 0.5s ease;
+    }
+
+    .stat-card:hover i.position-absolute {
+        transform: translateY(-50%) scale(1.1);
+        opacity: 0.25;
+    }
+
+    .stat-card .label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        opacity: 0.85;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-card h2 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 0;
+        line-height: 1;
+    }
+
+    /* Modern Table Styling */
+    .table-container {
+        background: var(--card-bg, #fff);
+        border-radius: 1.25rem;
+        border: none;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+
+    #stylesTable thead th {
+        background-color: var(--bs-tertiary-bg);
+        border: none;
+        text-transform: uppercase;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        color: var(--text-muted);
+        padding: 1.25rem 1rem;
+    }
+
+    #stylesTable tbody tr {
+        transition: all 0.2s ease;
+        border-bottom: 1px solid rgba(0,0,0,0.03);
+    }
+
+    #stylesTable tbody tr:hover {
+        background-color: var(--primary-light) !important;
+    }
+
+    #stylesTable td {
+        padding: 1.25rem 1rem;
+        border: none;
+    }
+
+    /* Premium Badges */
+    .badge {
+        font-weight: 700;
+        padding: 0.5em 1.2em;
+        border-radius: 50px;
+        letter-spacing: 0.5px;
+        font-size: 0.7rem;
+    }
+
+    .badge-success-premium { background-color: rgba(25, 135, 84, 0.1) !important; color: #198754 !important; border: 1px solid rgba(25, 135, 84, 0.2); }
+    .badge-warning-premium { background-color: rgba(242, 153, 74, 0.1) !important; color: #f2994a !important; border: 1px solid rgba(242, 153, 74, 0.2); }
+    .badge-info-premium { background-color: rgba(30, 60, 114, 0.1) !important; color: #1e3c72 !important; border: 1px solid rgba(30, 60, 114, 0.2); }
+    .badge-danger-premium { background-color: rgba(220, 53, 69, 0.1) !important; color: #dc3545 !important; border: 1px solid rgba(220, 53, 69, 0.2); }
+
+    /* Filter Card Refinement */
+    .filter-card {
+        background: var(--card-bg, #fff);
+        border-radius: 1.25rem !important;
+        border: none;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+
+    .form-label-premium {
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    /* Photo interactions */
+    .style-photo-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 2px solid #fff;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+
+    .style-photo-wrapper:hover {
+        transform: scale(1.1) rotate(2deg);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+
+    [data-theme="dark"] .table-container, [data-theme="dark"] .filter-card { background: #1e293b; }
+    [data-theme="dark"] #stylesTable thead th { background-color: rgba(255,255,255,0.05); }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container-fluid px-4 merchandising-styles">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mt-4 mb-3">
+        <div>
+            <h1 class="h3 mb-1 fw-bold">Style Management</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard" class="text-decoration-none">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ BASE_URL }}/merchandising" class="text-decoration-none">Merchandising</a></li>
+                    <li class="breadcrumb-item active">Style Gallery</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary rounded-pill px-4 shadow-sm" id="exportStylesCsv">
+                <i class="fas fa-file-export me-2"></i>Export
+            </button>
+            <button class="btn btn-success rounded-pill px-4 shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#bulkStyleModal">
+                <i class="fas fa-file-excel me-2"></i>Bulk Upload
+            </button>
+            <button class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#styleModal" data-modal-mode="create">
+                <i class="fas fa-plus me-2"></i>New Style
+            </button>
+        </div>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <i class="fas fa-layer-group position-absolute text-white"></i>
+                <p class="label mb-1">Total Library</p>
+                <h2 class="mb-0">{{ stats.total }}</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card shadow-sm" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                <i class="fas fa-bolt position-absolute text-white"></i>
+                <p class="label mb-1">In Development</p>
+                <h2 class="mb-0">{{ stats.active }}</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card shadow-sm" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                <i class="fas fa-check-double position-absolute text-white"></i>
+                <p class="label mb-1">Completed Styles</p>
+                <h2 class="mb-0">{{ stats.completed }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="card filter-card mb-4">
+        <div class="card-body p-4">
+            <form class="row g-3 align-items-end" method="get" action="{{ BASE_URL }}/merchandising/styles">
+                <div class="col-md-3">
+                    <label class="form-label-premium">Search Library</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted small"></i></span>
+                        <input type="text" class="form-control bg-light border-0 ps-0" name="search" placeholder="Code, name, article..." value="{{ filters.search }}">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-premium">Focus Buyer</label>
+                    <select class="form-select bg-light border-0" name="buyer_id">
+                        <option value="">All Partners</option>
+                        {% for buyer in dropdowns.buyers %}
+                            <option value="{{ buyer.buyer_id }}" {{ filters.buyer_id == buyer.buyer_id ? 'selected' }}>{{ buyer.buyer_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-premium">Current Stage</label>
+                    <select class="form-select bg-light border-0" name="status">
+                        <option value="">Any Status</option>
+                        {% for status in dropdowns.statuses %}
+                            <option value="{{ status.value }}" {{ filters.status == status.value ? 'selected' }}>{{ status.label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label-premium">Season</label>
+                    <input type="text" class="form-control bg-light border-0" name="season" placeholder="e.g., SS25" value="{{ filters.season }}">
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button class="btn btn-primary flex-grow-1 rounded-pill shadow-sm" type="submit">
+                        <i class="fas fa-filter me-1"></i>Apply Filter
+                    </button>
+                    <a class="btn btn-outline-secondary rounded-pill shadow-sm" href="{{ BASE_URL }}/merchandising/styles" title="Reset Filters">
+                        <i class="fas fa-undo"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="table-container mb-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="stylesTable">
+                <thead>
+                    <tr>
+                        <th width="80" class="text-center ps-4">PHOTO</th>
+                        <th class="sortable" data-sort="code" style="cursor: pointer;">STYLE INFO <i class="fas fa-sort text-muted ms-1 sort-icon small"></i></th>
+                        <th class="sortable" data-sort="buyer" style="cursor: pointer;">PARTNER <i class="fas fa-sort text-muted ms-1 sort-icon small"></i></th>
+                        <th class="sortable" data-sort="season" style="cursor: pointer;">TIMELINE <i class="fas fa-sort text-muted ms-1 sort-icon small"></i></th>
+                        <th class="sortable" data-sort="price" style="cursor: pointer;">VALUE <i class="fas fa-sort text-muted ms-1 sort-icon small"></i></th>
+                        <th class="sortable" data-sort="status" style="cursor: pointer;">CURRENT STATUS <i class="fas fa-sort text-muted ms-1 sort-icon small"></i></th>
+                        <th class="text-end pe-4">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for style in styles %}
+                        <tr data-style='{{ style|json_encode|raw }}'>
+                            <td class="text-center ps-4">
+                                {% if style.photo_path %}
+                                    <div class="style-photo-wrapper mx-auto">
+                                        <img src="{{ BASE_URL }}/public/{{ style.photo_path }}" alt="Photo" class="w-100 h-100 object-fit-cover clickable-photo" data-full-photo="{{ BASE_URL }}/public/{{ style.photo_path }}">
+                                    </div>
+                                {% else %}
+                                    <div class="style-photo-wrapper mx-auto bg-light d-flex align-items-center justify-content-center text-muted">
+                                        <i class="fas fa-camera opacity-25"></i>
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="fw-bold text-dark me-2">{{ style.style_code }}</div>
+                                    {% if style.created_at and (date(style.created_at) > date('-24hours')) %}
+                                        <span class="badge bg-danger rounded-pill px-2 py-1" style="font-size: 0.55rem;">NEW</span>
+                                    {% endif %}
+                                </div>
+                                <div class="text-muted small text-truncate" style="max-width: 200px;">{{ style.style_name }}</div>
+                                <div class="badge bg-light text-muted fw-normal mt-1 border" style="font-size: 0.65rem;">REF: {{ style.article_number ?: 'N/A' }}</div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-primary-light text-primary d-flex align-items-center justify-content-center me-2 fw-bold" style="width: 28px; height: 28px; font-size: 0.75rem;">
+                                        {{ style.buyer_name|slice(0, 1)|upper }}
+                                    </div>
+                                    <span class="fw-semibold">{{ style.buyer_name ?: 'Unknown' }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="small fw-bold text-uppercase text-muted opacity-75">{{ style.season ?: 'TBD' }}</div>
+                            </td>
+                            <td>
+                                <div class="fw-black text-primary" style="font-size: 1.1rem;">${{ style.price|number_format(2, '.', ',') }}</div>
+                            </td>
+                            <td>
+                                {% set badgeClass = 'badge-info-premium' %}
+                                {% if style.status in ['completed', 'approved_for_production'] %}
+                                    {% set badgeClass = 'badge-success-premium' %}
+                                {% elseif style.status in ['design', 'development'] %}
+                                    {% set badgeClass = 'badge-warning-premium' %}
+                                {% endif %}
+                                <span class="badge {{ badgeClass }} text-uppercase">
+                                    <i class="fas fa-circle me-1" style="font-size: 0.4rem;"></i> {{ style.status|replace({'_': ' '}) }}
+                                </span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group btn-group-sm shadow-sm rounded-pill bg-white border p-1">
+                                    <a href="{{ BASE_URL }}/merchandising/styles/{{ style.style_id }}/tech-pack" class="btn btn-link text-info px-2" title="Tech Pack Spec"><i class="fas fa-file-invoice"></i></a>
+                                    <button class="btn btn-link text-secondary px-2" data-view-style title="View Details"><i class="fas fa-eye"></i></button>
+                                    <button class="btn btn-link text-primary px-2" data-edit-style title="Quick Edit"><i class="fas fa-pen"></i></button>
+                                    <button class="btn btn-link text-danger px-2" data-delete-style title="Archive Style"><i class="fas fa-trash-alt"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <div class="py-5 opacity-50">
+                                    <i class="fas fa-box-open fa-4x mb-3"></i>
+                                    <h4 class="fw-light">No styles in library</h4>
+                                    <p class="small mb-4">Try adjusting filters or create a new style entry.</p>
+                                    {% if filters.search or filters.buyer_id or filters.status or filters.season %}
+                                        <a href="{{ BASE_URL }}/merchandising/styles" class="btn btn-outline-primary btn-sm rounded-pill px-4">
+                                            Reset Filters
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Create / Edit Style Modal -->
+<div class="modal fade" id="styleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <form id="styleForm">
+                <input type="hidden" name="style_id" id="styleId">
+                <div class="modal-header border-0 bg-light p-4">
+                    <div>
+                        <h5 class="modal-title fw-bold" id="styleModalTitle">New Style</h5>
+                        <p class="text-muted small mb-0">Define style attributes, pricing, and visual references.</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="styleAlert" class="alert d-none rounded-3"></div>
+                    
+                    <!-- Section: General Information -->
+                    <div class="modal-section-title">General Information</div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Style Code</label>
+                            <input type="text" class="form-control" name="style_code" placeholder="e.g. ST-2025-001" required>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">Style Name</label>
+                            <input type="text" class="form-control" name="style_name" placeholder="Full descriptive name" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Article Number</label>
+                            <input type="text" class="form-control" name="article_number" placeholder="Internal REF">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Buyer / Partner</label>
+                            <select class="form-select" name="buyer_id" required>
+                                <option value="">Select partner</option>
+                                {% for buyer in dropdowns.buyers %}
+                                    <option value="{{ buyer.buyer_id }}">{{ buyer.buyer_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Season</label>
+                            <input type="text" class="form-control" name="season" placeholder="e.g. Autumn/Winter 25">
+                        </div>
+                    </div>
+
+                    <!-- Section: Commercial & Classification -->
+                    <div class="modal-section-title">Commercial & Classification</div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Target Price (USD)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" class="form-control" name="price" min="0" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Category</label>
+                            <input type="text" class="form-control" name="category" placeholder="e.g. Menswear">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Garment Type</label>
+                            <input type="text" class="form-control" name="garment_type" placeholder="e.g. Denim Jacket">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Initial Status</label>
+                            <select class="form-select" name="status" required>
+                                {% for status in dropdowns.statuses %}
+                                    <option value="{{ status.value }}" {{ status.value == 'design' ? 'selected' }}>{{ status.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">Style Description</label>
+                            <input type="text" class="form-control" name="style_description" placeholder="Brief public description...">
+                        </div>
+                    </div>
+
+                    <!-- Section: Media & Notes -->
+                    <div class="modal-section-title">Media & Internal Notes</div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Style Reference Photo</label>
+                            <div id="modalPhotoPreview" class="mb-3 d-none position-relative" style="width: 100%; max-width: 200px;">
+                                <img src="" alt="Current Photo" class="img-thumbnail rounded shadow-sm w-100" style="height: 150px; object-fit: cover;">
+                                <button type="button" class="btn btn-sm btn-danger rounded-circle position-absolute top-0 start-100 translate-middle shadow" id="clearPhotoBtn" title="Remove Photo">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="upload-zone border border-dashed rounded-3 p-3 text-center bg-light">
+                                <input type="file" class="form-control d-none" name="style_photo" id="style_photo_input" accept="image/*">
+                                <label for="style_photo_input" class="mb-0 cursor-pointer" style="cursor: pointer;">
+                                    <i class="fas fa-cloud-upload-alt fa-2x text-primary mb-2"></i>
+                                    <p class="small text-muted mb-0">Click to upload or drag & drop</p>
+                                    <p class="very-small text-muted" style="font-size: 0.7rem;">JPG, PNG or WEBP (Max 5MB)</p>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Internal Notes</label>
+                            <textarea class="form-control h-100" name="description" rows="5" placeholder="Private internal notes for merchandising team..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Discard</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm" id="styleSubmitBtn">
+                        <i class="fas fa-save me-1"></i>Save Style
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Style Modal -->
+<div class="modal fade" id="viewStyleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Style Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row align-items-start mb-4">
+                    <div class="col-md-4 text-center" id="styleViewPhoto">
+                        <!-- Photo injected here -->
+                    </div>
+                    <div class="col-md-8">
+                        <dl class="row mb-0" id="styleDetails"></dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Full Photo View Modal -->
+<div class="modal fade" id="photoLightboxModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-4 pt-1">
+                <img src="" id="lightboxImage" class="img-fluid rounded shadow" alt="Full Style Photo" style="max-height: 75vh;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Premium Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body text-center p-4">
+                <div class="text-danger mb-3">
+                    <i class="fas fa-exclamation-circle fa-4x opacity-75"></i>
+                </div>
+                <h5 class="mb-2">Are you sure?</h5>
+                <p class="text-muted small mb-4">Do you really want to delete style <strong id="deleteStyleCode"></strong>? This process cannot be undone.</p>
+                <div class="d-flex justify-content-center gap-2">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger rounded-pill px-3" id="confirmDeleteBtn"><i class="fas fa-trash me-1"></i>Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Style Upload Facility Modal -->
+<div class="modal fade" id="bulkStyleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0 bg-primary text-white p-4">
+                <div>
+                    <h5 class="modal-title fw-bold text-white mb-1"><i class="fas fa-file-excel me-2"></i>Bulk Style Upload Facility</h5>
+                    <p class="text-white-50 small mb-0">Import multiple styles using CSV/Excel file upload or multi-row interactive batch form.</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            
+            <div class="p-3 bg-light border-bottom">
+                <ul class="nav nav-pills nav-justified" id="bulkUploadTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-bold py-2" id="file-tab" data-bs-toggle="tab" data-bs-target="#fileUploadTab" type="button" role="tab">
+                            <i class="fas fa-cloud-upload-alt me-2"></i>Excel / CSV File Upload
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold py-2" id="batch-tab" data-bs-toggle="tab" data-bs-target="#batchGridTab" type="button" role="tab">
+                            <i class="fas fa-table me-2"></i>Manual Multi-Row Batch Form
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="modal-body p-4">
+                <div class="tab-content" id="bulkUploadTabContent">
+                    <!-- Tab 1: File Upload -->
+                    <div class="tab-pane fade show active" id="fileUploadTab" role="tabpanel">
+                        <form id="bulkUploadFileForm" enctype="multipart/form-data">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h6 class="fw-bold mb-1">Step 1: Download Template or Prepare Your File</h6>
+                                    <p class="text-muted very-small mb-0">Ensure your CSV or Excel file contains column headers like <code>Style Code</code>, <code>Style Name</code>, <code>Buyer</code>, <code>Price</code>, etc.</p>
+                                </div>
+                                <a href="{{ BASE_URL }}/merchandising/styles/download-template" download="styles_import_template.xlsx" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm">
+                                    <i class="fas fa-download me-1"></i>Download Excel Template
+                                </a>
+                            </div>
+
+                            <div class="upload-dropzone border border-2 border-dashed rounded-4 p-5 text-center bg-light position-relative mb-4 cursor-pointer" id="dropzoneBox" style="cursor: pointer; transition: all 0.2s ease;">
+                                <input type="file" id="bulkFileInput" name="file" class="d-none" accept=".xlsx,.xls,.csv">
+                                <i class="fas fa-file-excel text-primary fa-3x mb-3"></i>
+                                <h6 class="fw-bold mb-1">Click to select or drag & drop file here</h6>
+                                <p class="text-muted small mb-0">Supports Microsoft Excel (.xlsx, .xls) and CSV (.csv) files</p>
+                                <div id="selectedFileNameDisplay" class="mt-3 d-none">
+                                    <span class="badge bg-primary fs-6 px-3 py-2 rounded-pill"><i class="fas fa-paperclip me-1"></i><span id="selectedFileName"></span></span>
+                                </div>
+                            </div>
+
+                            <div class="form-check form-switch mb-4">
+                                <input class="form-check-input" type="checkbox" id="updateExistingFileCheck" name="update_existing" value="1">
+                                <label class="form-check-label fw-semibold small" for="updateExistingFileCheck">
+                                    Update existing style record if matching Style Code is found
+                                </label>
+                            </div>
+
+                            <div id="bulkFileResult" class="alert d-none rounded-3"></div>
+
+                            <div class="d-flex justify-content-end gap-2">
+                                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm" id="btnSubmitFileUpload" disabled>
+                                    <i class="fas fa-upload me-1"></i>Upload & Process Styles
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Tab 2: Dynamic Multi-Row Entry -->
+                    <div class="tab-pane fade" id="batchGridTab" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h6 class="fw-bold mb-1">Quick Batch Creation</h6>
+                                <p class="text-muted very-small mb-0">Enter multiple styles dynamically in the form below.</p>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" id="btnAddBatchRow">
+                                    <i class="fas fa-plus me-1"></i>Add Row
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" id="btnAdd5BatchRows">
+                                    <i class="fas fa-plus-circle me-1"></i>Add 5 Rows
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" id="btnClearBatchGrid">
+                                    <i class="fas fa-trash-alt me-1"></i>Clear All
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive mb-3" style="max-height: 380px; overflow-y: auto;">
+                            <table class="table table-bordered table-sm align-middle mb-0" id="batchGridTable">
+                                <thead class="table-dark sticky-top">
+                                    <tr>
+                                        <th width="40" class="text-center">#</th>
+                                        <th width="140">Style Code*</th>
+                                        <th>Style Name*</th>
+                                        <th width="120">Article #</th>
+                                        <th width="160">Buyer / Partner*</th>
+                                        <th width="110">Season</th>
+                                        <th width="120">Category</th>
+                                        <th width="120">Garment Type</th>
+                                        <th width="100">Price ($)</th>
+                                        <th width="120">Status</th>
+                                        <th width="50" class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="batchGridBody">
+                                    <!-- Dynamic Rows Added by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="updateExistingBatchCheck">
+                            <label class="form-check-label fw-semibold small" for="updateExistingBatchCheck">
+                                Update existing style record if matching Style Code is found
+                            </label>
+                        </div>
+
+                        <div id="batchGridResult" class="alert d-none rounded-3"></div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-success rounded-pill px-4 shadow-sm" id="btnSubmitBatchGrid">
+                                <i class="fas fa-check-circle me-1"></i>Save All Batch Styles (<span id="batchRowCount">0</span>)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1090;">
+    <div id="systemToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="systemToastBody">
+                <!-- Message content -->
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ parent() }}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const styleModalEl = document.getElementById('styleModal');
+        const styleModal = styleModalEl ? bootstrap.Modal.getOrCreateInstance(styleModalEl) : null;
+        const styleForm = document.getElementById('styleForm');
+        const styleAlert = document.getElementById('styleAlert');
+        const styleTitle = document.getElementById('styleModalTitle');
+        const styleSubmitBtn = document.getElementById('styleSubmitBtn');
+        const viewModalEl = document.getElementById('viewStyleModal');
+        const viewModal = viewModalEl ? bootstrap.Modal.getOrCreateInstance(viewModalEl) : null;
+        const styleDetails = document.getElementById('styleDetails');
+
+        // Toast logic
+        const toastEl = document.getElementById('systemToast');
+        const systemToast = toastEl ? bootstrap.Toast.getOrCreateInstance(toastEl) : null;
+        const toastBody = document.getElementById('systemToastBody');
+
+        function showToast(message, type = 'success') {
+            if (!toastEl || !systemToast) return;
+            toastEl.className = `toast align-items-center text-white border-0 bg-${type}`;
+            toastBody.textContent = message;
+            systemToast.show();
+        }
+
+        // Check for session flash messages rendered as JS
+        {% if session_success %}showToast("{{ session_success|escape('js') }}", "success");{% endif %}
+        {% if session_error %}showToast("{{ session_error|escape('js') }}", "danger");{% endif %}
+
+        function showAlert(box, message) {
+            box.className = 'alert alert-danger';
+            box.textContent = message;
+            box.classList.remove('d-none');
+        }
+
+        function hideAlert(box) {
+            box.classList.add('d-none');
+        }
+
+        const photoInput = document.getElementById('style_photo_input');
+        const previewDiv = document.getElementById('modalPhotoPreview');
+        const clearPhotoBtn = document.getElementById('clearPhotoBtn');
+        let currentStylePhoto = null; // Track DB photo to revert to if needed
+
+        // Live Photo Preview Logic
+        photoInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewDiv.classList.remove('d-none');
+                    previewDiv.querySelector('img').src = e.target.result;
+                    clearPhotoBtn.classList.remove('d-none');
+                }
+                reader.readAsDataURL(file);
+            } else {
+                revertPhotoPreview();
+            }
+        });
+
+        clearPhotoBtn.addEventListener('click', () => {
+            photoInput.value = ''; // clear file input
+            revertPhotoPreview();
+        });
+
+        function revertPhotoPreview() {
+            if (currentStylePhoto) {
+                previewDiv.classList.remove('d-none');
+                previewDiv.querySelector('img').src = `{{ BASE_URL }}/public/${currentStylePhoto}`;
+                clearPhotoBtn.classList.add('d-none');
+            } else {
+                previewDiv.classList.add('d-none');
+                previewDiv.querySelector('img').src = '';
+                clearPhotoBtn.classList.add('d-none');
+            }
+        }
+
+        function populateForm(style = null) {
+            styleForm.reset();
+            hideAlert(styleAlert);
+            if (style) {
+                styleTitle.textContent = 'Edit Style';
+                styleSubmitBtn.innerHTML = '<i class="fas fa-save me-1"></i>Update Style';
+                styleForm.style_id.value = style.style_id;
+                styleForm.style_code.value = style.style_code;
+                styleForm.style_name.value = style.style_name;
+                styleForm.article_number.value = style.article_number || '';
+                styleForm.buyer_id.value = style.buyer_id || '';
+                styleForm.season.value = style.season || '';
+                styleForm.price.value = style.price || '';
+                styleForm.category.value = style.category || '';
+                styleForm.status.value = style.status || 'design';
+                styleForm.style_description.value = style.style_description || '';
+                styleForm.garment_type.value = style.garment_type || '';
+                styleForm.description.value = style.description || '';
+                
+                currentStylePhoto = style.photo_path || null;
+                revertPhotoPreview();
+            } else {
+                styleTitle.textContent = 'New Style';
+                styleSubmitBtn.innerHTML = '<i class="fas fa-save me-1"></i>Save Style';
+                styleForm.style_id.value = '';
+                styleForm.status.value = 'design';
+                currentStylePhoto = null;
+                revertPhotoPreview();
+            }
+        }
+
+        styleModalEl?.addEventListener('show.bs.modal', event => {
+            const trigger = event.relatedTarget;
+            if (trigger?.dataset.modalMode === 'create') {
+                populateForm();
+            } else {
+                const style = JSON.parse(trigger.closest('tr').dataset.style);
+                populateForm(style);
+            }
+        });
+
+        document.querySelectorAll('[data-edit-style]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const style = JSON.parse(btn.closest('tr').dataset.style);
+                populateForm(style);
+                styleModal?.show();
+            });
+        });
+
+        styleForm?.addEventListener('submit', async event => {
+            event.preventDefault();
+            hideAlert(styleAlert);
+            
+            const btn = styleSubmitBtn;
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+            btn.disabled = true;
+
+            const formData = new FormData(styleForm);
+            const isEdit = Boolean(formData.get('style_id'));
+            const endpoint = isEdit ? `{{ BASE_URL }}/merchandising/styles/${formData.get('style_id')}` : '{{ BASE_URL }}/merchandising/styles';
+            
+            const method = 'POST';
+            if (isEdit) formData.append('_method', 'PUT');
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: method,
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    showToast(`Style ${isEdit ? 'updated' : 'created'} successfully!`, 'success');
+                    setTimeout(() => location.reload(), 800);
+                    styleModal?.hide();
+                    return;
+                }
+                
+                let data;
+                try { data = await response.json(); } catch(e) { data = {message: 'Server error: ' + response.statusText}; }
+                throw data;
+            } catch (error) {
+                showAlert(styleAlert, error?.message || 'Unable to save style.');
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        });
+
+        document.querySelectorAll('[data-view-style]').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const style = JSON.parse(btn.closest('tr').dataset.style);
+                try {
+                    const response = await fetch(`{{ BASE_URL }}/merchandising/styles/${style.style_id}`);
+                    if (!response.ok) throw new Error('Unable to load style');
+                    const { data } = await response.json();
+                    renderStyleDetails(data);
+                    viewModal?.show();
+                } catch (error) {
+                    alert('Failed to load style details.');
+                }
+            });
+        });
+
+        function renderStyleDetails(style) {
+            styleDetails.innerHTML = '';
+            
+            const photoContainer = document.getElementById('styleViewPhoto');
+            if (style.photo_path) {
+                photoContainer.innerHTML = `<img src="{{ BASE_URL }}/public/${style.photo_path}" alt="Photo" class="img-fluid rounded shadow-sm border clickable-photo" style="max-height: 200px; object-fit: contain; cursor: pointer;" data-full-photo="{{ BASE_URL }}/public/${style.photo_path}">`;
+            } else {
+                photoContainer.innerHTML = `<div class="rounded bg-light border d-flex align-items-center justify-content-center text-muted shadow-sm mx-auto" style="height: 150px; width: 100%;"><i class="fas fa-image fa-3x"></i></div>`;
+            }
+
+            const mapping = {
+                'Style Code': style.style_code,
+                'Style Name': style.style_name,
+                'Article Number': style.article_number || '—',
+                'Buyer': style.buyer_name || '—',
+                'Season': style.season || '—',
+                'Status': style.status,
+                'Category': style.category || '—',
+                'Garment Type': style.garment_type || '—',
+                'Target Price': `$${Number(style.price || 0).toFixed(2)}`,
+                'Description': style.style_description || '—'
+            };
+            Object.entries(mapping).forEach(([label, value]) => {
+                styleDetails.insertAdjacentHTML('beforeend', `<dt class="col-sm-5 text-muted">${label}</dt><dd class="col-sm-7 fw-medium">${value}</dd>`);
+            });
+        }
+
+        const deleteConfirmModalEl = document.getElementById('deleteConfirmModal');
+        const deleteConfirmModal = deleteConfirmModalEl ? bootstrap.Modal.getOrCreateInstance(deleteConfirmModalEl) : null;
+        let styleToDelete = null;
+
+        document.querySelectorAll('[data-delete-style]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                styleToDelete = JSON.parse(btn.closest('tr').dataset.style);
+                document.getElementById('deleteStyleCode').textContent = styleToDelete.style_code;
+                deleteConfirmModal?.show();
+            });
+        });
+
+        document.getElementById('confirmDeleteBtn')?.addEventListener('click', async () => {
+            if (!styleToDelete) return;
+            const btn = document.getElementById('confirmDeleteBtn');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Deleting...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(`{{ BASE_URL }}/merchandising/styles/${styleToDelete.style_id}`, { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ _method: 'DELETE' })
+                });
+                if (response.ok) {
+                    showToast('Style deleted successfully.', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                    deleteConfirmModal?.hide();
+                } else {
+                    throw new Error('Failed to delete style.');
+                }
+            } catch (error) {
+                alert(error.message);
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+                deleteConfirmModal?.hide();
+            }
+        });
+
+        document.getElementById('exportStylesCsv')?.addEventListener('click', () => {
+            const rows = [['Style Code', 'Style Name', 'Article', 'Buyer', 'Season', 'Price', 'Status']];
+            document.querySelectorAll('#stylesTable tbody tr').forEach(tr => {
+                if (tr.querySelector('td[colspan]')) return;
+                const style = JSON.parse(tr.dataset.style);
+                rows.push([
+                    style.style_code,
+                    style.style_name,
+                    style.article_number || '',
+                    style.buyer_name || '',
+                    style.season || '',
+                    Number(style.price || 0).toFixed(2),
+                    style.status
+                ]);
+            });
+            const csv = rows.map(r => r.map(col => `"${String(col).replace(/"/g, '""')}"`).join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'styles.csv';
+            link.click();
+        });
+
+        const lightboxModalEl = document.getElementById('photoLightboxModal');
+        const lightboxModal = lightboxModalEl ? bootstrap.Modal.getOrCreateInstance(lightboxModalEl) : null;
+        const lightboxImage = document.getElementById('lightboxImage');
+
+        document.addEventListener('click', event => {
+            if (event.target.matches('[data-full-photo]')) {
+                event.stopPropagation();
+                if (lightboxImage && lightboxModal) {
+                    lightboxImage.src = event.target.dataset.fullPhoto;
+                    lightboxModal.show();
+                }
+            }
+        });
+
+        // Interactive Table Sorting
+        const table = document.getElementById('stylesTable');
+        const sortableHeaders = table.querySelectorAll('th.sortable');
+        let currentSort = { column: null, direction: 'asc' };
+
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                const column = header.dataset.sort;
+                const body = table.querySelector('tbody');
+                const emptyRow = document.getElementById('emptyStateRow');
+                if (emptyRow) return;
+
+                const rows = Array.from(body.querySelectorAll('tr'));
+                
+                if (currentSort.column === column) {
+                    currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    currentSort.column = column;
+                    currentSort.direction = 'asc';
+                }
+
+                // Update icons
+                sortableHeaders.forEach(th => {
+                    const icon = th.querySelector('.sort-icon');
+                    if (th === header) {
+                        icon.className = `fas fa-sort-${currentSort.direction === 'asc' ? 'up' : 'down'} ms-1 sort-icon text-primary`;
+                    } else {
+                        icon.className = 'fas fa-sort text-muted ms-1 sort-icon';
+                    }
+                });
+
+                rows.sort((a, b) => {
+                    const dataA = JSON.parse(a.dataset.style);
+                    const dataB = JSON.parse(b.dataset.style);
+                    let valA, valB;
+
+                    switch (column) {
+                        case 'code': valA = dataA.style_code; valB = dataB.style_code; break;
+                        case 'buyer': valA = dataA.buyer_name || ''; valB = dataB.buyer_name || ''; break;
+                        case 'season': valA = dataA.season || ''; valB = dataB.season || ''; break;
+                        case 'price': valA = Number(dataA.price || 0); valB = Number(dataB.price || 0); break;
+                        case 'status': valA = dataA.status; valB = dataB.status; break;
+                        default: return 0;
+                    }
+
+                    if (typeof valA === 'string') valA = valA.toLowerCase();
+                    if (typeof valB === 'string') valB = valB.toLowerCase();
+
+                    if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
+                    if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
+                    return 0;
+                });
+
+                // Re-append rows
+                rows.forEach(row => body.appendChild(row));
+            });
+        });
+
+        // -------------------------------------------------------------
+        // BULK UPLOAD FACILITY LOGIC
+        // -------------------------------------------------------------
+        const availableBuyers = {{ dropdowns.buyers|json_encode|raw }};
+        const availableStatuses = {{ dropdowns.statuses|json_encode|raw }};
+
+        // File Upload Dropzone
+        const dropzoneBox = document.getElementById('dropzoneBox');
+        const bulkFileInput = document.getElementById('bulkFileInput');
+        const selectedFileNameDisplay = document.getElementById('selectedFileNameDisplay');
+        const selectedFileName = document.getElementById('selectedFileName');
+        const btnSubmitFileUpload = document.getElementById('btnSubmitFileUpload');
+        const bulkUploadFileForm = document.getElementById('bulkUploadFileForm');
+        const bulkFileResult = document.getElementById('bulkFileResult');
+
+        if (dropzoneBox && bulkFileInput) {
+            dropzoneBox.addEventListener('click', () => bulkFileInput.click());
+
+            dropzoneBox.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropzoneBox.classList.add('bg-primary-light', 'border-primary');
+            });
+
+            dropzoneBox.addEventListener('dragleave', () => {
+                dropzoneBox.classList.remove('bg-primary-light', 'border-primary');
+            });
+
+            dropzoneBox.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzoneBox.classList.remove('bg-primary-light', 'border-primary');
+                if (e.dataTransfer.files.length) {
+                    bulkFileInput.files = e.dataTransfer.files;
+                    handleFileSelection();
+                }
+            });
+
+            bulkFileInput.addEventListener('change', handleFileSelection);
+
+            function handleFileSelection() {
+                const file = bulkFileInput.files[0];
+                if (file) {
+                    selectedFileName.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+                    selectedFileNameDisplay.classList.remove('d-none');
+                    btnSubmitFileUpload.disabled = false;
+                } else {
+                    selectedFileNameDisplay.classList.add('d-none');
+                    btnSubmitFileUpload.disabled = true;
+                }
+            }
+        }
+
+        // Handle File Form Submit
+        bulkUploadFileForm?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!bulkFileInput.files.length) return;
+
+            const originalBtnHtml = btnSubmitFileUpload.innerHTML;
+            btnSubmitFileUpload.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing File...';
+            btnSubmitFileUpload.disabled = true;
+            bulkFileResult.className = 'alert alert-info d-block rounded-3';
+            bulkFileResult.innerHTML = '<i class="fas fa-cog fa-spin me-2"></i>Parsing file and importing styles into database...';
+
+            const formData = new FormData(bulkUploadFileForm);
+
+            try {
+                const response = await fetch('{{ BASE_URL }}/merchandising/styles/bulk-upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    let html = `<div class="d-flex align-items-center mb-2"><i class="fas fa-check-circle text-success fa-2x me-3"></i><div><h6 class="fw-bold mb-0">${data.message}</h6></div></div>`;
+                    
+                    if (data.errors && data.errors.length) {
+                        html += '<hr><div class="small fw-bold text-dark mb-1">Warnings / Row Details:</div><ul class="small mb-0 ps-3 text-danger" style="max-height: 120px; overflow-y: auto;">';
+                        data.errors.forEach(err => { html += `<li>${err}</li>`; });
+                        html += '</ul>';
+                    }
+
+                    bulkFileResult.className = 'alert alert-success d-block rounded-3';
+                    bulkFileResult.innerHTML = html;
+
+                    showToast('Bulk import completed successfully!', 'success');
+                    setTimeout(() => location.reload(), 1500);
+
+                } else {
+                    let errHtml = `<div class="fw-bold"><i class="fas fa-exclamation-triangle me-2"></i>${data.message || 'Import failed.'}</div>`;
+                    if (data.errors && data.errors.length) {
+                        errHtml += '<ul class="small mb-0 mt-2 ps-3 text-danger">';
+                        data.errors.forEach(err => { errHtml += `<li>${err}</li>`; });
+                        errHtml += '</ul>';
+                    }
+                    bulkFileResult.className = 'alert alert-danger d-block rounded-3';
+                    bulkFileResult.innerHTML = errHtml;
+                    btnSubmitFileUpload.innerHTML = originalBtnHtml;
+                    btnSubmitFileUpload.disabled = false;
+                }
+            } catch (err) {
+                bulkFileResult.className = 'alert alert-danger d-block rounded-3';
+                bulkFileResult.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>Network or server error occurred during upload.';
+                btnSubmitFileUpload.innerHTML = originalBtnHtml;
+                btnSubmitFileUpload.disabled = false;
+            }
+        });
+
+        // -------------------------------------------------------------
+        // MANUAL MULTI-ROW BATCH GRID LOGIC
+        // -------------------------------------------------------------
+        const batchGridBody = document.getElementById('batchGridBody');
+        const batchRowCountSpan = document.getElementById('batchRowCount');
+        const btnAddBatchRow = document.getElementById('btnAddBatchRow');
+        const btnAdd5BatchRows = document.getElementById('btnAdd5BatchRows');
+        const btnClearBatchGrid = document.getElementById('btnClearBatchGrid');
+        const btnSubmitBatchGrid = document.getElementById('btnSubmitBatchGrid');
+        const batchGridResult = document.getElementById('batchGridResult');
+
+        let batchRowCounter = 0;
+
+        function updateBatchRowCount() {
+            const rows = batchGridBody ? batchGridBody.querySelectorAll('tr').length : 0;
+            if (batchRowCountSpan) batchRowCountSpan.textContent = rows;
+        }
+
+        function createBatchRow() {
+            batchRowCounter++;
+            const tr = document.createElement('tr');
+
+            let buyerOptionsHtml = '<option value="">-- Select Buyer --</option>';
+            availableBuyers.forEach(b => {
+                buyerOptionsHtml += `<option value="${b.buyer_id}">${b.buyer_name}</option>`;
+            });
+
+            let statusOptionsHtml = '';
+            availableStatuses.forEach(s => {
+                statusOptionsHtml += `<option value="${s.value}" ${s.value === 'design' ? 'selected' : ''}>${s.label}</option>`;
+            });
+
+            tr.innerHTML = `
+                <td class="text-center text-muted fw-bold row-index">${batchGridBody.querySelectorAll('tr').length + 1}</td>
+                <td><input type="text" class="form-control form-control-sm style-code-input" placeholder="e.g. ST-2025-0${batchRowCounter}" required></td>
+                <td><input type="text" class="form-control form-control-sm style-name-input" placeholder="Style Name" required></td>
+                <td><input type="text" class="form-control form-control-sm article-input" placeholder="ART-000"></td>
+                <td><select class="form-select form-select-sm buyer-select" required>${buyerOptionsHtml}</select></td>
+                <td><input type="text" class="form-control form-control-sm season-input" placeholder="SS25"></td>
+                <td><input type="text" class="form-control form-control-sm category-input" placeholder="Menswear"></td>
+                <td><input type="text" class="form-control form-control-sm garment-type-input" placeholder="Jeans"></td>
+                <td><input type="number" step="0.01" class="form-control form-control-sm price-input" placeholder="0.00"></td>
+                <td><select class="form-select form-select-sm status-select">${statusOptionsHtml}</select></td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-link text-danger p-0 btn-remove-row" title="Remove Row"><i class="fas fa-times-circle"></i></button>
+                </td>
+            `;
+
+            tr.querySelector('.btn-remove-row').addEventListener('click', () => {
+                tr.remove();
+                reindexBatchRows();
+                updateBatchRowCount();
+            });
+
+            batchGridBody.appendChild(tr);
+            updateBatchRowCount();
+        }
+
+        function reindexBatchRows() {
+            if (!batchGridBody) return;
+            batchGridBody.querySelectorAll('tr').forEach((tr, idx) => {
+                tr.querySelector('.row-index').textContent = idx + 1;
+            });
+        }
+
+        if (btnAddBatchRow) {
+            btnAddBatchRow.addEventListener('click', () => createBatchRow());
+        }
+
+        if (btnAdd5BatchRows) {
+            btnAdd5BatchRows.addEventListener('click', () => {
+                for (let i = 0; i < 5; i++) createBatchRow();
+            });
+        }
+
+        if (btnClearBatchGrid) {
+            btnClearBatchGrid.addEventListener('click', () => {
+                if (batchGridBody) batchGridBody.innerHTML = '';
+                updateBatchRowCount();
+                for (let i = 0; i < 3; i++) createBatchRow();
+            });
+        }
+
+        // Initialize with 3 rows on start
+        if (batchGridBody && batchGridBody.querySelectorAll('tr').length === 0) {
+            for (let i = 0; i < 3; i++) createBatchRow();
+        }
+
+        // Submit Batch Grid
+        btnSubmitBatchGrid?.addEventListener('click', async () => {
+            const rows = batchGridBody.querySelectorAll('tr');
+            if (!rows.length) {
+                alert('Please add at least one style row.');
+                return;
+            }
+
+            const stylesList = [];
+            let isValid = true;
+
+            rows.forEach((tr, idx) => {
+                const styleCode = tr.querySelector('.style-code-input').value.trim();
+                const styleName = tr.querySelector('.style-name-input').value.trim();
+                const buyerId = tr.querySelector('.buyer-select').value;
+
+                if (!styleCode || !styleName || !buyerId) {
+                    tr.classList.add('table-danger');
+                    isValid = false;
+                } else {
+                    tr.classList.remove('table-danger');
+                    stylesList.push({
+                        style_code: styleCode,
+                        style_name: styleName,
+                        article_number: tr.querySelector('.article-input').value.trim(),
+                        buyer_id: buyerId,
+                        season: tr.querySelector('.season-input').value.trim(),
+                        category: tr.querySelector('.category-input').value.trim(),
+                        garment_type: tr.querySelector('.garment-type-input').value.trim(),
+                        price: tr.querySelector('.price-input').value,
+                        status: tr.querySelector('.status-select').value
+                    });
+                }
+            });
+
+            if (!isValid) {
+                batchGridResult.className = 'alert alert-danger d-block rounded-3';
+                batchGridResult.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>Please fill in all required fields (Style Code, Style Name, and Buyer) highlighted in red.';
+                return;
+            }
+
+            const originalBtnHtml = btnSubmitBatchGrid.innerHTML;
+            btnSubmitBatchGrid.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving Styles...';
+            btnSubmitBatchGrid.disabled = true;
+            batchGridResult.classList.add('d-none');
+
+            const updateExisting = document.getElementById('updateExistingBatchCheck')?.checked || false;
+
+            try {
+                const response = await fetch('{{ BASE_URL }}/merchandising/styles/bulk-store', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        styles: stylesList,
+                        update_existing: updateExisting
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    batchGridResult.className = 'alert alert-success d-block rounded-3';
+                    batchGridResult.innerHTML = `<i class="fas fa-check-circle me-2"></i>${data.message}`;
+                    showToast('Batch styles created successfully!', 'success');
+                    setTimeout(() => location.reload(), 1200);
+                } else {
+                    let errHtml = `<div class="fw-bold"><i class="fas fa-exclamation-triangle me-2"></i>${data.message || 'Failed to store batch.'}</div>`;
+                    if (data.errors && data.errors.length) {
+                        errHtml += '<ul class="small mb-0 mt-2 ps-3 text-danger">';
+                        data.errors.forEach(err => { errHtml += `<li>${err}</li>`; });
+                        errHtml += '</ul>';
+                    }
+                    batchGridResult.className = 'alert alert-danger d-block rounded-3';
+                    batchGridResult.innerHTML = errHtml;
+                    btnSubmitBatchGrid.innerHTML = originalBtnHtml;
+                    btnSubmitBatchGrid.disabled = false;
+                }
+            } catch (err) {
+                batchGridResult.className = 'alert alert-danger d-block rounded-3';
+                batchGridResult.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>Network or server error during batch save.';
+                btnSubmitBatchGrid.innerHTML = originalBtnHtml;
+                btnSubmitBatchGrid.disabled = false;
+            }
+        });
+    });
+</script>
+{% endblock %}

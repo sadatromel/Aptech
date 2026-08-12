@@ -1,0 +1,136 @@
+{% extends "layouts/app.twig" %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4 p-4 rounded-3 text-white shadow-sm no-print" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);">
+        <div>
+            <span class="badge bg-white text-indigo mb-2 font-monospace" style="color: #4f46e5;"><i class="fas fa-file-invoice-dollar me-1"></i> OFFICIAL PAYSLIP</span>
+            <h2 class="mb-1 font-weight-bold">Payslip Statement — {{ payroll.first_name }} {{ payroll.last_name }}</h2>
+            <p class="mb-0 opacity-75">Payroll Period: {{ payroll.payroll_period }} | Employee Code: {{ payroll.employee_code }}</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button onclick="window.print()" class="btn btn-light rounded-pill px-4 font-weight-bold text-indigo shadow-sm" style="color: #4f46e5;"><i class="fas fa-print me-1"></i> Print Payslip</button>
+            <a href="{{ BASE_URL }}/hr/payroll" class="btn btn-outline-light rounded-pill px-3"><i class="fas fa-arrow-left me-1"></i> Payroll List</a>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body p-5">
+            <!-- Payslip Header -->
+            <div class="row align-items-center mb-5">
+                <div class="col-6">
+                    <h3 class="fw-bold text-uppercase">Payslip</h3>
+                    <p class="text-muted mb-0">RMG ERP Ltd.</p>
+                </div>
+                <div class="col-6 text-end">
+                    <h4 class="fw-bold mb-0">#{{ payroll.payroll_id }}</h4>
+                    <p class="text-muted">Date: {{ payroll.payment_date|date("d M, Y") }}</p>
+                </div>
+            </div>
+
+            <!-- Employee & Bank Details -->
+            <div class="row mb-5">
+                <div class="col-6">
+                    <h6 class="text-uppercase text-muted fw-bold small">Employee Details</h6>
+                    <h5 class="fw-bold">{{ payroll.first_name }} {{ payroll.last_name }}</h5>
+                    <p class="mb-0">{{ payroll.position_name }}</p>
+                    <p class="mb-0 text-muted">{{ payroll.employee_code }}</p>
+                </div>
+                <div class="col-6 text-end">
+                    <h6 class="text-uppercase text-muted fw-bold small">Department</h6>
+                    <h5 class="fw-bold">{{ payroll.department_name }}</h5>
+                    <div class="mt-2">
+                        {% if payroll.status == 'Paid' %}
+                            <span class="badge bg-success border px-3 py-2 text-uppercase">Paid</span>
+                        {% else %}
+                            <span class="badge bg-warning border px-3 py-2 text-uppercase">{{ payroll.status }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Salary Details Table -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card bg-light border-0">
+                        <div class="card-body">
+                            <h6 class="text-uppercase fw-bold text-success mb-3">Earnings</h6>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Basic Salary</span>
+                                <span class="fw-bold">${{ payroll.earned_basic|number_format(2) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>House Rent</span>
+                                <span class="fw-bold">${{ payroll.earned_house_rent|number_format(2) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Medical Allowance</span>
+                                <span class="fw-bold">${{ payroll.earned_medical|number_format(2) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Transport Allowance</span>
+                                <span class="fw-bold">${{ payroll.earned_transport|number_format(2) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Overtime Amount ({{ payroll.overtime_hours }} hrs)</span>
+                                <span class="fw-bold">${{ payroll.overtime_amount|number_format(2) }}</span>
+                            </div>
+                             <hr>
+                            <div class="d-flex justify-content-between">
+                                <span class="fw-bold">Total Earnings</span>
+                                <span class="fw-bold text-success">${{ (payroll.total_earned + payroll.overtime_amount)|number_format(2) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-light border-0">
+                        <div class="card-body">
+                            <h6 class="text-uppercase fw-bold text-danger mb-3">Deductions</h6>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Absent Deduction</span>
+                                <span class="fw-bold">${{ payroll.absent_deduction|number_format(2) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Late Deduction</span>
+                                <span class="fw-bold">${{ payroll.late_deduction|number_format(2) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Provident Fund (5%)</span>
+                                <span class="fw-bold">${{ payroll.provident_fund|number_format(2) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Tax Deduction</span>
+                                <span class="fw-bold">${{ payroll.tax_deduction|number_format(2) }}</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between">
+                                <span class="fw-bold">Total Deductions</span>
+                                <span class="fw-bold text-danger">${{ payroll.total_deductions|number_format(2) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Net Pay -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="alert alert-primary text-end">
+                        <h5 class="text-uppercase text-muted fw-bold small mb-1">Net Payable</h5>
+                        <h2 class="fw-bold mb-0">${{ payroll.net_salary|number_format(2) }}</h2>
+                        <small class="text-muted">Paid on {{ payroll.payment_date|date("F j, Y") }}</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-5">
+                <div class="col-12 text-center text-muted small">
+                    <p>This is a computer-generated payslip and does not require a signature.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

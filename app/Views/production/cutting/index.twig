@@ -1,0 +1,43 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Cutting Plans{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Cutting Plans</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ BASE_URL }}/production/cutting/create" class="btn btn-sm btn-primary">
+                <i class="fas fa-plus"></i> New Plan
+            </a>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th>Plan #</th>
+                    <th>Style</th>
+                    <th>Date</th>
+                    <th>Total Qty</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for plan in plans %}
+                <tr>
+                    <td>{{ plan.plan_number }}</td>
+                    <td>{{ plan.style_code }}</td>
+                    <td>{{ plan.planned_date }}</td>
+                    <td>{{ plan.total_quantity }}</td>
+                    <td><span class="badge bg-secondary">{{ plan.status|capitalize }}</span></td>
+                    <td>
+                        <a href="{{ BASE_URL }}/production/cutting/bundles?id={{ plan.plan_id }}" class="btn btn-sm btn-info">Bundles</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Export Shipping Dossier • {{ document.document_number }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Action Bar (Hidden on print) -->
+    <div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
+        <a href="{{ BASE_URL }}/commercial/export-documents" class="btn btn-outline-secondary rounded-pill px-3 btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>Back to Export List
+        </a>
+        <button onclick="window.print()" class="btn btn-primary rounded-pill px-4 btn-sm shadow-sm">
+            <i class="fas fa-print me-1"></i>Print Export Dossier
+        </button>
+    </div>
+
+    <!-- Printable Export Dossier Specification -->
+    <div class="card border-0 shadow-lg rounded-4 p-4 print-container">
+        <!-- Header -->
+        <div class="row border-bottom pb-3 mb-4">
+            <div class="col-8">
+                <h2 class="fw-bold text-dark mb-1">EXPORT SHIPPING DOSSIER</h2>
+                <h5 class="text-primary fw-semibold mb-0">DOSSIER #: {{ document.document_number }}</h5>
+                <small class="text-muted">Aptech Garments & Textile Export ERP</small>
+            </div>
+            <div class="col-4 text-end">
+                <div class="badge bg-dark fs-6 px-3 py-2">EXPORT DOCUMENT</div>
+                <small class="d-block text-muted mt-1">Export Date: {{ document.export_date ? document.export_date|date('d M Y') : 'N/A' }}</small>
+            </div>
+        </div>
+
+        <!-- Key Spec Table -->
+        <div class="row g-4 mb-4">
+            <div class="col-6">
+                <div class="p-3 bg-light rounded-3 border">
+                    <h6 class="fw-bold text-uppercase text-secondary small mb-2"><i class="fas fa-user-tie me-1"></i>Shipper & Buyer Info</h6>
+                    <table class="table table-sm table-borderless mb-0 small">
+                        <tr><td class="text-muted" style="width: 35%;">Buyer:</td><td class="fw-bold">{{ document.buyer_name ?? 'N/A' }}</td></tr>
+                        <tr><td class="text-muted">Order PO #:</td><td class="fw-bold text-primary">{{ document.order_number ?? 'N/A' }}</td></tr>
+                        <tr><td class="text-muted">Style Code:</td><td class="fw-bold">{{ document.style_code ?? 'N/A' }}</td></tr>
+                        <tr><td class="text-muted">Invoice #:</td><td class="fw-bold">{{ document.invoice_number ?? 'N/A' }}</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="p-3 bg-light rounded-3 border">
+                    <h6 class="fw-bold text-uppercase text-secondary small mb-2"><i class="fas fa-ship me-1"></i>Shipping & Route Info</h6>
+                    <table class="table table-sm table-borderless mb-0 small">
+                        <tr><td class="text-muted" style="width: 35%;">Port of Loading:</td><td class="fw-bold">{{ document.port_of_loading ?: 'Chittagong, Bangladesh' }}</td></tr>
+                        <tr><td class="text-muted">Port of Discharge:</td><td class="fw-bold text-danger">{{ document.port_of_discharge ?: 'N/A' }}</td></tr>
+                        <tr><td class="text-muted">Vessel / Voyage:</td><td class="fw-bold">{{ document.vessel_name ?: 'N/A' }} / {{ document.voyage_number ?: '-' }}</td></tr>
+                        <tr><td class="text-muted">Payment Terms:</td><td class="fw-bold text-success">{{ document.payment_terms ?: 'L/C at Sight' }}</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Consignee Block -->
+        <div class="card border mb-4">
+            <div class="card-header bg-light fw-bold small text-uppercase"><i class="fas fa-building me-1"></i>Consignee & Delivery Address</div>
+            <div class="card-body py-2 small">
+                <p class="fw-bold mb-1">{{ document.consignee_name ?: document.buyer_name }}</p>
+                <p class="text-muted mb-0">{{ document.consignee_address ?: 'Consignee address details on file.' }}</p>
+            </div>
+        </div>
+
+        <!-- Financial Summary -->
+        <div class="card border-primary mb-4">
+            <div class="card-header bg-primary text-white fw-bold small text-uppercase"><i class="fas fa-dollar-sign me-1"></i>Export Financial Summary</div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small">Total Export Invoice Value:</span>
+                        <h3 class="fw-bold text-success mb-0">${{ document.invoice_value|number_format(2) }} {{ document.currency ?: 'USD' }}</h3>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-success-subtle text-success fs-6 px-3 py-2 border border-success">
+                            Terms: {{ document.shipment_terms ?: 'FOB' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signature Block -->
+        <div class="row pt-5 mt-5 border-top">
+            <div class="col-4 text-center">
+                <div class="border-top border-dark pt-2 small fw-bold">Prepared By (Commercial Executive)</div>
+            </div>
+            <div class="col-4 text-center">
+                <div class="border-top border-dark pt-2 small fw-bold">Checked By (Customs/Shipping Manager)</div>
+            </div>
+            <div class="col-4 text-center">
+                <div class="border-top border-dark pt-2 small fw-bold">Authorized Signature</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .d-print-none { display: none !important; }
+    body { background-color: #fff !important; }
+    .print-container { box-shadow: none !important; border: none !important; }
+}
+</style>
+{% endblock %}

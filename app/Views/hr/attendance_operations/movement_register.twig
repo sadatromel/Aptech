@@ -1,0 +1,71 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Movement Register | HR Module{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4 p-4 rounded-3 text-white shadow-sm" style="background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);">
+        <div>
+            <span class="badge bg-white text-info mb-2 font-monospace" style="color: #0284c7;"><i class="fas fa-clipboard-list me-1"></i> OUTDOOR MOVEMENT LOG</span>
+            <h2 class="mb-1 font-weight-bold">Movement Register & Gate Passes</h2>
+            <p class="mb-0 opacity-75">Complete historical register of worker outdoor movements, field assignments, and buyer meeting passes.</p>
+        </div>
+        <div>
+            <a href="{{ BASE_URL }}/hr/attendance/movement-bulk" class="btn btn-light rounded-pill px-4 font-weight-bold text-info shadow-sm" style="color: #0284c7;"><i class="fas fa-plus me-1"></i> Bulk Movement Entry</a>
+        </div>
+    </div>
+
+    <!-- Main Register Table Card -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-info fw-bold" style="color: #0284c7;"><i class="fas fa-history me-2"></i>Official Outdoor Movement Log</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Employee Name</th>
+                            <th>Code</th>
+                            <th>Out Time</th>
+                            <th>Return Time</th>
+                            <th>Destination</th>
+                            <th>Purpose</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in movements %}
+                        <tr>
+                            <td><span class="badge bg-light text-dark border font-monospace">{{ m.movement_date }}</span></td>
+                            <td><span class="fw-bold text-dark">{{ m.employee_name }}</span></td>
+                            <td><span class="badge bg-light text-dark border font-monospace">{{ m.employee_code }}</span></td>
+                            <td><span class="badge bg-info text-white font-monospace"><i class="fas fa-sign-out-alt me-1"></i> {{ m.start_time }}</span></td>
+                            <td>
+                                {% if m.end_time %}
+                                    <span class="badge bg-success text-white font-monospace"><i class="fas fa-sign-in-alt me-1"></i> {{ m.end_time }}</span>
+                                {% else %}
+                                    <span class="text-muted">On Duty</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="fw-semibold text-dark">{{ m.destination }}</span></td>
+                            <td><small class="text-muted">{{ m.purpose }}</small></td>
+                            <td><span class="badge bg-success rounded-pill px-3">{{ m.status|capitalize }}</span></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="fas fa-walking fa-2x mb-2 text-info opacity-50"></i><br>
+                                No outdoor movement records logged in register.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

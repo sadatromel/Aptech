@@ -1,0 +1,225 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Check In Visitor - RMG ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex align-items-center mb-4">
+        <a href="{{ BASE_URL }}/visitors" class="text-decoration-none text-muted me-2">Visitor Log</a>
+        <span class="text-muted me-2">/</span>
+        <h1 class="h3 mb-0 text-gray-800">Check In Visitor</h1>
+    </div>
+
+    <form action="{{ BASE_URL }}/visitors" method="POST" enctype="multipart/form-data">
+    {{ csrf_field() | raw }}
+        <div class="row">
+            <!-- Form Section -->
+            <div class="col-lg-8">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Visitor Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <!-- Personal Details -->
+                        <h6 class="heading-small text-muted mb-4">Personal Details</h6>
+                        <div class="row">
+                            <div class="col-lg-6 mb-3">
+                                <label class="form-label">Category</label>
+                                <select name="category" class="form-select" id="inputCategory">
+                                    <option value="Visitor">Visitor</option>
+                                    <option value="Vendor">Vendor</option>
+                                    <option value="Interviewee">Interviewee</option>
+                                    <option value="Contractor">Contractor</option>
+                                </select>
+                            </div>
+                            <div class="col-lg-6 mb-3">
+                                <label class="form-label">Phone Number <small class="text-muted">(Auto-fills if visitor exists)</small></label>
+                                <input type="text" name="phone" class="form-control" id="inputPhone" placeholder="Enter phone number" required>
+                            </div>
+                            <div class="col-lg-6 mb-3">
+                                <label class="form-label">Visitor Name <span class="text-danger">*</span></label>
+                                <input type="text" name="name" class="form-control" id="inputName" required>
+                            </div>
+                            <div class="col-lg-6 mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control" id="inputEmail" placeholder="visitor@example.com">
+                            </div>
+                            <div class="col-lg-12 mb-3">
+                                <label class="form-label">Company Name</label>
+                                <input type="text" name="company_name" class="form-control" id="inputCompany" placeholder="Company or Organization">
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Visit Details -->
+                        <h6 class="heading-small text-muted mb-4">Visit Details</h6>
+                        <div class="row">
+                            <div class="col-lg-12 mb-3">
+                                <label class="form-label">Purpose of Visit <span class="text-danger">*</span></label>
+                                <input type="text" name="purpose" class="form-control" id="inputPurpose" placeholder="e.g., Meeting, Delivery, Maintenance" required>
+                            </div>
+                            <div class="col-lg-6 mb-3">
+                                <label class="form-label">Person to Meet <span class="text-danger">*</span></label>
+                                <input type="text" name="meet_person" class="form-control" id="inputMeetPerson" required>
+                            </div>
+                            <div class="col-lg-6 mb-3">
+                                <label class="form-label">Department</label>
+                                <input type="text" name="department" class="form-control" id="inputDepartment">
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Identification -->
+                        <h6 class="heading-small text-muted mb-4">Identification</h6>
+                        <div class="row">
+                            <div class="col-lg-6 mb-3">
+                                <label class="form-label">ID Type</label>
+                                <select name="id_type" class="form-select">
+                                    <option value="">Select ID type</option>
+                                    <option value="National ID">National ID</option>
+                                    <option value="Driving License">Driving License</option>
+                                    <option value="Passport">Passport</option>
+                                    <option value="Employee ID">Employee ID</option>
+                                </select>
+                            </div>
+                            <div class="col-lg-6 mb-3">
+                                <label class="form-label">ID Number</label>
+                                <input type="text" name="id_number" class="form-control">
+                            </div>
+                            <div class="col-lg-12 mb-3">
+                                <label class="form-label">Card Number</label>
+                                <input type="text" name="card_number" class="form-control">
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Photo -->
+                        <h6 class="heading-small text-muted mb-4">Visitor Photo (Optional)</h6>
+                        <div class="row mb-3">
+                            <div class="col-lg-12">
+                                <div class="input-group">
+                                    <input type="file" name="photo" class="form-control" id="inputPhoto" accept="image/*">
+                                    <button class="btn btn-dark" type="button"><i class="fas fa-camera"></i> Take Photo</button>
+                                </div>
+                                <small class="text-muted">Upload visitor photo (JPG, PNG, GIF - Max 2MB) or use camera to capture</small>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        
+                         <!-- Notes -->
+                        <h6 class="heading-small text-muted mb-4">Additional Information</h6>
+                         <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea name="notes" class="form-control" rows="3" placeholder="Additional notes..."></textarea>
+                        </div>
+                        
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-dark">
+                                <i class="fas fa-sign-in-alt me-1"></i> Check In Visitor
+                            </button>
+                            <a href="{{ BASE_URL }}/visitors" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="col-lg-4">
+                <div class="card shadow text-white bg-primary mb-3">
+                     <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-white">Visitor Pass Preview</h6>
+                        <span class="badge bg-light text-primary">VISITOR BADGE</span>
+                     </div>
+                </div>
+                
+                <div class="card shadow border-0" id="badgePreview">
+                    <div class="card-body text-center p-4">
+                         <div class="border-bottom pb-3 mb-3">
+                             <h5 class="text-uppercase fw-bold letter-spacing-1">Visitor Pass</h5>
+                         </div>
+                         
+                         <div class="mb-3">
+                             <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                                 <i class="fas fa-user fa-3x text-secondary" id="previewIcon"></i>
+                                 <img id="previewImage" src="" class="rounded-circle d-none" style="width: 100px; height: 100px; object-fit: cover;">
+                             </div>
+                         </div>
+                         
+                         <h4 class="fw-bold mb-1" id="previewName">Visitor Name</h4>
+                         <p class="text-muted mb-4" id="previewCompany">Company Name</p>
+                         
+                         <div class="text-start small mb-4">
+                             <div class="row mb-2">
+                                 <div class="col-4 fw-bold text-muted">Meeting:</div>
+                                 <div class="col-8" id="previewMeet">--</div>
+                             </div>
+                             <div class="row mb-2">
+                                 <div class="col-4 fw-bold text-muted">Dept:</div>
+                                 <div class="col-8" id="previewDept">--</div>
+                             </div>
+                             <div class="row mb-2">
+                                 <div class="col-4 fw-bold text-muted">Purpose:</div>
+                                 <div class="col-8" id="previewPurpose">--</div>
+                             </div>
+                             <div class="row mb-2">
+                                 <div class="col-4 fw-bold text-muted">Phone:</div>
+                                 <div class="col-8" id="previewPhone">--</div>
+                             </div>
+                         </div>
+                         
+                         <div class="mb-3">
+                             <i class="fas fa-barcode fa-3x text-dark"></i>
+                             <div class="small text-muted mt-1">Card Number --</div>
+                         </div>
+                         
+                         <div class="border-top pt-3 small text-muted">
+                             Checked In: <span id="previewTime">{{ "now"|date("d M Y, h:i A") }}</span>
+                         </div>
+                    </div>
+                     <div class="card-footer bg-white border-top-0 pb-4 text-center">
+                         <button type="button" class="btn btn-outline-dark w-100" onclick="window.print()">
+                             <i class="fas fa-print me-1"></i> Print Badge
+                         </button>
+                     </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Live Preview Logic
+        function updatePreview(input, target, defaultText = '--') {
+            $(input).on('input change', function() {
+                $(target).text($(this).val() || defaultText);
+            });
+        }
+
+        updatePreview('#inputName', '#previewName', 'Visitor Name');
+        updatePreview('#inputCompany', '#previewCompany', 'Company Name');
+        updatePreview('#inputMeetPerson', '#previewMeet');
+        updatePreview('#inputDepartment', '#previewDept');
+        updatePreview('#inputPurpose', '#previewPurpose');
+        updatePreview('#inputPhone', '#previewPhone');
+
+        // Photo Preview
+        $('#inputPhoto').change(function() {
+            if (this.files && this.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#previewImage').attr('src', e.target.result).removeClass('d-none');
+                    $('#previewIcon').addClass('d-none');
+                }
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+    });
+</script>
+{% endblock %}

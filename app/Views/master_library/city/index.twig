@@ -1,0 +1,83 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Cities | Master Library{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Cities</h1>
+    
+    {% if flash_success %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ flash_success }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item active">Cities</li>
+    </ol>
+
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+            <div class="h5 mb-0 text-primary"><i class="fas fa-table me-2"></i>City List</div>
+            <a href="{{ BASE_URL }}/master_library/cities/create" class="btn btn-primary px-4 rounded-pill"><i class="fas fa-plus me-1"></i> Add New</a>
+        </div>
+        <div class="card-body p-4">
+            <table id="datatablesSimple" class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Name</th>
+                        <th>State</th>
+                        <th>Country</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for city in cities %}
+                    <tr>
+                        <td>{{ city.city_name }}</td>
+                        <td>{{ city.state_province }}</td>
+                        <td>{{ city.country_name }}</td>
+                        <td>
+                            <span class="badge rounded-pill bg-{{ city.status == 'active' ? 'success' : 'secondary' }}">{{ city.status|capitalize }}</span>
+                        </td>
+                        <td>
+                            <a href="{{ BASE_URL }}/master_library/cities/edit/{{ city.city_id }}" class="btn btn-warning btn-sm rounded-circle" title="Edit"><i class="fas fa-edit"></i></a>
+                            <button type="button" class="btn btn-danger btn-sm rounded-circle" title="Delete" onclick="deleteCity('{{ city.city_id }}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+</div>
+</div>
+
+<script>
+    /**
+     * Dynamic Form Submission for Delete
+     * Creates a form in the body, appends it, and submits it.
+     * Bypasses any table nesting or DataTables DOM manipulation issues.
+     */
+    function deleteCity(id) {
+        if (confirm('Are you sure you want to delete this city?')) {
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ BASE_URL }}/master_library/cities/delete';
+            form.style.display = 'none';
+
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'id';
+            input.value = id;
+
+            form.appendChild(input);
+            document.body.appendChild(form); // Crucial: Append to body to ensure it is in the DOM
+            form.submit();
+        }
+    }
+</script>
+{% endblock %}

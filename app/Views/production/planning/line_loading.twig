@@ -1,0 +1,64 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Line Loading - Production{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Line Loading Board</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <form action="" method="get" class="d-flex gap-2">
+                 <input type="hidden" name="page" value="line_loading">
+                 <input type="date" name="date" class="form-control form-control-sm" value="{{ date }}">
+                 <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Visual Line Board -->
+    <div class="row g-4">
+        {% for line in lines_status %}
+        <div class="col-xl-3 col-md-6">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold">{{ line.line_name }}</h6>
+                    <span class="badge bg-{{ line.utilization > 90 ? 'danger' : (line.utilization > 50 ? 'success' : 'warning') }}">
+                        {{ line.utilization }}% Load
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Daily Capacity</small>
+                        <div class="fw-bold">{{ line.daily_capacity }} pcs</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Planned Today</small>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold text-primary">{{ line.planned_quantity }} pcs</span>
+                            <div class="progress flex-grow-1 ms-2" style="height: 6px;">
+                                <div class="progress-bar" role="progressbar" style="width: {{ line.utilization }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Output Today</small>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold text-success">{{ line.completed_quantity }} pcs</span>
+                            <small class="text-muted">{{ line.efficiency }}% Eff.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <a href="{{ BASE_URL }}/production/planning?line_id={{ line.line_id }}" class="btn btn-sm btn-outline-secondary">View Schedule</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <p class="text-muted">No line data available for this date.</p>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

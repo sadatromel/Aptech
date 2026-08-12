@@ -1,0 +1,254 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Tech Pack Specification • {{ style.style_code }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3 print-container">
+    <!-- Non-printable Header / Actions -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom d-print-none">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{{ BASE_URL }}/merchandising/styles">Styles</a></li>
+                    <li class="breadcrumb-item"><a href="{{ BASE_URL }}/merchandising/styles/{{ style.style_id }}">{{ style.style_code }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Tech Pack Spec</li>
+                </ol>
+            </nav>
+            <h1 class="h3 fw-bold text-dark mb-0">
+                <i class="fas fa-file-invoice text-primary me-2"></i>Technical Specification Package (Tech Pack)
+            </h1>
+        </div>
+        <div class="d-flex gap-2">
+            <button onclick="window.print();" class="btn btn-primary rounded-pill px-3 shadow-sm btn-sm">
+                <i class="fas fa-print me-1"></i>Print / Export PDF
+            </button>
+            <a href="{{ BASE_URL }}/merchandising/styles/{{ style.style_id }}" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm btn-sm">
+                <i class="fas fa-arrow-left me-1"></i>Back to Style
+            </a>
+        </div>
+    </div>
+
+    <!-- TECH PACK SHEET BODY (PRINT OPTIMIZED) -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 print-card">
+        <!-- Tech Pack Title Header -->
+        <div class="row pb-3 mb-4 border-bottom align-items-center">
+            <div class="col-8">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-primary text-white p-3 rounded-3 fw-bold display-6">TP</div>
+                    <div>
+                        <h2 class="fw-bold mb-1 text-uppercase text-dark">{{ style.style_code }} — {{ style.style_name }}</h2>
+                        <span class="badge bg-dark rounded-pill px-3 py-1">BUYER: {{ style.buyer_name ?? 'N/A' }}</span>
+                        <span class="badge bg-secondary rounded-pill px-3 py-1 ms-1">SEASON: {{ style.season ?? 'N/A' }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-4 text-end">
+                <h5 class="fw-bold text-muted mb-1">GARMENT TECH PACK</h5>
+                <small class="text-muted d-block">Generated: {{ "now"|date("d M Y, H:i") }}</small>
+                <span class="badge bg-success mt-1">STATUS: {{ style.status|replace({'_': ' '})|upper }}</span>
+            </div>
+        </div>
+
+        <!-- Section 1: Header Information Grid & Sketch -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-7">
+                <div class="card border bg-light h-100 rounded-3">
+                    <div class="card-header bg-white fw-bold border-bottom"><i class="fas fa-info-circle me-2 text-primary"></i>1. Style Specifications</div>
+                    <div class="card-body p-3">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Style Code / Ref</small>
+                                <span class="fw-bold text-dark">{{ style.style_code }}</span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Article Number</small>
+                                <span class="fw-semibold text-dark">{{ style.article_number ?? '-' }}</span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Category / Dept</small>
+                                <span class="fw-semibold text-dark">{{ style.category ?? '-' }}</span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Garment Type</small>
+                                <span class="fw-semibold text-dark">{{ style.garment_type ?? '-' }}</span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Target FOB Price</small>
+                                <span class="fw-bold text-success">${{ style.price|number_format(2) }}</span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Buyer Contact</small>
+                                <span class="fw-semibold text-dark">{{ style.contact_person ?? '-' }} ({{ style.email ?? '-' }})</span>
+                            </div>
+                            <div class="col-12 border-top pt-2 mt-2">
+                                <small class="text-muted d-block">Style Description / Construction Details</small>
+                                <p class="mb-0 small text-dark">{{ style.style_description ?? (style.description ?? 'No specific construction description provided.') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="card border bg-light h-100 rounded-3 text-center">
+                    <div class="card-header bg-white fw-bold border-bottom"><i class="fas fa-image me-2 text-primary"></i>2. Garment Visual Sketch / Photo</div>
+                    <div class="card-body p-3 d-flex align-items-center justify-content-center">
+                        {% if style.photo_path %}
+                        <img src="{{ BASE_URL }}/{{ style.photo_path }}" alt="Garment Sketch" class="img-fluid rounded-3 border shadow-sm" style="max-height: 220px; object-fit: contain;">
+                        {% else %}
+                        <div class="text-muted py-4">
+                            <i class="fas fa-tshirt fa-4x mb-2 opacity-25"></i>
+                            <p class="small mb-0">No garment sketch photo attached.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Bill of Materials (BOM) Table -->
+        <div class="mb-4">
+            <h6 class="fw-bold border-bottom pb-2 text-dark"><i class="fas fa-list-ol me-2 text-primary"></i>3. Bill of Materials (BOM) — Fabric & Trims</h6>
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle mb-0 text-sm">
+                    <thead class="bg-light text-muted small">
+                        <tr>
+                            <th>Category</th>
+                            <th>Item Code / Name</th>
+                            <th>Supplier / Source</th>
+                            <th>Color / Placement</th>
+                            <th>UOM</th>
+                            <th class="text-end">Consumption</th>
+                            <th class="text-end">Unit Cost</th>
+                            <th class="text-end">Ext Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if bom_components is empty %}
+                        <tr><td colspan="8" class="text-center text-muted py-3">No BOM components specified for this style.</td></tr>
+                        {% else %}
+                        {% for comp in bom_components %}
+                        <tr>
+                            <td><span class="badge bg-light text-dark border">{{ comp.item_category ?? 'Material' }}</span></td>
+                            <td class="fw-bold">{{ comp.item_code ?? comp.item_name }}</td>
+                            <td><small>{{ comp.supplier_name ?? 'Nominated' }}</small></td>
+                            <td><small>{{ comp.color ?? '-' }} / {{ comp.placement ?? 'Main Body' }}</small></td>
+                            <td>{{ comp.unit_of_measure ?? 'PCS' }}</td>
+                            <td class="text-end fw-semibold">{{ comp.consumption|number_format(3) }}</td>
+                            <td class="text-end">${{ comp.unit_cost|number_format(3) }}</td>
+                            <td class="text-end fw-bold">${{ (comp.consumption * comp.unit_cost)|number_format(3) }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section 3: Size Measurement Breakdown -->
+        <div class="mb-4">
+            <h6 class="fw-bold border-bottom pb-2 text-dark"><i class="fas fa-ruler-horizontal me-2 text-primary"></i>4. Size Range & Order Breakdown</h6>
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle mb-0">
+                    <thead class="bg-light text-muted small">
+                        <tr>
+                            <th>Breakdown Name</th>
+                            <th>Color</th>
+                            <th>Assorted Sizes</th>
+                            <th>Size Quantity Specs</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if breakdowns is empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-3">No size breakdown records logged.</td></tr>
+                        {% else %}
+                        {% for bd in breakdowns %}
+                        <tr>
+                            <td class="fw-bold">{{ bd.breakdown_name }}</td>
+                            <td><span class="badge bg-secondary-subtle text-secondary">{{ bd.color }}</span></td>
+                            <td>{{ bd.sizes }}</td>
+                            <td class="fw-semibold text-primary">{{ bd.size_quantities }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section 4: Sample Approval Log -->
+        <div class="mb-4">
+            <h6 class="fw-bold border-bottom pb-2 text-dark"><i class="fas fa-cut me-2 text-primary"></i>5. Sample Approval History</h6>
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle mb-0">
+                    <thead class="bg-light text-muted small">
+                        <tr>
+                            <th>Sample Type</th>
+                            <th>Request Date</th>
+                            <th>Comments / Fit Feedback</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if samples is empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-3">No sample approval history recorded.</td></tr>
+                        {% else %}
+                        {% for s in samples %}
+                        <tr>
+                            <td class="fw-bold">{{ s.sample_type|upper }}</td>
+                            <td><small>{{ s.request_date ? s.request_date|date('d M Y') : '-' }}</small></td>
+                            <td><small>{{ s.notes ?? 'Standard sample approval' }}</small></td>
+                            <td>
+                                <span class="badge {% if s.status == 'approved' %}bg-success{% elseif s.status == 'rejected' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                    {{ s.status|upper }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section 5: Approval Signatures -->
+        <div class="pt-4 mt-4 border-top">
+            <div class="row text-center g-4">
+                <div class="col-4">
+                    <div class="border-bottom pb-4 mb-2"></div>
+                    <span class="fw-bold d-block small">Prepared By (Merchandiser)</span>
+                    <small class="text-muted">Signature & Date</small>
+                </div>
+                <div class="col-4">
+                    <div class="border-bottom pb-4 mb-2"></div>
+                    <span class="fw-bold d-block small">Reviewed By (QA / Tech Specialist)</span>
+                    <small class="text-muted">Signature & Date</small>
+                </div>
+                <div class="col-4">
+                    <div class="border-bottom pb-4 mb-2"></div>
+                    <span class="fw-bold d-block small">Approved By (Factory Manager)</span>
+                    <small class="text-muted">Signature & Date</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .d-print-none, sidebar, nav, header {
+        display: none !important;
+    }
+    body {
+        background: #fff !important;
+    }
+    .print-card {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+    }
+    .print-container {
+        padding: 0 !important;
+    }
+}
+</style>
+{% endblock %}

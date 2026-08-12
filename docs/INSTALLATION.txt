@@ -1,0 +1,517 @@
+================================================================================
+                 AIP TRANSPORT ERP - INSTALLATION MANUAL
+================================================================================
+
+COMPLETE STEP-BY-STEP GUIDE FOR DEPLOYMENT & SETUP
+
+================================================================================
+SECTION 1: PRE-INSTALLATION REQUIREMENTS
+================================================================================
+
+HARDWARE REQUIREMENTS:
+  ✓ Processor: Dual-core 2.0 GHz or higher
+  ✓ RAM: 2 GB minimum (4 GB recommended)
+  ✓ Disk Space: 100 MB free space
+  ✓ Internet: Not required (works offline)
+
+SOFTWARE REQUIREMENTS:
+  ✓ Operating System: Windows/Mac/Linux
+  ✓ Web Server: Apache 2.4+ (included in XAMPP)
+  ✓ PHP: 7.0+ (7.4+ recommended)
+  ✓ MySQL: 5.7+ (8.0 recommended)
+  ✓ Browser: Chrome, Firefox, Safari, Edge
+
+XAMPP SETUP (if not already installed):
+  1. Download XAMPP from apachefriends.org
+  2. Install XAMPP to default location
+  3. Start Apache and MySQL services
+  4. Verify at http://localhost/dashboard/
+
+================================================================================
+SECTION 2: DATABASE SETUP
+================================================================================
+
+STEP 2.1: CREATE DATABASE
+
+Method A - Using phpMyAdmin:
+  1. Open http://localhost/phpmyadmin in browser
+  2. Click "Databases" tab
+  3. Enter database name: aptech
+  4. Select Collation: utf8mb4_unicode_ci
+  5. Click "Create"
+
+Method B - Using MySQL Command Line:
+  1. Open Command Prompt
+  2. Type: mysql -u root
+  3. Execute: CREATE DATABASE aptech;
+  4. Execute: USE aptech;
+  5. Exit with: exit
+
+STEP 2.2: IMPORT DATABASE SCHEMA
+
+Method A - Using phpMyAdmin (Recommended):
+  1. Go to http://localhost/phpmyadmin
+  2. Click on 'aptech' database
+  3. Click "Import" tab
+  4. Click "Browse" button
+  5. Select 'complete_setup.sql' file
+  6. Click "Go" button
+  7. Wait for "Import successful" message
+
+Method B - Using MySQL Command Line:
+  1. Open Command Prompt
+  2. Navigate to project folder:
+     cd C:\xampp\htdocs\AIP Transport
+  3. Execute: mysql -u root aptech < complete_setup.sql
+  4. Wait for process to complete
+
+STEP 2.3: VERIFY DATABASE
+
+In phpMyAdmin:
+  1. Click on 'aptech' database
+  2. Check Tables tab shows 8 tables:
+     ✓ user_roles
+     ✓ users
+     ✓ user_activity_logs
+     ✓ vehicles
+     ✓ maintenance_schedule
+     ✓ parts_inventory
+     ✓ maintenance_parts_usage
+     ✓ cost_reports
+
+  3. Click on 'users' table → Browse
+  4. Should show 3 sample users
+  5. Click on 'vehicles' table → Browse
+  6. Should show 3 sample vehicles
+
+================================================================================
+SECTION 3: FILE PLACEMENT
+================================================================================
+
+LOCATION: C:\xampp\htdocs\AIP Transport\
+
+Ensure these files are present:
+
+APPLICATION FILES:
+  ✓ index.php                  (Login page)
+  ✓ register.php               (Registration)
+  ✓ dashboard.php              (Main dashboard)
+  ✓ vehicles.php               (Vehicle module)
+  ✓ maintenance.php            (Maintenance module)
+  ✓ parts_inventory.php        (Parts module)
+  ✓ cost_reports.php           (Reports module)
+  ✓ users.php                  (User management)
+  ✓ logout.php                 (Logout handler)
+
+DATABASE FILES:
+  ✓ complete_setup.sql         (Main schema - USE THIS ONE)
+  ✓ sample_data.sql            (Optional - included in complete_setup.sql)
+  ✓ setup.sql                  (Optional - included in complete_setup.sql)
+
+DOCUMENTATION FILES:
+  ✓ README.md                  (Full documentation)
+  ✓ QUICKSTART.md              (Quick start guide)
+  ✓ PROJECT_SUMMARY.txt        (Project overview)
+  ✓ DELIVERABLES.txt           (What's included)
+  ✓ INSTALLATION.txt           (This file)
+
+================================================================================
+SECTION 4: ACCESS THE SYSTEM
+================================================================================
+
+STEP 4.1: START SERVERS
+
+XAMPP Control Panel:
+  1. Open XAMPP Control Panel
+  2. Start Apache (click Start button)
+  3. Start MySQL (click Start button)
+  4. Status should show "Running" in green
+
+STEP 4.2: OPEN IN BROWSER
+
+  1. Open your web browser (Chrome/Firefox/Safari/Edge)
+  2. Enter URL: http://localhost/AIP%20Transport/
+  3. You should see AIP Transport login page
+  4. If page doesn't load, check:
+     - Apache is running
+     - Files are in correct folder
+     - URL is correct
+
+STEP 4.3: LOGIN WITH DEMO CREDENTIALS
+
+First-time login - Super Admin:
+  Email: admin@aiptransport.com
+  Password: password123
+
+  After logging in, you'll see:
+  ✓ Dashboard with statistics
+  ✓ Sidebar with navigation menu
+  ✓ Welcome message
+  ✓ Recent activity log
+
+================================================================================
+SECTION 5: INITIAL CONFIGURATION
+================================================================================
+
+STEP 5.1: TEST EACH MODULE
+
+1. DASHBOARD
+   - Navigate to Dashboard
+   - Verify statistics display
+   - Check activity log shows data
+
+2. VEHICLES
+   - Click "Vehicles" in sidebar
+   - Should show 3 sample vehicles
+   - Add a new vehicle to test form
+   - Fill in all fields:
+     * Registration Number: DHA-004
+     * Vehicle Name: Test Vehicle
+     * Make: Hino
+     * Model: 700
+     * Year: 2023
+     * Vehicle Type: Truck
+     * Fuel Type: Diesel
+     * Mileage: 0
+     * Purchase Date: (today's date)
+     * Purchase Cost: 2000000
+   - Click "Add Vehicle"
+   - New vehicle should appear in list
+
+3. MAINTENANCE
+   - Click "Maintenance" in sidebar
+   - Select a vehicle from dropdown
+   - Fill maintenance form
+   - Click "Add Maintenance"
+   - Record should appear in table
+
+4. PARTS INVENTORY
+   - Click "Parts Inventory" in sidebar
+   - Should show 5 sample parts
+   - Add new part to test
+   - Fill in all fields
+   - Click "Add Part"
+   - Part should appear in inventory
+
+5. COST REPORTS
+   - Click "Cost Reports" in sidebar
+   - Should show statistics
+   - Generate new report
+   - Select vehicle, month, costs
+   - Click "Generate Report"
+   - Report should appear in table
+
+STEP 5.2: TEST USER FUNCTIONS
+
+Login as Different Users:
+  1. Logout first (click Logout button)
+  2. Login as Manager: manager@aiptransport.com / password123
+  3. Verify access to vehicles, maintenance, reports
+  4. Logout and login as Technician
+  5. Verify limited access (viewing only)
+
+STEP 5.3: TEST USER MANAGEMENT (Admin Only)
+
+  1. Logout and login as admin@aiptransport.com
+  2. Go to Users (sidebar menu)
+  3. You should see user creation form
+  4. Add a new user:
+     * Full Name: Test User
+     * Email: test@example.com
+     * Password: testpass123
+     * Role: Viewer
+  5. Click "Create User"
+  6. New user should appear in list
+  7. Logout and try login with new credentials
+
+================================================================================
+SECTION 6: TROUBLESHOOTING
+================================================================================
+
+PROBLEM: "Cannot connect to database"
+SOLUTION:
+  1. Check MySQL is running (XAMPP Control Panel)
+  2. Verify database 'aptech' exists in phpMyAdmin
+  3. Check database credentials in PHP files
+  4. Default: Host=localhost, User=root, Password=(blank)
+  5. If different, update credentials in each PHP file
+
+PROBLEM: "Page not found / 404 error"
+SOLUTION:
+  1. Verify files are in: C:\xampp\htdocs\AIP Transport\
+  2. Check folder name spelling (case-sensitive on Linux)
+  3. Restart Apache server
+  4. Clear browser cache (Ctrl+F5)
+  5. Try accessing http://localhost/AIP%20Transport/index.php
+
+PROBLEM: "Foreign key constraint fails when adding data"
+SOLUTION:
+  1. Database not properly imported
+  2. Delete database and try again:
+     - In phpMyAdmin, select database 'aptech'
+     - Click "Drop" (delete)
+     - Create new 'aptech' database
+     - Re-import complete_setup.sql
+  3. Ensure roles are created before adding users
+
+PROBLEM: "Login not working"
+SOLUTION:
+  1. Check database has sample users (3 users should exist)
+  2. Verify email is correct: admin@aiptransport.com
+  3. Password: password123 (case-sensitive)
+  4. Check PHP error logs
+  5. Try different browser
+  6. Clear cookies
+
+PROBLEM: "Session expires immediately"
+SOLUTION:
+  1. Check PHP session settings
+  2. Session timeout usually 24 minutes by default
+  3. No files are corrupted
+  4. Just login again
+
+PROBLEM: "Blank page or white screen"
+SOLUTION:
+  1. PHP error occurred - check error logs
+  2. Enable PHP error display:
+     - Edit php.ini
+     - Find: display_errors = Off
+     - Change to: display_errors = On
+  3. Restart Apache
+  4. Refresh page to see errors
+  5. Most common: Database connection issue
+
+PROBLEM: "Can't upload files to folder"
+SOLUTION:
+  1. Check folder permissions
+  2. Folder must be writable
+  3. Right-click folder → Properties
+  4. Security → Edit → Modify (Allow checkbox)
+  5. Apply and OK
+
+================================================================================
+SECTION 7: SECURITY CHECKLIST
+================================================================================
+
+After installation, complete this security checklist:
+
+PASSWORDS:
+  ☐ Change all demo user passwords
+  ☐ Create strong passwords (mix of upper, lower, numbers, symbols)
+  ☐ Don't use same password for all users
+  ☐ Change admin password first
+
+SERVER SECURITY:
+  ☐ Update PHP to latest version
+  ☐ Update MySQL to latest version
+  ☐ Configure MySQL to not expose port (3306)
+  ☐ Disable local_infile in MySQL
+
+DATABASE SECURITY:
+  ☐ Change MySQL root password (if not already set)
+  ☐ Create dedicated database user with limited privileges
+  ☐ Don't use root for application
+
+PHP SECURITY:
+  ☐ Disable dangerous functions (exec, system, etc.)
+  ☐ Set upload_max_filesize appropriately
+  ☐ Disable directory listing (DirectoryIndex)
+  ☐ Use HTTPS in production (SSL certificate)
+
+APPLICATION SECURITY:
+  ☐ All SQL queries use prepared statements (✓ already done)
+  ☐ Input validation enabled (✓ already done)
+  ☐ Password hashing enabled (✓ already done)
+  ☐ Activity logging enabled (✓ already done)
+  ☐ Role-based access control active (✓ already done)
+
+================================================================================
+SECTION 8: BACKUP & RECOVERY
+================================================================================
+
+REGULAR BACKUPS:
+
+Database Backup (Weekly):
+  1. Open phpMyAdmin
+  2. Select 'aptech' database
+  3. Click "Export" tab
+  4. Select "SQL" format
+  5. Click "Go"
+  6. Save file to backup location
+  7. Name it with date: aptech_backup_2025-11-24.sql
+
+Files Backup (Monthly):
+  1. Copy entire folder: AIP Transport
+  2. Rename: AIP Transport_backup_2025-11
+  3. Store in separate location
+  4. Keep at least 3 backups
+
+RECOVERY PROCEDURE:
+
+Database Recovery:
+  1. Drop corrupted database in phpMyAdmin
+  2. Create new 'aptech' database
+  3. Import backup SQL file
+  4. Verify all data restored
+
+File Recovery:
+  1. Delete corrupted files
+  2. Copy from backup folder
+  3. Paste to original location
+  4. Restart Apache
+
+================================================================================
+SECTION 9: PERFORMANCE OPTIMIZATION
+================================================================================
+
+For Production Environment:
+
+DATABASE OPTIMIZATION:
+  1. Run: OPTIMIZE TABLE table_name;
+  2. Do this for all 8 tables monthly
+  3. Archive old activity logs (> 1 year)
+  4. Add indexes on frequently searched columns
+
+PHP OPTIMIZATION:
+  1. Enable opcache
+  2. Increase memory_limit to 256M
+  3. Set max_execution_time to 30
+  4. Disable error display in production
+
+WEB SERVER OPTIMIZATION:
+  1. Enable GZIP compression
+  2. Enable caching headers
+  3. Use Content Delivery Network (CDN)
+  4. Minimize JavaScript/CSS
+
+MONITORING:
+  1. Monitor disk space
+  2. Check MySQL slow query log
+  3. Monitor Apache error logs
+  4. Check server resources
+  5. Review activity logs regularly
+
+================================================================================
+SECTION 10: PRODUCTION DEPLOYMENT
+================================================================================
+
+If deploying to production server:
+
+PREPARE SERVER:
+  1. Install latest PHP & MySQL
+  2. Configure firewall
+  3. Set up SSL certificate (HTTPS)
+  4. Create separate database user
+  5. Restrict file permissions (755 for folders, 644 for files)
+
+DEPLOY FILES:
+  1. Upload files via SFTP
+  2. Set correct permissions
+  3. Don't expose complete_setup.sql
+  4. Create .htaccess for security
+  5. Configure database credentials
+
+CONFIGURE:
+  1. Update database credentials
+  2. Set error logging (not error display)
+  3. Configure email for notifications
+  4. Set session timeout appropriately
+  5. Enable SSL/HTTPS
+
+TEST:
+  1. Test all modules in production
+  2. Verify backups work
+  3. Test recovery process
+  4. Monitor performance
+  5. Check security logs
+
+MAINTENANCE:
+  1. Weekly: Check error logs
+  2. Monthly: Backup database
+  3. Quarterly: Update packages
+  4. Annually: Security audit
+
+================================================================================
+SECTION 11: GETTING SUPPORT
+================================================================================
+
+For Issues:
+  1. Check QUICKSTART.md for common issues
+  2. Review error messages carefully
+  3. Check browser console (F12)
+  4. Check PHP error logs
+  5. Check MySQL error logs
+
+Common Issues in QUICKSTART.md:
+  - Connection failed
+  - Foreign key constraint fails
+  - Page not found
+  - Session expires
+  - Blank page/white screen
+
+Documentation:
+  - README.md - Full documentation
+  - PROJECT_SUMMARY.txt - Project overview
+  - DELIVERABLES.txt - Features & deliverables
+
+================================================================================
+SECTION 12: DAILY OPERATIONS
+================================================================================
+
+DAILY CHECKLIST:
+
+Morning:
+  ☐ Check servers are running
+  ☐ Verify can login
+  ☐ Check recent activity log
+  ☐ Look for pending maintenance alerts
+
+Throughout Day:
+  ☐ Use system normally
+  ☐ Add/update vehicle records
+  ☐ Log maintenance activities
+  ☐ Add parts to inventory
+  ☐ Track costs
+
+End of Day:
+  ☐ Generate daily report if needed
+  ☐ Review low stock alerts
+  ☐ Check pending maintenance
+
+Weekly:
+  ☐ Generate cost reports
+  ☐ Review all modules
+  ☐ Backup database
+  ☐ Check error logs
+  ☐ Verify all users have access
+
+Monthly:
+  ☐ Full database backup
+  ☐ Archive old activity logs
+  ☐ Update user passwords
+  ☐ Review access logs
+  ☐ Optimize database
+
+================================================================================
+                          INSTALLATION COMPLETE
+================================================================================
+
+Congratulations! Your AIP Transport ERP system is now installed and ready.
+
+Next Steps:
+  1. Start using the system
+  2. Add your company data
+  3. Create user accounts for team
+  4. Set up regular backups
+  5. Monitor system performance
+
+For any questions, refer to:
+  - README.md for full documentation
+  - QUICKSTART.md for common issues
+  - PROJECT_SUMMARY.txt for feature overview
+
+System is now live and ready for operation!
+
+================================================================================
+                     Version 1.0 | November 24, 2025
+================================================================================

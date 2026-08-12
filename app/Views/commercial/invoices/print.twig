@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice #{{ invoice.invoice_number }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: white; font-family: 'Inter', sans-serif; color: #333; }
+        .invoice-box { max-width: 800px; margin: auto; padding: 30px; }
+        .invoice-header { border-bottom: 2px solid #f0f0f0; padding-bottom: 20px; margin-bottom: 30px; }
+        .company-logo { font-size: 1.5rem; font-weight: 800; color: #0d6efd; letter-spacing: -1px; }
+        .status-stamp { 
+            position: absolute; top: 100px; right: 50px; 
+            transform: rotate(-15deg); font-size: 2rem; 
+            font-weight: 800; padding: 10px 20px; border: 5px solid;
+            opacity: 0.2; pointer-events: none;
+        }
+        .stamp-paid { color: #198754; border-color: #198754; }
+        .stamp-pending { color: #ffc107; border-color: #ffc107; }
+        
+        @media print {
+            .no-print { display: none; }
+            body { padding: 0; }
+            .invoice-box { padding: 0; max-width: 100%; border: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print text-center py-3 bg-light border-bottom mb-4">
+    <button onclick="window.print()" class="btn btn-primary px-4 rounded-pill shadow-sm">
+        <i class="fas fa-print me-2"></i>Print Invoice
+    </button>
+    <button onclick="window.close()" class="btn btn-outline-secondary px-4 rounded-pill ms-2">Close</button>
+</div>
+
+<div class="invoice-box position-relative">
+    {% if invoice.status == 'paid' %}
+        <div class="status-stamp stamp-paid">PAID</div>
+    {% elseif invoice.status == 'pending' %}
+        <div class="status-stamp stamp-pending">PENDING</div>
+    {% endif %}
+
+    <div class="invoice-header d-flex justify-content-between align-items-center">
+        <div>
+            <div class="company-logo mb-1">APTECH ERP</div>
+            <div class="text-muted small">
+                Commercial Invoice<br>
+                Generated on {{ "now"|date("d M Y H:i") }}
+            </div>
+        </div>
+        <div class="text-end">
+            <h2 class="fw-bold mb-0">INVOICE</h2>
+            <div class="text-muted">#{{ invoice.invoice_number }}</div>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-6">
+            <h6 class="text-muted text-uppercase small fw-bold mb-3">Bill To:</h6>
+            <h5 class="fw-bold mb-1">{{ invoice.customer_name }}</h5>
+            <div class="text-muted small">
+                {{ invoice.address|nl2br }}<br>
+                {{ invoice.phone }}<br>
+                {{ invoice.email }}
+            </div>
+        </div>
+        <div class="col-6 text-end">
+            <div class="mb-2">
+                <span class="text-muted small fw-bold text-uppercase me-2">Invoice Date:</span>
+                <span class="fw-bold">{{ invoice.invoice_date|date('d M Y') }}</span>
+            </div>
+            <div class="mb-2">
+                <span class="text-muted small fw-bold text-uppercase me-2">Due Date:</span>
+                <span class="fw-bold">{{ invoice.due_date|date('d M Y') }}</span>
+            </div>
+            {% if invoice.order_number %}
+                <div>
+                    <span class="text-muted small fw-bold text-uppercase me-2">Order #:</span>
+                    <span class="fw-bold">{{ invoice.order_number }}</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <table class="table table-bordered mb-4">
+        <thead class="bg-light">
+            <tr>
+                <th class="py-2">Description</th>
+                <th class="text-center py-2" style="width: 15%;">Qty</th>
+                <th class="text-end py-2" style="width: 20%;">Price</th>
+                <th class="text-end py-2" style="width: 20%;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+                <tr>
+                    <td>{{ item.description }}</td>
+                    <td class="text-center">{{ item.quantity }}</td>
+                    <td class="text-end">${{ item.unit_price|number_format(2) }}</td>
+                    <td class="text-end fw-bold">${{ item.total|number_format(2) }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="row justify-content-end">
+        <div class="col-5">
+            <table class="table table-borderless table-sm">
+                <tr>
+                    <td class="text-end text-muted">Subtotal:</td>
+                    <td class="text-end fw-bold">${{ (invoice.total_amount - invoice.tax_amount + invoice.discount)|number_format(2) }}</td>
+                </tr>
+                <tr>
+                    <td class="text-end text-muted">Tax ({{ invoice.tax_rate }}%):</td>
+                    <td class="text-end fw-bold text-danger">${{ invoice.tax_amount|number_format(2) }}</td>
+                </tr>
+                <tr>
+                    <td class="text-end text-muted">Discount:</td>
+                    <td class="text-end fw-bold text-success">-${{ invoice.discount|number_format(2) }}</td>
+                </tr>
+                <tr class="border-top">
+                    <td class="text-end fw-bold h5">Total Amount:</td>
+                    <td class="text-end fw-bold h5 text-primary">${{ invoice.total_amount|number_format(2) }}</td>
+                </tr>
+                <tr>
+                    <td class="text-end text-muted">Paid to Date:</td>
+                    <td class="text-end fw-bold text-success">${{ invoice.paid_amount|number_format(2) }}</td>
+                </tr>
+                <tr class="table-light">
+                    <td class="text-end fw-bold h6">Balance Due:</td>
+                    <td class="text-end fw-bold h6 text-danger">${{ invoice.balance|number_format(2) }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    {% if invoice.notes %}
+        <div class="mt-5 pt-4 border-top">
+            <h6 class="text-muted text-uppercase small fw-bold mb-2">Terms & Notes:</h6>
+            <div class="text-muted small">{{ invoice.notes|nl2br }}</div>
+        </div>
+    {% endif %}
+
+    <div class="mt-5 pt-5">
+        <div class="row text-center small">
+            <div class="col-4">
+                <div class="border-top pt-2">Authorized Signature</div>
+            </div>
+            <div class="col-4 offset-4">
+                <div class="border-top pt-2">Customer Acceptance</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</body>
+</html>

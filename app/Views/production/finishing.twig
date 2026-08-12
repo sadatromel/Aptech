@@ -1,0 +1,973 @@
+{% extends "layouts/app.twig" %}
+{% block title %}Finishing Control Center{% endblock %}
+{% block content %}
+<style>
+    /* ── Base cards ── */
+    .glow-card {
+        transition: all 0.3s ease-in-out;
+        border-radius: 16px;
+        background: rgba(255,255,255,0.92);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.4);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+    }
+    .glow-card:hover { box-shadow: 0 14px 32px rgba(231,74,59,0.10); }
+
+    /* ── Navigation pills ── */
+    .nav-pills .nav-link {
+        border-radius: 10px; padding: 7px 15px;
+        font-weight: 600; font-size: .83rem; color: #5a5c69;
+        transition: all 0.25s ease;
+    }
+    .nav-pills .nav-link.active {
+        background: linear-gradient(135deg,#e74a3b 0%,#be2617 100%);
+        color:#fff !important;
+        box-shadow: 0 4px 14px rgba(231,74,59,0.30);
+    }
+    .nav-pills .nav-link:hover:not(.active) { background:#fff5f5; color:#e74a3b; }
+
+    /* ── KPI metric icons ── */
+    .metric-icon {
+        width:48px; height:48px; border-radius:12px;
+        display:flex; align-items:center; justify-content:center; font-size:1.4rem;
+    }
+    .bg-light-danger  { background:rgba(231,74,59,.12); }
+    .bg-light-success { background:rgba(28,200,138,.12); }
+    .bg-light-warning { background:rgba(246,194,62,.12); }
+    .bg-light-info    { background:rgba(54,185,204,.12); }
+    .bg-light-primary { background:rgba(78,115,223,.12); }
+
+    /* ── Text gradient ── */
+    .text-gradient {
+        background: linear-gradient(135deg,#e74a3b 0%,#f6c23e 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    /* ── Progress bars ── */
+    .bar-wrap { height:8px; background:#e9ecef; border-radius:4px; overflow:hidden; }
+    .bar-fill  { height:100%; border-radius:4px; transition:width .6s ease; }
+
+    /* ── Stage flow pipeline ── */
+    .stage-flow { display:flex; align-items:center; gap:0; }
+    .stage-box {
+        flex:1; text-align:center; padding:14px 8px;
+        border-radius:0; position:relative;
+    }
+    .stage-box:first-child { border-radius:12px 0 0 12px; }
+    .stage-box:last-child  { border-radius:0 12px 12px 0; }
+    .stage-arrow {
+        width:0; height:0;
+        border-top:28px solid transparent;
+        border-bottom:28px solid transparent;
+        flex-shrink:0; z-index:2;
+    }
+
+    /* ── Status badges ── */
+    .tl-dot { width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:4px; }
+    .tl-green  { background:#1cc88a; }
+    .tl-yellow { background:#f6c23e; }
+    .tl-red    { background:#e74a3b; }
+
+    /* ── Report section ── */
+    .report-section-title {
+        font-size:1rem; font-weight:700; color:#e74a3b;
+        border-bottom:2px solid #fde8e6; padding-bottom:8px; margin-bottom:14px;
+    }
+
+    @media print {
+        .no-print { display:none !important; }
+        .glow-card { box-shadow:none; border:1px solid #ddd; }
+    }
+</style>
+
+{# ── Flash messages ── #}
+{% if app.session.flash('success_message') %}
+<div class="alert alert-success alert-dismissible fade show mx-2">
+    <i class="fas fa-check-circle me-2"></i>{{ app.session.flash('success_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+{% if app.session.flash('error_message') %}
+<div class="alert alert-danger alert-dismissible fade show mx-2">
+    <i class="fas fa-exclamation-circle me-2"></i>{{ app.session.flash('error_message') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<div class="row">
+
+    {# ── Page header ── #}
+    <div class="col-12 mb-3">
+        <div class="page-header d-flex justify-content-between align-items-center p-4 glow-card">
+            <div>
+                <h1 class="h3 fw-bold text-gradient mb-1">Finishing Control Center</h1>
+                <p class="text-muted mb-0 small">Washing Receive · Ironing · Final QC · Needle Detection · Poly Packing</p>
+            </div>
+            <div class="d-flex gap-2 no-print">
+                <span class="badge bg-danger text-white px-3 py-2"><i class="fas fa-layer-group me-1"></i>{{ receives|length }} Batches Received</span>
+                <span class="badge bg-success text-white px-3 py-2"><i class="fas fa-calendar me-1"></i>{{ "now"|date("d M Y") }}</span>
+            </div>
+        </div>
+    </div>
+
+    {# ── Navigation ── #}
+    <div class="col-12 mb-3 no-print">
+        <div class="p-2 glow-card">
+            <ul class="nav nav-pills gap-1 flex-wrap">
+                <li class="nav-item"><a class="nav-link {% if activeTab == 'dashboard' %}active{% endif %}" href="{{ BASE_URL }}/finishing/dashboard"><i class="fas fa-chart-pie me-1"></i>Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link {% if activeTab == 'receive' %}active{% endif %}"   href="{{ BASE_URL }}/finishing/receive"><i class="fas fa-download me-1"></i>Washing Receive</a></li>
+                <li class="nav-item"><a class="nav-link {% if activeTab == 'ironing' %}active{% endif %}"  href="{{ BASE_URL }}/finishing/ironing"><i class="fas fa-wind me-1"></i>Ironing &amp; Trimming</a></li>
+                <li class="nav-item"><a class="nav-link {% if activeTab == 'qc' %}active{% endif %}"       href="{{ BASE_URL }}/finishing/qc"><i class="fas fa-check-double me-1"></i>Final Inspection</a></li>
+                <li class="nav-item"><a class="nav-link {% if activeTab == 'packing' %}active{% endif %}"  href="{{ BASE_URL }}/finishing/packing"><i class="fas fa-box me-1"></i>Folding &amp; Packing</a></li>
+                <li class="nav-item"><a class="nav-link {% if activeTab == 'reports' %}active{% endif %}"  href="{{ BASE_URL }}/finishing/reports"><i class="fas fa-file-invoice me-1"></i>Reports</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-12">
+
+{# ═══════════════════════════════════
+   1. DASHBOARD
+═══════════════════════════════════ #}
+{% if activeTab == 'dashboard' %}
+
+{# KPI row #}
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card glow-card p-3 border-0">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="text-muted fw-bold text-uppercase small mb-1">Batches Received</h6>
+                    <h3 class="fw-bold mb-0">{{ receives|length }}</h3>
+                    <small class="text-info">{{ totalReceived }} pcs total</small>
+                </div>
+                <div class="metric-icon bg-light-info text-info"><i class="fas fa-download"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card glow-card p-3 border-0">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="text-muted fw-bold text-uppercase small mb-1">Ironed</h6>
+                    <h3 class="fw-bold mb-0">{{ totalIroned }}</h3>
+                    <small class="{% if ironDefects > 0 %}text-warning{% else %}text-success{% endif %}">{{ ironDefects }} defects found</small>
+                </div>
+                <div class="metric-icon bg-light-danger text-danger"><i class="fas fa-wind"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card glow-card p-3 border-0">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="text-muted fw-bold text-uppercase small mb-1">QC Pass Rate</h6>
+                    <h3 class="fw-bold mb-0">{{ passRate }}%</h3>
+                    <small class="{% if passRate >= 97 %}text-success{% elseif passRate >= 90 %}text-warning{% else %}text-danger{% endif %}">
+                        {{ totalPassed }} passed / {{ totalRejected }} rejected
+                    </small>
+                </div>
+                <div class="metric-icon bg-light-success text-success"><i class="fas fa-check-double"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card glow-card p-3 border-0">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="text-muted fw-bold text-uppercase small mb-1">Packed</h6>
+                    <h3 class="fw-bold mb-0">{{ totalPacked }}</h3>
+                    <small class="text-warning">{{ totalCartons }} cartons ready</small>
+                </div>
+                <div class="metric-icon bg-light-warning text-warning"><i class="fas fa-box"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Stage pipeline #}
+<div class="card glow-card border-0 p-4 mb-4">
+    <h6 class="fw-bold mb-3"><i class="fas fa-stream me-2 text-danger"></i>Finishing Pipeline — Today's Flow</h6>
+    <div class="stage-flow mb-2">
+        <div class="stage-box" style="background:#e8f4fd;">
+            <div class="small fw-bold text-info mb-1"><i class="fas fa-download me-1"></i>RECEIVED</div>
+            <div class="h4 fw-bold text-info mb-0">{{ totalReceived }}</div>
+            <div class="small text-muted">pcs</div>
+        </div>
+        <div class="stage-arrow" style="border-left:14px solid #e8f4fd;"></div>
+        <div class="stage-box" style="background:#fde8e6;">
+            <div class="small fw-bold text-danger mb-1"><i class="fas fa-wind me-1"></i>IRONED</div>
+            <div class="h4 fw-bold text-danger mb-0">{{ totalIroned }}</div>
+            <div class="small text-muted">pcs</div>
+        </div>
+        <div class="stage-arrow" style="border-left:14px solid #fde8e6;"></div>
+        <div class="stage-box" style="background:#e8f8f1;">
+            <div class="small fw-bold text-success mb-1"><i class="fas fa-check-double me-1"></i>INSPECTED</div>
+            <div class="h4 fw-bold text-success mb-0">{{ totalInspected }}</div>
+            <div class="small text-muted">pcs</div>
+        </div>
+        <div class="stage-arrow" style="border-left:14px solid #e8f8f1;"></div>
+        <div class="stage-box" style="background:#fffbea;">
+            <div class="small fw-bold text-warning mb-1"><i class="fas fa-box me-1"></i>PACKED</div>
+            <div class="h4 fw-bold text-warning mb-0">{{ totalPacked }}</div>
+            <div class="small text-muted">pcs</div>
+        </div>
+    </div>
+    <div class="bar-wrap mt-2">
+        {% set pipelinePct = totalReceived > 0 ? ((totalPacked / totalReceived) * 100)|round : 0 %}
+        {% set pipelineCapped = pipelinePct > 100 ? 100 : pipelinePct %}
+        <div class="bar-fill bg-danger" style="width:{{ pipelineCapped }}%"></div>
+    </div>
+    <div class="d-flex justify-content-between mt-1">
+        <small class="text-muted">Pipeline completion</small>
+        <small class="fw-bold text-danger">{{ pipelinePct }}%</small>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card glow-card border-0 p-4">
+            <h6 class="fw-bold text-danger mb-3"><i class="fas fa-download me-2"></i>Recent Receives</h6>
+            {% if receives|length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead class="table-light"><tr><th>Batch No.</th><th>Style</th><th>Qty</th><th>Date</th></tr></thead>
+                    <tbody>
+                    {% for r in receives|slice(0,5) %}
+                    <tr>
+                        <td class="fw-bold">{{ r.batch_no ?? '—' }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ r.style_code ?? '—' }}</span></td>
+                        <td class="fw-bold text-info">{{ r.qty_received }}</td>
+                        <td class="text-muted small">{{ r.received_date ?? '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-download fa-2x mb-2 d-block opacity-25"></i>
+                No receives yet. <a href="{{ BASE_URL }}/finishing/receive">Log first batch</a>.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card glow-card border-0 p-4">
+            <h6 class="fw-bold text-danger mb-3"><i class="fas fa-search-minus me-2"></i>Needle Detection Status</h6>
+            <div class="row g-3 mb-3">
+                <div class="col-6">
+                    <div class="p-3 rounded text-center" style="background:#e8f8f1;">
+                        <div class="h4 fw-bold text-success mb-0">{{ qcRecords|length - needleFails }}</div>
+                        <div class="small text-muted fw-bold">PASSED</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-3 rounded text-center" style="background:#fde8e6;">
+                        <div class="h4 fw-bold text-danger mb-0">{{ needleFails }}</div>
+                        <div class="small text-muted fw-bold">FAILED</div>
+                    </div>
+                </div>
+            </div>
+            {% if needleFails == 0 and qcRecords|length > 0 %}
+            <div class="alert alert-success py-2 mb-0">
+                <i class="fas fa-check-circle me-2"></i><strong>Clean!</strong> All inspected garments passed metal detection.
+            </div>
+            {% elseif qcRecords|length == 0 %}
+            <div class="text-center py-3 text-muted small">
+                <i class="fas fa-search-minus fa-2x mb-2 d-block opacity-25"></i>No QC records yet.
+            </div>
+            {% else %}
+            <div class="alert alert-danger py-2 mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ needleFails }} needle detection failure(s) logged!
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endif %}
+
+
+{# ═══════════════════════════════════
+   2. WASHING RECEIVE
+═══════════════════════════════════ #}
+{% if activeTab == 'receive' %}
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card glow-card border-0 p-4">
+            <h5 class="fw-bold mb-1" style="color:#e74a3b;"><i class="fas fa-download me-2"></i>Log Washing Receive</h5>
+            <p class="text-muted small mb-3">Register garments received from the washing plant into the finishing floor.</p>
+            <form method="POST" action="{{ BASE_URL }}/finishing/receive">
+                {{ csrf_field() | raw }}<input type="hidden" name="action" value="log_receive">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Batch No. <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control form-control-sm" name="batch_no" placeholder="e.g. WB-2024-001" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">PO Number</label>
+                    <select class="form-select form-select-sm" name="po_number">
+                        <option value="">— Select Order —</option>
+                        {% for o in orders %}<option value="{{ o.po_number }}">{{ o.po_number }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Style Code</label>
+                    <select class="form-select form-select-sm" name="style_code">
+                        <option value="">— Select Style —</option>
+                        {% for s in styles %}<option value="{{ s.style_code }}">{{ s.style_code }} – {{ s.style_name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Quantity Received <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control form-control-sm" name="qty_received" min="1" placeholder="e.g. 500" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Date Received <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control form-control-sm" name="received_date" value="{{ "now"|date("Y-m-d") }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Remarks</label>
+                    <textarea class="form-control form-control-sm" name="remarks" rows="2" placeholder="Condition notes, shade, etc."></textarea>
+                </div>
+                <button type="submit" class="btn btn-danger text-white w-100"><i class="fas fa-save me-1"></i>Register Receive</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card glow-card border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0" style="color:#e74a3b;"><i class="fas fa-list me-2"></i>Receive Register</h5>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-info bg-opacity-10 text-info px-3 py-2">{{ receives|length }} batches</span>
+                    <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2">{{ totalReceived }} pcs total</span>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr><th>#</th><th>Batch No.</th><th>PO Number</th><th>Style</th><th>Qty Received</th><th>Date</th><th>Remarks</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for r in receives %}
+                    <tr>
+                        <td class="text-muted small">{{ loop.index }}</td>
+                        <td class="fw-bold">{{ r.batch_no ?? '—' }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ r.po_number ?? '—' }}</span></td>
+                        <td><span class="badge bg-info bg-opacity-10 text-info">{{ r.style_code ?? '—' }}</span></td>
+                        <td class="fw-bold text-danger">{{ r.qty_received }}</td>
+                        <td class="text-muted small">{{ r.received_date ?? '—' }}</td>
+                        <td class="text-muted small">{{ r.remarks|length > 30 ? r.remarks|slice(0,30) ~ '…' : r.remarks }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center text-muted py-5">
+                        <i class="fas fa-download fa-3x mb-3 d-block opacity-25"></i>
+                        No batches received yet. Use the form to register the first receive.
+                    </td></tr>
+                    {% endfor %}
+                    </tbody>
+                    {% if receives|length > 0 %}
+                    <tfoot class="table-light fw-bold">
+                        <tr><td colspan="4">TOTAL</td><td class="text-danger">{{ totalReceived }} pcs</td><td colspan="2"></td></tr>
+                    </tfoot>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
+{# ═══════════════════════════════════
+   3. IRONING & TRIMMING
+═══════════════════════════════════ #}
+{% if activeTab == 'ironing' %}
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card glow-card border-0 p-4">
+            <h5 class="fw-bold mb-1" style="color:#e74a3b;"><i class="fas fa-wind me-2"></i>Log Ironing Output</h5>
+            <p class="text-muted small mb-3">Record output from iron tables, vacuum tables &amp; thread trimming stations.</p>
+            <form method="POST" action="{{ BASE_URL }}/finishing/ironing">
+                {{ csrf_field() | raw }}<input type="hidden" name="action" value="log_ironing">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Batch No. <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control form-control-sm" name="batch_no" placeholder="Ref to receive batch" required
+                           list="batchList">
+                    <datalist id="batchList">
+                        {% for r in receives %}<option value="{{ r.batch_no }}">{% endfor %}
+                    </datalist>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold small">Qty Ironed <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control form-control-sm" name="qty_ironed" min="1" placeholder="480" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold small">Qty Defective</label>
+                        <input type="number" class="form-control form-control-sm" name="qty_defective" min="0" value="0">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Operator Name</label>
+                    <input type="text" class="form-control form-control-sm" name="operator_name" placeholder="Iron table operator">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Date <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control form-control-sm" name="ironing_date" value="{{ "now"|date("Y-m-d") }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Remarks</label>
+                    <textarea class="form-control form-control-sm" name="remarks" rows="2" placeholder="Puckering, shine marks, etc."></textarea>
+                </div>
+                <button type="submit" class="btn btn-danger text-white w-100"><i class="fas fa-save me-1"></i>Save Ironing Log</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="row g-3 mb-3">
+            <div class="col-md-3"><div class="p-3 rounded text-center" style="background:#fde8e6;">
+                <div class="small text-muted fw-bold">TOTAL IRONED</div>
+                <div class="h4 fw-bold text-danger mb-0">{{ totalIroned }}</div></div></div>
+            <div class="col-md-3"><div class="p-3 rounded text-center" style="background:#fff8e6;">
+                <div class="small text-muted fw-bold">DEFECTIVES</div>
+                <div class="h4 fw-bold text-warning mb-0">{{ ironDefects }}</div></div></div>
+            <div class="col-md-3"><div class="p-3 rounded text-center" style="background:#e8f8f1;">
+                <div class="small text-muted fw-bold">GOOD PIECES</div>
+                <div class="h4 fw-bold text-success mb-0">{{ totalIroned - ironDefects }}</div></div></div>
+            <div class="col-md-3"><div class="p-3 rounded text-center" style="background:#f0f3ff;">
+                <div class="small text-muted fw-bold">LOG ENTRIES</div>
+                <div class="h4 fw-bold text-primary mb-0">{{ ironings|length }}</div></div></div>
+        </div>
+        <div class="card glow-card border-0 p-4">
+            <h6 class="fw-bold mb-3" style="color:#e74a3b;">Ironing Log</h6>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr><th>#</th><th>Batch No.</th><th>Ironed</th><th>Defective</th><th>Defect Rate</th><th>Operator</th><th>Date</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for ir in ironings %}
+                    {% set defRate = ir.qty_ironed > 0 ? ((ir.qty_defective / ir.qty_ironed) * 100)|round(1) : 0 %}
+                    <tr>
+                        <td class="text-muted small">{{ loop.index }}</td>
+                        <td class="fw-bold">{{ ir.batch_no ?? '—' }}</td>
+                        <td class="fw-bold text-danger">{{ ir.qty_ironed }}</td>
+                        <td class="{% if ir.qty_defective > 0 %}text-warning fw-bold{% else %}text-muted{% endif %}">{{ ir.qty_defective }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bar-wrap" style="width:60px;">
+                                    <div class="bar-fill {% if defRate <= 1 %}bg-success{% elseif defRate <= 3 %}bg-warning{% else %}bg-danger{% endif %}" style="width:{{ defRate > 100 ? 100 : defRate }}%"></div>
+                                </div>
+                                <small class="fw-bold">{{ defRate }}%</small>
+                            </div>
+                        </td>
+                        <td class="text-muted small">{{ ir.operator_name ?? '—' }}</td>
+                        <td class="text-muted small">{{ ir.ironing_date ?? '—' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center text-muted py-5">
+                        <i class="fas fa-wind fa-3x mb-3 d-block opacity-25"></i>
+                        No ironing records yet. Use the form to log output.
+                    </td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
+{# ═══════════════════════════════════
+   4. FINAL INSPECTION / QC
+═══════════════════════════════════ #}
+{% if activeTab == 'qc' %}
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card glow-card border-0 p-4">
+            <h5 class="fw-bold mb-1" style="color:#e74a3b;"><i class="fas fa-check-double me-2"></i>Log Final Inspection</h5>
+            <p class="text-muted small mb-3">Record AQL inspection results &amp; metal / needle detector status.</p>
+            <form method="POST" action="{{ BASE_URL }}/finishing/qc">
+                {{ csrf_field() | raw }}<input type="hidden" name="action" value="log_qc">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Style Code</label>
+                    <select class="form-select form-select-sm" name="style_code">
+                        <option value="">— Select Style —</option>
+                        {% for s in styles %}<option value="{{ s.style_code }}">{{ s.style_code }} – {{ s.style_name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-4">
+                        <label class="form-label fw-semibold small">Inspected <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control form-control-sm" name="qty_inspected" min="1" required>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label fw-semibold small">Passed</label>
+                        <input type="number" class="form-control form-control-sm" name="qty_passed" min="0" value="0">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label fw-semibold small">Rejected</label>
+                        <input type="number" class="form-control form-control-sm" name="qty_rejected" min="0" value="0">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Defect Type</label>
+                    <select class="form-select form-select-sm" name="defect_type">
+                        <option value="">— None —</option>
+                        <option>Stitching Defect</option>
+                        <option>Measurement Error</option>
+                        <option>Fabric Shade Issue</option>
+                        <option>Button / Trim Issue</option>
+                        <option>Puckering</option>
+                        <option>Ironing Defect</option>
+                        <option>Packing Error</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Metal / Needle Detector</label>
+                    <div class="d-flex gap-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="needle_status" value="pass" id="ndPass" checked>
+                            <label class="form-check-label fw-semibold text-success" for="ndPass"><i class="fas fa-check-circle me-1"></i>Pass</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="needle_status" value="fail" id="ndFail">
+                            <label class="form-check-label fw-semibold text-danger" for="ndFail"><i class="fas fa-times-circle me-1"></i>Fail</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Inspector</label>
+                    <input type="text" class="form-control form-control-sm" name="inspector_name" placeholder="Inspector name">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Date <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control form-control-sm" name="inspection_date" value="{{ "now"|date("Y-m-d") }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Remarks</label>
+                    <textarea class="form-control form-control-sm" name="remarks" rows="2"></textarea>
+                </div>
+                <button type="submit" class="btn btn-danger text-white w-100"><i class="fas fa-save me-1"></i>Save Inspection</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-8">
+        {# Metal detector alert #}
+        {% if needleFails > 0 %}
+        <div class="alert alert-danger d-flex align-items-center gap-3 mb-3">
+            <i class="fas fa-exclamation-triangle fa-2x"></i>
+            <div>
+                <strong>Needle Detection Alert!</strong> {{ needleFails }} inspection batch(es) failed metal detection. Isolate and re-inspect immediately.
+            </div>
+        </div>
+        {% elseif qcRecords|length > 0 %}
+        <div class="alert alert-success d-flex align-items-center gap-3 mb-3">
+            <i class="fas fa-shield-alt fa-2x"></i>
+            <div>
+                <strong>All Clear.</strong> All inspected garments have passed metal &amp; needle detection. Test card verified (1.2mm ferrous).
+            </div>
+        </div>
+        {% endif %}
+
+        {# QC KPI cards #}
+        <div class="row g-3 mb-3">
+            <div class="col-md-3"><div class="p-3 rounded text-center" style="background:#f0f3ff;">
+                <div class="small text-muted fw-bold">INSPECTED</div>
+                <div class="h4 fw-bold text-primary mb-0">{{ totalInspected }}</div></div></div>
+            <div class="col-md-3"><div class="p-3 rounded text-center" style="background:#e8f8f1;">
+                <div class="small text-muted fw-bold">PASSED</div>
+                <div class="h4 fw-bold text-success mb-0">{{ totalPassed }}</div></div></div>
+            <div class="col-md-3"><div class="p-3 rounded text-center" style="background:#fde8e6;">
+                <div class="small text-muted fw-bold">REJECTED</div>
+                <div class="h4 fw-bold text-danger mb-0">{{ totalRejected }}</div></div></div>
+            <div class="col-md-3"><div class="p-3 rounded text-center" style="background:#{% if passRate >= 97 %}e8f8f1;color:#1cc88a{% elseif passRate >= 90 %}fffbea;color:#f6c23e{% else %}fde8e6;color:#e74a3b{% endif %}">
+                <div class="small text-muted fw-bold">PASS RATE</div>
+                <div class="h4 fw-bold mb-0">{{ passRate }}%</div></div></div>
+        </div>
+
+        <div class="card glow-card border-0 p-4">
+            <h6 class="fw-bold mb-3" style="color:#e74a3b;">Inspection Log</h6>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr><th>#</th><th>Style</th><th>Inspected</th><th>Passed</th><th>Rejected</th><th>Pass %</th><th>Needle</th><th>Inspector</th><th>Date</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for qc in qcRecords %}
+                    {% set qcPass = qc.qty_inspected > 0 ? ((qc.qty_passed / qc.qty_inspected) * 100)|round : 0 %}
+                    <tr>
+                        <td class="text-muted small">{{ loop.index }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ qc.style_code ?? '—' }}</span></td>
+                        <td>{{ qc.qty_inspected }}</td>
+                        <td class="text-success fw-bold">{{ qc.qty_passed }}</td>
+                        <td class="{% if qc.qty_rejected > 0 %}text-danger fw-bold{% else %}text-muted{% endif %}">{{ qc.qty_rejected }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bar-wrap" style="width:50px;">
+                                    <div class="bar-fill {% if qcPass >= 97 %}bg-success{% elseif qcPass >= 90 %}bg-warning{% else %}bg-danger{% endif %}" style="width:{{ qcPass > 100 ? 100 : qcPass }}%"></div>
+                                </div>
+                                <small class="fw-bold">{{ qcPass }}%</small>
+                            </div>
+                        </td>
+                        <td>
+                            {% if (qc.needle_status ?? 'pass') == 'pass' %}
+                            <span class="badge bg-success"><i class="fas fa-check me-1"></i>Pass</span>
+                            {% else %}
+                            <span class="badge bg-danger"><i class="fas fa-times me-1"></i>FAIL</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted small">{{ qc.inspector_name ?? '—' }}</td>
+                        <td class="text-muted small">{{ qc.inspection_date ?? '—' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="9" class="text-center text-muted py-5">
+                        <i class="fas fa-check-double fa-3x mb-3 d-block opacity-25"></i>
+                        No inspection records. Use the form to log final QC.
+                    </td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
+{# ═══════════════════════════════════
+   5. FOLDING & POLY PACKING
+═══════════════════════════════════ #}
+{% if activeTab == 'packing' %}
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card glow-card border-0 p-4">
+            <h5 class="fw-bold mb-1" style="color:#e74a3b;"><i class="fas fa-box me-2"></i>Log Folding &amp; Packing</h5>
+            <p class="text-muted small mb-3">Record poly-bagging, hanger packing, &amp; carton-ready quantities.</p>
+            <form method="POST" action="{{ BASE_URL }}/finishing/packing">
+                {{ csrf_field() | raw }}<input type="hidden" name="action" value="log_packing">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Style Code</label>
+                    <select class="form-select form-select-sm" name="style_code">
+                        <option value="">— Select Style —</option>
+                        {% for s in styles %}<option value="{{ s.style_code }}">{{ s.style_code }} – {{ s.style_name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">PO Number</label>
+                    <select class="form-select form-select-sm" name="po_number">
+                        <option value="">— Select Order —</option>
+                        {% for o in orders %}<option value="{{ o.po_number }}">{{ o.po_number }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Packing Type</label>
+                    <select class="form-select form-select-sm" name="packing_type">
+                        <option value="flat">Flat Packing (Poly Bag)</option>
+                        <option value="hanger">Hanger Packing</option>
+                        <option value="blister">Blister Packing</option>
+                        <option value="vacuum">Vacuum Packing</option>
+                    </select>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold small">Qty Folded <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control form-control-sm" name="qty_folded" min="1" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold small">Qty Poly-Packed</label>
+                        <input type="number" class="form-control form-control-sm" name="qty_packed" min="0" value="0">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Carton Count</label>
+                    <input type="number" class="form-control form-control-sm" name="carton_count" min="0" value="0" placeholder="No. of cartons ready">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Pack Date <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control form-control-sm" name="pack_date" value="{{ "now"|date("Y-m-d") }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Remarks</label>
+                    <textarea class="form-control form-control-sm" name="remarks" rows="2" placeholder="Buyer label, barcode, size ratio..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-danger text-white w-100"><i class="fas fa-save me-1"></i>Save Packing Record</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="row g-3 mb-3">
+            <div class="col-md-3"><div class="p-3 rounded text-center" style="background:#fde8e6;">
+                <div class="small text-muted fw-bold">ENTRIES</div>
+                <div class="h4 fw-bold text-danger mb-0">{{ packings|length }}</div></div></div>
+            <div class="col-md-3"><div class="p-3 rounded text-center" style="background:#fff8e6;">
+                <div class="small text-muted fw-bold">FOLDED</div>
+                <div class="h4 fw-bold text-warning mb-0">{{ totalPacked }}</div></div></div>
+            <div class="col-md-3"><div class="p-3 rounded text-center" style="background:#e8f8f1;">
+                <div class="small text-muted fw-bold">POLY-PACKED</div>
+                <div class="h4 fw-bold text-success mb-0">{{ totalPacked }}</div></div></div>
+            <div class="col-md-3"><div class="p-3 rounded text-center" style="background:#f0f3ff;">
+                <div class="small text-muted fw-bold">CARTONS READY</div>
+                <div class="h4 fw-bold text-primary mb-0">{{ totalCartons }}</div></div></div>
+        </div>
+
+        {# Carton ready highlight #}
+        {% if totalCartons > 0 %}
+        <div class="alert alert-success d-flex align-items-center gap-3 mb-3">
+            <i class="fas fa-boxes fa-2x"></i>
+            <div>
+                <strong>{{ totalCartons }} cartons</strong> are ready for dispatch to the Packing department.
+                Total <strong>{{ totalPacked }} pcs</strong> poly-packed.
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card glow-card border-0 p-4">
+            <h6 class="fw-bold mb-3" style="color:#e74a3b;">Packing Register</h6>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr><th>#</th><th>Style</th><th>PO No.</th><th>Pack Type</th><th>Folded</th><th>Poly-Packed</th><th>Cartons</th><th>Date</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for pk in packings %}
+                    <tr>
+                        <td class="text-muted small">{{ loop.index }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ pk.style_code ?? '—' }}</span></td>
+                        <td class="text-muted small">{{ pk.po_number ?? '—' }}</td>
+                        <td>
+                            {% if pk.packing_type == 'flat' %}<span class="badge bg-info bg-opacity-10 text-info">Flat</span>
+                            {% elseif pk.packing_type == 'hanger' %}<span class="badge bg-warning bg-opacity-10 text-warning">Hanger</span>
+                            {% elseif pk.packing_type == 'blister' %}<span class="badge bg-primary bg-opacity-10 text-primary">Blister</span>
+                            {% else %}<span class="badge bg-secondary bg-opacity-10 text-secondary">{{ pk.packing_type }}</span>{% endif %}
+                        </td>
+                        <td class="fw-bold">{{ pk.qty_folded }}</td>
+                        <td class="fw-bold text-success">{{ pk.qty_packed }}</td>
+                        <td class="fw-bold text-primary">{{ pk.carton_count }}</td>
+                        <td class="text-muted small">{{ pk.pack_date ?? '—' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="text-center text-muted py-5">
+                        <i class="fas fa-box fa-3x mb-3 d-block opacity-25"></i>
+                        No packing records yet. Use the form to log packing output.
+                    </td></tr>
+                    {% endfor %}
+                    </tbody>
+                    {% if packings|length > 0 %}
+                    <tfoot class="table-light fw-bold">
+                        <tr><td colspan="4">TOTAL</td><td>—</td><td class="text-success">{{ totalPacked }}</td><td class="text-primary">{{ totalCartons }}</td><td></td></tr>
+                    </tfoot>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
+{# ═══════════════════════════════════
+   6. REPORTS
+═══════════════════════════════════ #}
+{% if activeTab == 'reports' %}
+<div class="row g-3">
+    <div class="col-12 no-print">
+        <div class="card glow-card border-0 p-3 d-flex flex-row align-items-center justify-content-between">
+            <div>
+                <h5 class="fw-bold mb-0" style="color:#e74a3b;"><i class="fas fa-file-invoice me-2"></i>Finishing Reports</h5>
+                <small class="text-muted">Stage-by-stage throughput · QC summary · Packing status</small>
+            </div>
+            <div class="d-flex gap-2">
+                <button onclick="window.print()" class="btn btn-outline-danger btn-sm"><i class="fas fa-print me-1"></i>Print Report</button>
+                <a href="{{ BASE_URL }}/finishing/receive" class="btn btn-danger text-white btn-sm"><i class="fas fa-plus me-1"></i>Log Data</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card glow-card border-0 p-4">
+
+            {# Summary KPIs #}
+            <div class="report-section-title"><i class="fas fa-chart-bar me-2"></i>Summary — {{ "now"|date("d M Y") }}</div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="card border-0 p-3 text-center" style="background:linear-gradient(135deg,#36b9cc,#258391);color:white;border-radius:12px;">
+                        <div class="h3 fw-bold mb-0">{{ totalReceived }}</div>
+                        <div class="small opacity-75">Received from Washing</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 p-3 text-center" style="background:linear-gradient(135deg,#e74a3b,#be2617);color:white;border-radius:12px;">
+                        <div class="h3 fw-bold mb-0">{{ totalIroned }}</div>
+                        <div class="small opacity-75">Ironed &amp; Trimmed</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 p-3 text-center" style="background:linear-gradient(135deg,{% if passRate >= 97 %}#1cc88a,#13855c{% elseif passRate >= 90 %}#f6c23e,#c49a0f{% else %}#e74a3b,#b52b1e{% endif %});color:white;border-radius:12px;">
+                        <div class="h3 fw-bold mb-0">{{ passRate }}%</div>
+                        <div class="small opacity-75">QC Pass Rate</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 p-3 text-center" style="background:linear-gradient(135deg,#4e73df,#2e59d9);color:white;border-radius:12px;">
+                        <div class="h3 fw-bold mb-0">{{ totalCartons }}</div>
+                        <div class="small opacity-75">Cartons Ready</div>
+                    </div>
+                </div>
+            </div>
+
+            {# Stage throughput table #}
+            <div class="report-section-title"><i class="fas fa-stream me-2"></i>Stage Throughput</div>
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered align-middle">
+                    <thead class="table-danger">
+                        <tr><th>Stage</th><th>Records</th><th>Total Qty</th><th>Notes</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><i class="fas fa-download me-2 text-info"></i><strong>Washing Receive</strong></td>
+                            <td>{{ receives|length }}</td>
+                            <td class="fw-bold">{{ totalReceived }} pcs</td>
+                            <td class="text-muted small">Batches received from washing plant</td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-wind me-2 text-danger"></i><strong>Ironing &amp; Trimming</strong></td>
+                            <td>{{ ironings|length }}</td>
+                            <td class="fw-bold">{{ totalIroned }} pcs</td>
+                            <td class="text-muted small">Defectives: {{ ironDefects }} pcs</td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-check-double me-2 text-success"></i><strong>Final Inspection + Needle Detection</strong></td>
+                            <td>{{ qcRecords|length }}</td>
+                            <td class="fw-bold">{{ totalInspected }} pcs</td>
+                            <td class="text-muted small">Passed: {{ totalPassed }}, Rejected: {{ totalRejected }}, Needle Fails: {{ needleFails }}</td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-box me-2 text-warning"></i><strong>Folding &amp; Poly Packing</strong></td>
+                            <td>{{ packings|length }}</td>
+                            <td class="fw-bold">{{ totalPacked }} pcs</td>
+                            <td class="text-muted small">Cartons ready: {{ totalCartons }}</td>
+                        </tr>
+                    </tbody>
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td>PIPELINE SUMMARY</td>
+                            <td>{{ receives|length + ironings|length + qcRecords|length + packings|length }}</td>
+                            <td colspan="2">
+                                {% set pipelinePct = totalReceived > 0 ? ((totalPacked / totalReceived) * 100)|round : 0 %}
+                                <span class="badge {% if pipelinePct >= 80 %}bg-success{% elseif pipelinePct >= 50 %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ pipelinePct }}% pipeline completion</span>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            {# Washing Receive detail #}
+            {% if receives|length > 0 %}
+            <div class="report-section-title"><i class="fas fa-download me-2"></i>Receive Register</div>
+            <div class="table-responsive mb-4">
+                <table class="table table-sm table-bordered align-middle">
+                    <thead class="table-light"><tr><th>#</th><th>Batch No.</th><th>PO No.</th><th>Style</th><th>Qty</th><th>Date</th></tr></thead>
+                    <tbody>
+                    {% for r in receives %}
+                    <tr>
+                        <td class="text-muted small">{{ loop.index }}</td>
+                        <td class="fw-bold">{{ r.batch_no }}</td>
+                        <td>{{ r.po_number ?? '—' }}</td>
+                        <td>{{ r.style_code ?? '—' }}</td>
+                        <td class="fw-bold">{{ r.qty_received }}</td>
+                        <td class="text-muted small">{{ r.received_date }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            {# QC detail #}
+            {% if qcRecords|length > 0 %}
+            <div class="report-section-title"><i class="fas fa-check-double me-2"></i>QC Inspection Summary</div>
+            <div class="table-responsive mb-4">
+                <table class="table table-sm table-bordered align-middle">
+                    <thead class="table-light"><tr><th>#</th><th>Style</th><th>Inspected</th><th>Passed</th><th>Rejected</th><th>Pass %</th><th>Needle</th><th>Inspector</th><th>Date</th></tr></thead>
+                    <tbody>
+                    {% for qc in qcRecords %}
+                    {% set qcPass = qc.qty_inspected > 0 ? ((qc.qty_passed / qc.qty_inspected) * 100)|round : 0 %}
+                    <tr {% if (qc.needle_status ?? 'pass') == 'fail' %}class="table-danger"{% endif %}>
+                        <td class="text-muted small">{{ loop.index }}</td>
+                        <td>{{ qc.style_code ?? '—' }}</td>
+                        <td>{{ qc.qty_inspected }}</td>
+                        <td class="text-success fw-bold">{{ qc.qty_passed }}</td>
+                        <td class="text-danger fw-bold">{{ qc.qty_rejected }}</td>
+                        <td class="fw-bold">{{ qcPass }}%</td>
+                        <td>
+                            {% if (qc.needle_status ?? 'pass') == 'pass' %}
+                            <span class="badge bg-success">Pass</span>
+                            {% else %}
+                            <span class="badge bg-danger">FAIL</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted small">{{ qc.inspector_name ?? '—' }}</td>
+                        <td class="text-muted small">{{ qc.inspection_date ?? '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            {# Packing detail #}
+            {% if packings|length > 0 %}
+            <div class="report-section-title"><i class="fas fa-box me-2"></i>Packing &amp; Carton Status</div>
+            <div class="table-responsive mb-4">
+                <table class="table table-sm table-bordered align-middle">
+                    <thead class="table-light"><tr><th>#</th><th>Style</th><th>PO No.</th><th>Type</th><th>Folded</th><th>Packed</th><th>Cartons</th><th>Date</th></tr></thead>
+                    <tbody>
+                    {% for pk in packings %}
+                    <tr>
+                        <td class="text-muted small">{{ loop.index }}</td>
+                        <td>{{ pk.style_code ?? '—' }}</td>
+                        <td>{{ pk.po_number ?? '—' }}</td>
+                        <td>{{ pk.packing_type }}</td>
+                        <td>{{ pk.qty_folded }}</td>
+                        <td class="fw-bold">{{ pk.qty_packed }}</td>
+                        <td class="fw-bold text-primary">{{ pk.carton_count }}</td>
+                        <td class="text-muted small">{{ pk.pack_date ?? '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="fw-bold table-light">
+                        <td colspan="4">TOTAL</td>
+                        <td>—</td>
+                        <td class="text-success">{{ totalPacked }}</td>
+                        <td class="text-primary">{{ totalCartons }}</td>
+                        <td></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            {# Report footer #}
+            <div class="p-3 rounded" style="background:#f8f9fa;">
+                <div class="row">
+                    <div class="col-md-6 small text-muted">
+                        <strong>Generated:</strong> {{ "now"|date("d M Y, H:i") }}<br>
+                        <strong>Report:</strong> Finishing Control Center — Daily Summary
+                    </div>
+                    <div class="col-md-6 text-end small text-muted">
+                        <strong>System:</strong> Aptech RMG ERP<br>
+                        <strong>Module:</strong> Finishing Control Center
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+    </div>{# /col-12 #}
+</div>{# /row #}
+{% endblock %}

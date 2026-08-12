@@ -1,0 +1,1316 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Role Permissions Matrix - RMG ERP{% endblock %}
+
+{% block styles %}
+<style>
+    /* Enhanced Permission Matrix Styles */
+    .permission-matrix {
+        background: var(--bg-card);
+        border-radius: 15px;
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+    
+    .matrix-header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        color: white;
+        padding: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .matrix-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .matrix-title h5 {
+        margin: 0;
+    }
+    
+    .role-badge {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+    
+    .matrix-controls {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .search-permissions {
+        position: relative;
+    }
+    
+    .search-permissions input {
+        padding-left: 2.5rem;
+        border-radius: 25px;
+        border: none;
+        padding-right: 1rem;
+        min-width: 300px;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        placeholder-color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .search-permissions input::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .search-permissions i {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255, 255, 255, 0.7);
+    }
+    
+    /* Permission Grid Layout */
+    .permission-grid {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        border-top: 1px solid var(--border-color);
+        min-height: 600px;
+    }
+    
+    /* Module Sidebar */
+    .module-sidebar {
+        background: var(--bg-secondary);
+        border-right: 1px solid var(--border-color);
+        overflow-y: auto;
+        position: sticky;
+        top: 0;
+        max-height: 70vh;
+    }
+    
+    .module-item {
+        padding: 1rem 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        position: relative;
+    }
+    
+    .module-item::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: var(--primary);
+        transform: scaleY(0);
+        transition: transform 0.3s ease;
+    }
+    
+    .module-item:hover {
+        background: rgba(var(--primary-rgb), 0.05);
+    }
+    
+    .module-item.active {
+        background: rgba(var(--primary-rgb), 0.1);
+        border-left-color: var(--primary);
+    }
+    
+    .module-item.active::after {
+        transform: scaleY(1);
+    }
+    
+    .module-icon {
+        width: 36px;
+        height: 36px;
+        background: rgba(var(--primary-rgb), 0.1);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+        font-size: 1.1rem;
+    }
+    
+    .module-info {
+        flex: 1;
+    }
+    
+    .module-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+        font-size: 0.95rem;
+    }
+    
+    .module-count {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .count-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--border-color);
+        transition: background 0.3s ease;
+    }
+    
+    .count-indicator.has-permissions {
+        background: var(--success);
+    }
+    
+    /* Permission Content */
+    .permission-content {
+        padding: 1.5rem;
+        overflow-y: auto;
+        max-height: 70vh;
+    }
+    
+    .permission-section {
+        display: none;
+    }
+    
+    .permission-section.active {
+        display: block;
+        animation: fadeInUp 0.4s ease;
+    }
+    
+    @keyframes fadeInUp {
+        from { 
+            opacity: 0; 
+            transform: translateY(20px); 
+        }
+        to { 
+            opacity: 1; 
+            transform: translateY(0); 
+        }
+    }
+    
+    /* Permission Cards */
+    .permission-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .permission-card {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.25rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .permission-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+        transform-origin: left;
+    }
+    
+    .permission-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+    
+    .permission-card.selected {
+        border-color: var(--primary);
+        background: rgba(var(--primary-rgb), 0.05);
+    }
+    
+    .permission-card.selected::before {
+        transform: scaleX(1);
+    }
+    
+    .permission-card.inherited {
+        opacity: 0.8;
+        background: rgba(var(--info-rgb), 0.05);
+        border-color: var(--info);
+    }
+    
+    .permission-card.inherited::before {
+        background: var(--info);
+        transform: scaleX(1);
+    }
+    
+    .permission-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .permission-checkbox {
+        margin-top: 0.25rem;
+        position: relative;
+    }
+    
+    .permission-checkbox input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+    
+    .permission-checkbox input[type="checkbox"]:checked {
+        background-color: var(--primary);
+        border-color: var(--primary);
+    }
+    
+    .permission-details {
+        flex: 1;
+    }
+    
+    .permission-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .permission-type {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .permission-type.create {
+        background: rgba(var(--success-rgb), 0.1);
+        color: var(--success);
+    }
+    
+    .permission-type.edit {
+        background: rgba(var(--warning-rgb), 0.1);
+        color: var(--warning);
+    }
+    
+    .permission-type.delete {
+        background: rgba(var(--danger-rgb), 0.1);
+        color: var(--danger);
+    }
+    
+    .permission-type.view {
+        background: rgba(var(--info-rgb), 0.1);
+        color: var(--info);
+    }
+    
+    .permission-type.approve {
+        background: rgba(var(--primary-rgb), 0.1);
+        color: var(--primary);
+    }
+    
+    .permission-description {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        line-height: 1.5;
+    }
+    
+    /* Inheritance Indicator */
+    .inheritance-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.7rem;
+        background: rgba(var(--info-rgb), 0.1);
+        color: var(--info);
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-top: 0.5rem;
+    }
+    
+    .inheritance-badge i {
+        font-size: 0.8rem;
+    }
+    
+    /* Quick Actions */
+    .quick-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: var(--bg-secondary);
+        border-radius: 10px;
+    }
+    
+    .quick-action-btn {
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-primary);
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .quick-action-btn:hover {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+        transform: translateY(-1px);
+    }
+    
+    /* Permission Summary */
+    .permission-summary {
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+    }
+    
+    .summary-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .summary-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .summary-stat {
+        text-align: center;
+        padding: 1rem;
+        background: var(--bg-card);
+        border-radius: 10px;
+        transition: transform 0.3s ease;
+    }
+    
+    .summary-stat:hover {
+        transform: translateY(-2px);
+    }
+    
+    .summary-stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .summary-stat-label {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+    
+    /* Progress Bar */
+    .permission-progress {
+        height: 10px;
+        background: var(--border-color);
+        border-radius: 5px;
+        overflow: hidden;
+        margin-bottom: 1rem;
+    }
+    
+    .permission-progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+        transition: width 0.5s ease;
+        position: relative;
+    }
+    
+    .permission-progress-bar::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    
+    /* Permission Categories */
+    .permission-categories {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .category-chip {
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-muted);
+    }
+    
+    .category-chip.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+    
+    .category-chip:hover {
+        transform: translateY(-1px);
+    }
+    
+    /* Dark Mode Adjustments */
+    [data-theme="dark"] .search-permissions input {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    [data-theme="dark"] .permission-card {
+        background: var(--bg-card);
+        border-color: var(--border-color);
+    }
+    
+    [data-theme="dark"] .permission-card:hover {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .permission-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .module-sidebar {
+            max-height: 200px;
+            border-right: none;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            overflow-x: auto;
+            overflow-y: hidden;
+            gap: 0.5rem;
+            padding: 1rem;
+        }
+        
+        .module-item {
+            min-width: 200px;
+            border-left: none;
+            border-bottom: 3px solid transparent;
+            flex-direction: column;
+            text-align: center;
+            padding: 1rem;
+        }
+        
+        .module-item.active {
+            border-left: none;
+            border-bottom-color: var(--primary);
+        }
+        
+        .permission-cards {
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .matrix-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .matrix-controls {
+            justify-content: center;
+        }
+        
+        .search-permissions input {
+            min-width: 100%;
+        }
+        
+        .permission-cards {
+            grid-template-columns: 1fr;
+        }
+        
+        .summary-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    /* Loading Animation */
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .loading-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid var(--border-color);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Toast Notification */
+    .permission-toast {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 1rem 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transform: translateX(400px);
+        transition: transform 0.3s ease;
+        z-index: 2000;
+    }
+    
+    .permission-toast.show {
+        transform: translateX(0);
+    }
+    
+    .permission-toast.success {
+        border-left: 4px solid var(--success);
+    }
+    
+    .permission-toast.error {
+        border-left: 4px solid var(--danger);
+    }
+    
+    .permission-toast.info {
+        border-left: 4px solid var(--info);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <!-- Header -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <div>
+            <h1 class="h2">Role Permissions Matrix</h1>
+            <p class="text-muted mb-0">Configure permissions for <strong>{{ role.role_name }}</strong></p>
+        </div>
+        <div class="btn-group">
+            <a href="{{ BASE_URL }}/admin/roles" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Roles
+            </a>
+            <button class="btn btn-primary" onclick="savePermissions()">
+                <i class="fas fa-save me-2"></i>Save Changes
+            </button>
+        </div>
+    </div>
+
+    <!-- Permission Matrix -->
+    <div class="permission-matrix">
+        <div class="matrix-header">
+            <div class="matrix-title">
+                <i class="fas fa-shield-alt fa-2x"></i>
+                <div>
+                    <h5>Permission Configuration</h5>
+                    <small class="opacity-75">Select permissions by module or category</small>
+                </div>
+            </div>
+            <div class="matrix-controls">
+                <div class="search-permissions">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="permissionSearch" placeholder="Search permissions...">
+                </div>
+                <button class="btn btn-light btn-sm" onclick="expandAll()">
+                    <i class="fas fa-expand-alt me-1"></i>Expand All
+                </button>
+                <button class="btn btn-light btn-sm" onclick="collapseAll()">
+                    <i class="fas fa-compress-alt me-1"></i>Collapse All
+                </button>
+            </div>
+        </div>
+        
+        <div class="permission-grid">
+            <!-- Module Sidebar -->
+            <div class="module-sidebar">
+                {% for module in modules %}
+                <div class="module-item {% if loop.first %}active{% endif %}" 
+                     data-module="{{ module.name }}" 
+                     onclick="switchModule('{{ module.name }}')">
+                    <div class="module-icon">
+                        <i class="fas fa-{{ module.icon }}"></i>
+                    </div>
+                    <div class="module-info">
+                        <div class="module-name">{{ module.display_name }}</div>
+                        <div class="module-count">
+                            <span class="count-indicator {% if module.hasPermissions %}has-permissions{% endif %}"></span>
+                            <span class="selected-count">0</span> / {{ module.permissions|length }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Permission Content -->
+            <div class="permission-content">
+                {% for module in modules %}
+                <div class="permission-section {% if loop.first %}active{% endif %}" 
+                     id="module-{{ module.name }}">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h6 class="mb-1">{{ module.display_name }} Permissions</h6>
+                            <small class="text-muted">Configure access rights for this module</small>
+                        </div>
+                        <div class="quick-actions">
+                            <button class="quick-action-btn" onclick="selectAllModule('{{ module.name }}')">
+                                <i class="fas fa-check-double"></i>
+                                Select All
+                            </button>
+                            <button class="quick-action-btn" onclick="clearAllModule('{{ module.name }}')">
+                                <i class="fas fa-times"></i>
+                                Clear All
+                            </button>
+                            <button class="quick-action-btn" onclick="toggleCritical('{{ module.name }}')">
+                                <i class="fas fa-star"></i>
+                                Critical Only
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Permission Categories -->
+                    <div class="permission-categories">
+                        <div class="category-chip active" onclick="filterByCategory('all', '{{ module.name }}')">
+                            All Permissions
+                        </div>
+                        <div class="category-chip" onclick="filterByCategory('view', '{{ module.name }}')">
+                            <i class="fas fa-eye me-1"></i>View Only
+                        </div>
+                        <div class="category-chip" onclick="filterByCategory('edit', '{{ module.name }}')">
+                            <i class="fas fa-edit me-1"></i>Edit
+                        </div>
+                        <div class="category-chip" onclick="filterByCategory('create', '{{ module.name }}')">
+                            <i class="fas fa-plus me-1"></i>Create
+                        </div>
+                        <div class="category-chip" onclick="filterByCategory('delete', '{{ module.name }}')">
+                            <i class="fas fa-trash me-1"></i>Delete
+                        </div>
+                    </div>
+                    
+                    <!-- Permission Cards -->
+                    <div class="permission-cards">
+                        {% for permission in module.permissions %}
+                        <div class="permission-card {% if permission.assigned %}selected{% endif %} {% if permission.inherited %}inherited{% endif %}" 
+                             data-permission-id="{{ permission.id }}"
+                             data-module="{{ module.name }}"
+                             data-category="{{ permission.category|default('view') }}"
+                             data-critical="{{ permission.critical|default(false) }}"
+                             onclick="togglePermission({{ permission.id }})">
+                            <div class="permission-header">
+                                <div class="permission-checkbox">
+                                    <input class="form-check-input" type="checkbox" 
+                                           id="perm_{{ permission.id }}"
+                                           {% if permission.assigned %}checked{% endif %}
+                                           {% if permission.inherited %}disabled{% endif %}
+                                           onclick="event.stopPropagation()">
+                                </div>
+                                <div class="permission-details">
+                                    <div class="permission-name">
+                                        {{ permission.display_name }}
+                                        <span class="permission-type {{ permission.category|default('view') }}">
+                                            {{ permission.category|default('view') }}
+                                        </span>
+                                    </div>
+                                    <div class="permission-description">
+                                        {{ permission.description ?: 'No description available' }}
+                                    </div>
+                                    {% if permission.inherited %}
+                                    <div class="inheritance-badge">
+                                        <i class="fas fa-link"></i>
+                                        Inherited from {{ permission.inherited_from }}
+                                    </div>
+                                    {% endif %}
+                                    {% if permission.critical %}
+                                    <div class="inheritance-badge" style="background: rgba(var(--warning-rgb), 0.1); color: var(--warning);">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        Critical Permission
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Permission Summary -->
+    <div class="permission-summary">
+        <div class="summary-header">
+            <h6>Permission Summary</h6>
+            <button class="btn btn-sm btn-outline-primary" onclick="exportPermissions()">
+                <i class="fas fa-download me-1"></i>Export Report
+            </button>
+        </div>
+        <div class="permission-progress">
+            <div class="permission-progress-bar" id="progressBar" style="width: 0%"></div>
+        </div>
+        <div class="summary-stats">
+            <div class="summary-stat">
+                <div class="summary-stat-value" id="totalModules">{{ modules|length }}</div>
+                <div class="summary-stat-label">Total Modules</div>
+            </div>
+            <div class="summary-stat">
+                <div class="summary-stat-value" id="enabledModules">0</div>
+                <div class="summary-stat-label">Enabled Modules</div>
+            </div>
+            <div class="summary-stat">
+                <div class="summary-stat-value" id="criticalPerms">0</div>
+                <div class="summary-stat-label">Critical</div>
+            </div>
+            <div class="summary-stat">
+                <div class="summary-stat-value" id="readOnlyPerms">0</div>
+                <div class="summary-stat-label">Read Only</div>
+            </div>
+            <div class="summary-stat">
+                <div class="summary-stat-value" id="writePerms">0</div>
+                <div class="summary-stat-label">Write Access</div>
+            </div>
+            <div class="summary-stat">
+                <div class="summary-stat-value" id="inheritedPerms">0</div>
+                <div class="summary-stat-label">Inherited</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden Form for Submission -->
+<form id="permissionForm" method="POST" style="display: none;">
+    {{ csrf_field() | raw }}
+    <input type="hidden" name="role_id" value="{{ role.role_id }}">
+    <input type="hidden" name="permissions" id="selectedPermissionsInput">
+</form>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<!-- Toast Notification -->
+<div class="permission-toast" id="permissionToast">
+    <i class="fas fa-check-circle"></i>
+    <div>
+        <div class="fw-semibold" id="toastTitle">Success</div>
+        <div class="small text-muted" id="toastMessage">Changes saved successfully</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+// Enhanced Permission Management System
+class PermissionManager {
+    constructor() {
+        this.selectedPermissions = new Set({{ assigned_permissions|json_encode|raw }});
+        this.totalPermissions = {{ total_permissions }};
+        this.modules = {{ modules|json_encode|raw }};
+        this.inheritedPermissions = new Set();
+        this.criticalPermissions = new Set();
+        this.init();
+    }
+    
+    init() {
+        this.updateCounts();
+        this.updateProgress();
+        this.attachEventListeners();
+        this.updateModuleCounts();
+        this.identifySpecialPermissions();
+        this.updateSummaryStats();
+    }
+    
+    identifySpecialPermissions() {
+        // Identify inherited and critical permissions
+        this.modules.forEach(module => {
+            module.permissions.forEach(perm => {
+                if (perm.inherited) {
+                    this.inheritedPermissions.add(perm.id);
+                }
+                if (perm.critical) {
+                    this.criticalPermissions.add(perm.id);
+                }
+            });
+        });
+    }
+    
+    attachEventListeners() {
+        // Search functionality
+        document.getElementById('permissionSearch').addEventListener('input', (e) => {
+            this.searchPermissions(e.target.value);
+        });
+        
+        // Prevent checkbox click from toggling card for inherited permissions
+        document.querySelectorAll('.permission-checkbox input:not([disabled])').forEach(checkbox => {
+            checkbox.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.togglePermission(parseInt(e.target.closest('.permission-card').dataset.permissionId));
+            });
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 's':
+                        e.preventDefault();
+                        this.savePermissions();
+                        break;
+                    case 'a':
+                        e.preventDefault();
+                        this.selectAllCurrent();
+                        break;
+                }
+            }
+        });
+    }
+    
+    switchModule(moduleName) {
+        // Update active states
+        document.querySelectorAll('.module-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        document.querySelector(`[data-module="${moduleName}"]`).classList.add('active');
+        
+        document.querySelectorAll('.permission-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        document.getElementById(`module-${moduleName}`).classList.add('active');
+    }
+    
+    togglePermission(permissionId) {
+        const card = document.querySelector(`[data-permission-id="${permissionId}"]`);
+        const checkbox = card.querySelector('input[type="checkbox"]');
+        
+        // Skip if inherited
+        if (this.inheritedPermissions.has(permissionId)) {
+            this.showToast('This permission is inherited and cannot be modified', 'info');
+            return;
+        }
+        
+        if (this.selectedPermissions.has(permissionId)) {
+            this.selectedPermissions.delete(permissionId);
+            card.classList.remove('selected');
+            checkbox.checked = false;
+        } else {
+            this.selectedPermissions.add(permissionId);
+            card.classList.add('selected');
+            checkbox.checked = true;
+            
+            // Check for critical permission warning
+            if (this.criticalPermissions.has(permissionId)) {
+                this.showToast('Critical permission granted', 'warning');
+            }
+        }
+        
+        this.updateCounts();
+        this.updateProgress();
+        this.updateModuleCounts();
+        this.updateSummaryStats();
+    }
+    
+    selectAllModule(moduleName) {
+        const moduleData = this.modules.find(m => m.name === moduleName);
+        moduleData.permissions.forEach(perm => {
+            if (!this.inheritedPermissions.has(perm.id)) {
+                this.selectedPermissions.add(perm.id);
+                const card = document.querySelector(`[data-permission-id="${perm.id}"]`);
+                if (card && !card.classList.contains('inherited')) {
+                    card.classList.add('selected');
+                    card.querySelector('input[type="checkbox"]').checked = true;
+                }
+            }
+        });
+        this.updateCounts();
+        this.updateProgress();
+        this.updateModuleCounts();
+        this.updateSummaryStats();
+        this.showToast(`All permissions selected for ${moduleData.display_name}`, 'success');
+    }
+    
+    clearAllModule(moduleName) {
+        const moduleData = this.modules.find(m => m.name === moduleName);
+        moduleData.permissions.forEach(perm => {
+            if (!this.inheritedPermissions.has(perm.id)) {
+                this.selectedPermissions.delete(perm.id);
+                const card = document.querySelector(`[data-permission-id="${perm.id}"]`);
+                if (card && !card.classList.contains('inherited')) {
+                    card.classList.remove('selected');
+                    card.querySelector('input[type="checkbox"]').checked = false;
+                }
+            }
+        });
+        this.updateCounts();
+        this.updateProgress();
+        this.updateModuleCounts();
+        this.updateSummaryStats();
+        this.showToast(`All permissions cleared for ${moduleData.display_name}`, 'info');
+    }
+    
+    toggleCritical(moduleName) {
+        const moduleData = this.modules.find(m => m.name === moduleName);
+        const criticalPerms = moduleData.permissions.filter(p => p.critical && !this.inheritedPermissions.has(p.id));
+        
+        if (criticalPerms.length === 0) {
+            this.showToast('No critical permissions found in this module', 'info');
+            return;
+        }
+        
+        // Check if all critical are already selected
+        const allSelected = criticalPerms.every(p => this.selectedPermissions.has(p.id));
+        
+        if (allSelected) {
+            // Deselect all critical
+            criticalPerms.forEach(perm => {
+                this.selectedPermissions.delete(perm.id);
+                const card = document.querySelector(`[data-permission-id="${perm.id}"]`);
+                if (card) {
+                    card.classList.remove('selected');
+                    card.querySelector('input[type="checkbox"]').checked = false;
+                }
+            });
+            this.showToast('Critical permissions deselected', 'info');
+        } else {
+            // Select all critical
+            criticalPerms.forEach(perm => {
+                this.selectedPermissions.add(perm.id);
+                const card = document.querySelector(`[data-permission-id="${perm.id}"]`);
+                if (card) {
+                    card.classList.add('selected');
+                    card.querySelector('input[type="checkbox"]').checked = true;
+                }
+            });
+            this.showToast('Critical permissions selected', 'warning');
+        }
+        
+        this.updateCounts();
+        this.updateProgress();
+        this.updateModuleCounts();
+        this.updateSummaryStats();
+    }
+    
+    filterByCategory(category, moduleName) {
+        // Update active chip
+        const section = document.getElementById(`module-${moduleName}`);
+        section.querySelectorAll('.category-chip').forEach(chip => {
+            chip.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        // Filter cards
+        section.querySelectorAll('.permission-card').forEach(card => {
+            if (category === 'all' || card.dataset.category === category) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+    
+    updateCounts() {
+        document.getElementById('selectedPermissions').textContent = this.selectedPermissions.size;
+        document.getElementById('totalPermissions').textContent = this.totalPermissions;
+    }
+    
+    updateProgress() {
+        const percentage = (this.selectedPermissions.size / this.totalPermissions) * 100;
+        document.getElementById('progressBar').style.width = `${percentage}%`;
+    }
+    
+    updateModuleCounts() {
+        this.modules.forEach(module => {
+            const moduleElement = document.querySelector(`[data-module="${module.name}"]`);
+            const selectedCount = module.permissions.filter(p => this.selectedPermissions.has(p.id)).length;
+            moduleElement.querySelector('.selected-count').textContent = selectedCount;
+            
+            // Update indicator
+            const indicator = moduleElement.querySelector('.count-indicator');
+            if (selectedCount > 0) {
+                indicator.classList.add('has-permissions');
+            } else {
+                indicator.classList.remove('has-permissions');
+            }
+        });
+    }
+    
+    updateSummaryStats() {
+        // Calculate stats
+        const enabledModules = this.modules.filter(m => 
+            m.permissions.some(p => this.selectedPermissions.has(p.id))
+        ).length;
+        
+        const criticalCount = Array.from(this.selectedPermissions).filter(id => 
+            this.criticalPermissions.has(id)
+        ).length;
+        
+        const readOnlyCount = Array.from(this.selectedPermissions).filter(id => {
+            const card = document.querySelector(`[data-permission-id="${id}"]`);
+            return card && card.dataset.category === 'view';
+        }).length;
+        
+        const writeCount = this.selectedPermissions.size - readOnlyCount;
+        
+        const inheritedCount = Array.from(this.selectedPermissions).filter(id => 
+            this.inheritedPermissions.has(id)
+        ).length;
+        
+        // Update DOM
+        document.getElementById('enabledModules').textContent = enabledModules;
+        document.getElementById('criticalPerms').textContent = criticalCount;
+        document.getElementById('readOnlyPerms').textContent = readOnlyCount;
+        document.getElementById('writePerms').textContent = writeCount;
+        document.getElementById('inheritedPerms').textContent = inheritedCount;
+    }
+    
+    searchPermissions(query) {
+        const lowerQuery = query.toLowerCase();
+        
+        document.querySelectorAll('.permission-card').forEach(card => {
+            const name = card.querySelector('.permission-name').textContent.toLowerCase();
+            const description = card.querySelector('.permission-description').textContent.toLowerCase();
+            
+            if (name.includes(lowerQuery) || description.includes(lowerQuery)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        
+        // Show message if no results
+        const visibleCards = document.querySelectorAll('.permission-card:not([style*="display: none"])').length;
+        if (visibleCards === 0 && query) {
+            this.showToast('No permissions found matching your search', 'info');
+        }
+    }
+    
+    selectAllCurrent() {
+        const activeModule = document.querySelector('.module-item.active').dataset.module;
+        this.selectAllModule(activeModule);
+    }
+    
+    showToast(message, type = 'success') {
+        const toast = document.getElementById('permissionToast');
+        const icon = toast.querySelector('i');
+        const title = document.getElementById('toastTitle');
+        const msg = document.getElementById('toastMessage');
+        
+        // Update content
+        msg.textContent = message;
+        
+        // Update style
+        toast.className = `permission-toast ${type}`;
+        
+        // Update icon
+        icon.className = type === 'success' ? 'fas fa-check-circle' : 
+                        type === 'error' ? 'fas fa-times-circle' : 
+                        type === 'warning' ? 'fas fa-exclamation-triangle' : 
+                        'fas fa-info-circle';
+        
+        // Update title
+        title.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+        
+        // Show toast
+        toast.classList.add('show');
+        
+        // Hide after 3 seconds
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+    
+    async savePermissions() {
+        const selected = Array.from(this.selectedPermissions);
+        
+        // Show loading
+        document.getElementById('loadingOverlay').classList.add('active');
+        
+        try {
+            const response = await fetch('{{ BASE_URL }}/admin/roles/update_permissions?id={{ role.role_id }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    permissions: JSON.stringify(selected)
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showToast('Permissions saved successfully', 'success');
+            } else {
+                this.showToast(result.message || 'Failed to save permissions', 'error');
+            }
+        } catch (error) {
+            this.showToast('An error occurred while saving permissions', 'error');
+            console.error(error);
+        } finally {
+            // Hide loading
+            document.getElementById('loadingOverlay').classList.remove('active');
+        }
+    }
+    
+    exportPermissions() {
+        const role = '{{ role.role_name }}';
+        const selected = Array.from(this.selectedPermissions);
+        const data = {
+            role: role,
+            permissions: selected,
+            modules: this.modules.map(m => ({
+                name: m.display_name,
+                permissions: m.permissions.filter(p => selected.includes(p.id)).map(p => p.display_name)
+            })).filter(m => m.permissions.length > 0)
+        };
+        
+        // Create and download JSON file
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${role}_permissions_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        this.showToast('Permission report exported successfully', 'success');
+    }
+}
+
+// Initialize Permission Manager
+const permissionManager = new PermissionManager();
+
+// Global functions
+function switchModule(moduleName) {
+    permissionManager.switchModule(moduleName);
+}
+
+function togglePermission(id) {
+    permissionManager.togglePermission(id);
+}
+
+function selectAllModule(moduleName) {
+    permissionManager.selectAllModule(moduleName);
+}
+
+function clearAllModule(moduleName) {
+    permissionManager.clearAllModule(moduleName);
+}
+
+function toggleCritical(moduleName) {
+    permissionManager.toggleCritical(moduleName);
+}
+
+function filterByCategory(category, moduleName) {
+    permissionManager.filterByCategory(category, moduleName);
+}
+
+function expandAll() {
+    document.querySelectorAll('.permission-section').forEach(section => {
+        section.classList.add('active');
+    });
+}
+
+function collapseAll() {
+    document.querySelectorAll('.permission-section').forEach((section, index) => {
+        if (index > 0) section.classList.remove('active');
+    });
+    document.querySelectorAll('.module-item').forEach((item, index) => {
+        if (index > 0) item.classList.remove('active');
+    });
+    // Switch to first module
+    switchModule('{{ modules[0].name }}');
+}
+
+function savePermissions() {
+    Swal.fire({
+        title: 'Save Permissions?',
+        html: `
+            <p>You are about to save <strong>${permissionManager.selectedPermissions.size}</strong> permissions for this role.</p>
+            <div class="text-start">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle"></i> This will immediately affect user access to the system.
+                </small>
+            </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#4361ee',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Save Changes',
+        showLoaderOnConfirm: true,
+        preConfirm: () => {
+            return permissionManager.savePermissions();
+        }
+    });
+}
+
+function exportPermissions() {
+    permissionManager.exportPermissions();
+}
+</script>
+{% endblock %}

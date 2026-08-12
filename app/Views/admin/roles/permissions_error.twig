@@ -1,0 +1,53 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Database Setup Required - RMG ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Database Setup Required
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-database fa-4x text-danger mb-3"></i>
+                        <h5>Permissions Tables Not Found</h5>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle me-2"></i>
+                        {{ message }}
+                    </div>
+                    
+                    <p class="text-muted">
+                        To use the enhanced permission matrix feature, you need to create the necessary database tables first.
+                    </p>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{{ BASE_URL }}/admin/setup?tab=database" class="btn btn-primary">
+                            <i class="fas fa-cog me-2"></i>
+                            Go to Database Setup
+                        </a>
+                        <a href="{{ BASE_URL }}/admin/roles" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Back to Roles
+                        </a>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6>Manual Setup Instructions:</h6>
+                    <ol class="small">
+                        <li>Open your database management tool (phpMyAdmin, MySQL Workbench, etc.)</li>
+                        <li>Import the SQL file: <code>/sql/create_permissions_tables.sql</code></li>
+                        <li>Refresh this page to continue</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

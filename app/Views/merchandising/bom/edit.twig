@@ -1,0 +1,52 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Edit BOM | Merchandising{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Edit BOM</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/merchandising/bom">BOMs</a></li>
+        <li class="breadcrumb-item active">{{ bom.style_code }}</li>
+    </ol>
+
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+             <div class="h5 mb-0 text-primary"><i class="fas fa-edit me-2"></i>Edit BOM: {{ bom.style_code }} (v{{ bom.version }})</div>
+        </div>
+        <div class="card-body p-4">
+            <form action="{{ BASE_URL }}/merchandising/bom/update/{{ bom.bom_id }}" method="POST">
+    {{ csrf_field() | raw }}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Style</label>
+                        <input type="text" class="form-control" value="{{ bom.style_code }} - {{ bom.style_name }}" disabled>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Version <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="version" value="{{ bom.version }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status">
+                            <option value="draft" {{ bom.status == 'draft' ? 'selected' }}>Draft</option>
+                            <option value="approved" {{ bom.status == 'approved' ? 'selected' }}>Approved</option>
+                            <option value="archived" {{ bom.status == 'archived' ? 'selected' }}>Archived</option>
+                        </select>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Remarks</label>
+                        <textarea class="form-control" name="remarks" rows="3">{{ bom.remarks }}</textarea>
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-end gap-2">
+                    <a href="{{ BASE_URL }}/merchandising/bom" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Update BOM</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

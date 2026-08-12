@@ -1,0 +1,350 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Gate Pass {{ gatePass.gate_pass_no }}{% endblock %}
+
+{% block styles %}
+<style>
+    .print-wrapper {
+        background: #fff;
+        padding: 40px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        max-width: 1000px;
+        margin: 0 auto;
+        font-family: 'Times New Roman', Times, serif;
+        color: #000;
+    }
+    
+    .company-header h2 {
+        font-weight: bold;
+        margin-bottom: 5px;
+        font-size: 28px;
+    }
+    
+    .company-header p {
+        margin-bottom: 0;
+        font-size: 14px;
+    }
+    
+    .document-title {
+        font-size: 22px;
+        font-weight: bold;
+        text-decoration: underline;
+        margin: 15px 0 30px;
+    }
+    
+    .info-table {
+        width: 100%;
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+    
+    .info-table td {
+        padding: 4px 8px 4px 0;
+        vertical-align: top;
+    }
+    
+    .info-label {
+        font-weight: bold;
+        width: 140px;
+    }
+
+    .info-colon {
+        width: 10px;
+        font-weight: bold;
+    }
+    
+    .items-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        font-size: 13px;
+        font-family: Arial, sans-serif;
+    }
+    
+    .items-table th, .items-table td {
+        border: 1px solid #777;
+        padding: 6px;
+        text-align: center;
+    }
+    
+    .items-table th {
+        background-color: #f0f0f0;
+        font-weight: bold;
+    }
+    
+    .items-table .text-left {
+        text-align: left;
+    }
+    
+    .signature-section {
+        margin-top: 80px;
+        display: flex;
+        justify-content: space-between;
+        text-align: center;
+        font-size: 13px;
+    }
+    
+    .signature-block {
+        width: 30%;
+    }
+    
+    .signature-line {
+        border-bottom: 1px solid #000;
+        margin-bottom: 5px;
+    }
+    
+    .barcode-placeholder {
+        font-family: 'Libre Barcode 39', cursive, sans-serif;
+        font-size: 40px;
+        line-height: 1;
+        margin-top: 5px;
+    }
+    
+    @media print {
+        body {
+            background: #fff;
+            padding: 0;
+            margin: 0;
+        }
+        .sidebar, .navbar, .breadcrumb, .btn, .d-flex {
+            display: none !important;
+        }
+        .print-wrapper {
+            box-shadow: none;
+            padding: 0;
+            margin: 0;
+            max-width: 100%;
+        }
+        .main-content {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+    }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 pt-3 d-print-none">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0 px-0 bg-transparent">
+            <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard" class="text-decoration-none"><i class="fas fa-home"></i></a></li>
+            <li class="breadcrumb-item"><a href="{{ BASE_URL }}/inventory" class="text-decoration-none">Store & Inventory</a></li>
+            <li class="breadcrumb-item"><a href="{{ BASE_URL }}/inventory/gate-passes" class="text-decoration-none">Gate Passes</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ gatePass.gate_pass_no }}</li>
+        </ol>
+    </nav>
+    <div>
+        <button onclick="window.print()" class="btn btn-primary shadow-sm rounded-pill px-4">
+            <i class="fas fa-print me-2"></i> Print
+        </button>
+        <a href="{{ BASE_URL }}/inventory/gate-passes" class="btn btn-outline-secondary shadow-sm rounded-pill px-4 ms-2">
+            Back
+        </a>
+    </div>
+</div>
+
+{% if session.success %}
+<div class="alert alert-success alert-dismissible fade show d-print-none" role="alert">
+    {{ session.success }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
+<div class="print-wrapper">
+    <!-- Header -->
+    <div class="text-center company-header">
+        <h2>Big Boss Corporation Ltd.</h2>
+        <p>30 Sharabo, Kasimpur, Gazipur, Bangladesh</p>
+        <div class="document-title">Gate Pass</div>
+    </div>
+    
+    <!-- Info Section -->
+    <div class="row">
+        <div class="col-6">
+            <table class="info-table">
+                <tr>
+                    <td class="info-label">Gate Pass No</td>
+                    <td class="info-colon">:</td>
+                    <td>{{ gatePass.gate_pass_no }}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Challan No</td>
+                    <td class="info-colon">:</td>
+                    <td>{{ gatePass.challan_no|default('') }}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Challan Date</td>
+                    <td class="info-colon">:</td>
+                    <td>{{ gatePass.challan_date ? gatePass.challan_date|date('Y-m-d') : '' }}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Prepared For</td>
+                    <td class="info-colon">:</td>
+                    <td class="text-uppercase">{{ gatePass.prepared_for|default('') }}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Address</td>
+                    <td class="info-colon">:</td>
+                    <td class="text-uppercase">{{ gatePass.address|default('') }}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Bearer By</td>
+                    <td class="info-colon">:</td>
+                    <td class="text-uppercase">{{ gatePass.bearer_by|default('') }}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Name and Desig.</td>
+                    <td class="info-colon">:</td>
+                    <td class="text-uppercase">{{ gatePass.name_and_desig|default('') }}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Department</td>
+                    <td class="info-colon">:</td>
+                    <td>{{ gatePass.department_name|default('') }}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Basis</td>
+                    <td class="info-colon">:</td>
+                    <td>{{ gatePass.basis|default('') }}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Bar Code</td>
+                    <td class="info-colon">:</td>
+                    <td class="barcode-placeholder">*{{ gatePass.gate_pass_no }}*</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Remarks</td>
+                    <td class="info-colon">:</td>
+                    <td>{{ gatePass.remarks|default('') }}</td>
+                </tr>
+            </table>
+        </div>
+        <div class="col-6">
+            <table class="info-table">
+                <tr>
+                    <td class="info-label">Returnable</td>
+                    <td class="info-colon">:</td>
+                    <td>{{ gatePass.returnable ? 'Yes' : 'No' }}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Date</td>
+                    <td class="info-colon">:</td>
+                    <td>{{ gatePass.date|date('d-m-Y') }}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Time</td>
+                    <td class="info-colon">:</td>
+                    <td>{{ gatePass.time|date('g:i A') }}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Exp. Return Date</td>
+                    <td class="info-colon">:</td>
+                    <td>{{ gatePass.exp_return_date ? gatePass.exp_return_date|date('d-m-Y') : '' }}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Verified By</td>
+                    <td class="info-colon">:</td>
+                    <td>{{ gatePass.verified_by_name|default('') }}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Approve By</td>
+                    <td class="info-colon">:</td>
+                    <td>{{ gatePass.approve_by_name|default('') }}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Prepared By</td>
+                    <td class="info-colon">:</td>
+                    <td>{{ gatePass.prepared_by_name|default('') }}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Designation</td>
+                    <td class="info-colon">:</td>
+                    <td>{{ gatePass.designation|default('') }}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Mobile No</td>
+                    <td class="info-colon">:</td>
+                    <td>{{ gatePass.mobile_no|default('') }}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Email</td>
+                    <td class="info-colon">:</td>
+                    <td>{{ gatePass.email|default('') }}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Supervisor</td>
+                    <td class="info-colon">:</td>
+                    <td>{{ gatePass.supervisor|default('') }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Items Table -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width: 5%">SL</th>
+                <th style="width: 15%">Buyer Name</th>
+                <th style="width: 12%">Style</th>
+                <th style="width: 12%">Allocation No</th>
+                <th style="width: 12%">Item Category</th>
+                <th style="width: 20%">Description</th>
+                <th style="width: 8%">Color</th>
+                <th style="width: 6%">Size</th>
+                <th style="width: 5%">UNIT</th>
+                <th style="width: 5%">Quantity</th>
+                <th style="width: 5%">Weight</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set totalQty = 0 %}
+            {% for item in items %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ item.buyer_name|default('') }}</td>
+                <td>{{ item.style_name|default('') }}</td>
+                <td>{{ item.allocation_no|default('') }}</td>
+                <td>{{ item.category_name|default('') }}</td>
+                <td class="text-left text-uppercase">{{ item.description }}</td>
+                <td>{{ item.color|default('') }}</td>
+                <td>{{ item.size|default('') }}</td>
+                <td>{{ item.unit|default('') }}</td>
+                <td>{{ item.quantity|number_format(0) }}</td>
+                <td>{{ item.weight|default('') }}</td>
+                {% set totalQty = totalQty + item.quantity %}
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="11">No items added to this gate pass.</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td colspan="9" style="text-align: right; font-weight: bold;">Total:</td>
+                <td style="font-weight: bold;">{{ totalQty|number_format(0) }}</td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <!-- Signatures -->
+    <div class="signature-section">
+        <div class="signature-block">
+            <div class="signature-line"></div>
+            <strong>{{ gatePass.prepared_by_name|default('Prepared By') }}</strong><br>
+            <span style="font-size:11px;">Prepared By</span>
+        </div>
+        <div class="signature-block">
+            <div class="signature-line"></div>
+            <strong>{{ gatePass.verified_by_name|default('Verified By') }}</strong><br>
+            <span style="font-size:11px;">Verified By</span>
+        </div>
+        <div class="signature-block">
+            <div class="signature-line"></div>
+            <strong>{{ gatePass.approve_by_name|default('Approved By') }}</strong><br>
+            <span style="font-size:11px;">Approved By</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

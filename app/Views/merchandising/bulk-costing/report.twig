@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cost/Budget Sheet - {{ costing.factory_name }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10px;
+            color: #333;
+            line-height: 1.2;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .company-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        .report-title {
+            font-size: 14px;
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 10px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #000;
+            padding: 5px;
+        }
+        .info-item {
+            display: flex;
+        }
+        .info-label {
+            width: 100px;
+            font-weight: bold;
+        }
+        .info-value {
+            border-bottom: 1px dotted #666;
+            flex-grow: 1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 3px;
+            text-align: left;
+        }
+        th {
+            background-color: #eee;
+            font-weight: bold;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .section-title {
+            font-weight: bold;
+            font-size: 11px;
+            margin-bottom: 3px;
+            background-color: #ddd;
+            padding: 2px 5px;
+        }
+        .summary-box {
+            float: left;
+            width: 250px;
+            border: 1px solid #000;
+            padding: 5px;
+            margin-top: 10px;
+        }
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+        }
+        .signatures {
+            float: right;
+            width: 400px;
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .sig-box {
+            width: 120px;
+            text-align: center;
+            border-top: 1px solid #000;
+            padding-top: 5px;
+        }
+        .clearfix::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+            body {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="background: #f8f9fa; padding: 10px; margin-bottom: 20px; border-bottom: 1px solid #ddd; text-align: center;">
+        <button onclick="window.print()" style="padding: 10px 20px; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 4px;">Print Report</button>
+        <button onclick="window.close()" style="padding: 10px 20px; cursor: pointer; margin-left: 10px;">Close</button>
+    </div>
+
+    <div class="header">
+        <div class="company-name">APTECH CASUALS LTD.</div>
+        <div class="report-title">COST / BUDGET SHEET</div>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-item"><span class="info-label">Factory:</span><span class="info-value">{{ costing.factory_name }}</span></div>
+        <div class="info-item"><span class="info-label">Style Code:</span><span class="info-value">{{ costing.style_code }}</span></div>
+        <div class="info-item"><span class="info-label">Allocation No:</span><span class="info-value">{{ costing.allocation_no }}</span></div>
+        <div class="info-item"><span class="info-label">Style Desc.:</span><span class="info-value">{{ costing.style_name }}</span></div>
+        <div class="info-item"><span class="info-label">Season:</span><span class="info-value">{{ costing.season ?: 'N/A' }}</span></div>
+        <div class="info-item"><span class="info-label">Job No:</span><span class="info-value">{{ costing.job_no }}</span></div>
+        <div class="info-item"><span class="info-label">SC No:</span><span class="info-value">{{ costing.sc_no }}</span></div>
+        <div class="info-item"><span class="info-label">Buyer Name:</span><span class="info-value">{{ costing.buyer_name }}</span></div>
+        <div class="info-item"><span class="info-label">Costing Date:</span><span class="info-value">{{ costing.costing_date|date('d-M-Y') }}</span></div>
+    </div>
+
+    <div class="section-title">STYLE AND ORDER DESCRIPTION</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Style Info</th>
+                <th>Order No</th>
+                <th>Quantity</th>
+                <th>Avg Unit Price</th>
+                <th>Total Order Value $</th>
+                <th>Ex. Delv. Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set total_order_qty = 0 %}
+            {% set total_orig_val = 0 %}
+            {% for style in costing.styles %}
+            <tr>
+                <td><strong>{{ style.style_code }}</strong><br><small>{{ style.style_name }}</small></td>
+                <td>{{ style.order_no }}</td>
+                <td class="text-right">{{ style.quantity|number_format(0) }}</td>
+                <td class="text-right">{{ style.unit_price|number_format(4) }}</td>
+                <td class="text-right">{{ (style.quantity * style.unit_price)|number_format(2) }}</td>
+                <td>{{ style.shipment_date ? style.shipment_date|date('d-m-Y') : 'N/A' }}</td>
+            </tr>
+            {% set total_order_qty = total_order_qty + style.quantity %}
+            {% set total_orig_val = total_orig_val + (style.quantity * style.unit_price) %}
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr style="font-weight: bold;">
+                <td colspan="2">Total</td>
+                <td class="text-right">{{ total_order_qty|number_format(0) }}</td>
+                <td></td>
+                <td class="text-right">{{ total_orig_val|number_format(2) }}</td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="section-title">ALL FABRIC DESCRIPTION</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Item Description</th>
+                <th>Fabric Ref</th>
+                <th>Source</th>
+                <th>Cons</th>
+                <th>Qty</th>
+                <th>Unit Price $</th>
+                <th>Total Value $</th>
+                <th>Supplier Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in costing.fabrics %}
+            <tr>
+                <td>{{ item.item_name }} - {{ item.description }}</td>
+                <td>{{ item.fabric_ref }}</td>
+                <td>{{ item.material_source }}</td>
+                <td class="text-right">{{ item.consumption }}</td>
+                <td class="text-right">{{ item.quantity|number_format(2) }}</td>
+                <td class="text-right">{{ item.unit_price|number_format(4) }}</td>
+                <td class="text-right">{{ (item.quantity * item.unit_price)|number_format(2) }}</td>
+                <td>{{ item.supplier_name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="section-title">ALL ACCESSORIES DESCRIPTION</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Item Description</th>
+                <th>Ref</th>
+                <th>Source</th>
+                <th>Cons</th>
+                <th>Qty</th>
+                <th>Unit Price $</th>
+                <th>Total Value $</th>
+                <th>Supplier Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in costing.accessories %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td>N/A</td>
+                <td>{{ item.material_source }}</td>
+                <td class="text-right">{{ item.consumption }}</td>
+                <td class="text-right">{{ item.quantity|number_format(2) }}</td>
+                <td class="text-right">{{ item.unit_price|number_format(4) }}</td>
+                <td class="text-right">{{ (item.quantity * item.unit_price)|number_format(2) }}</td>
+                <td>{{ item.supplier_name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="clearfix">
+        <div style="width: 48%; float: left;">
+            <div class="section-title">WASH COST</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Wash Type</th>
+                        <th>Qty</th>
+                        <th>Price</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in costing.wash_costs %}
+                    <tr>
+                        <td>{{ item.wash_type }} - {{ item.color }}</td>
+                        <td class="text-right">{{ item.quantity|number_format(0) }}</td>
+                        <td class="text-right">{{ item.unit_price|number_format(2) }}</td>
+                        <td class="text-right">{{ (item.quantity * item.unit_price)|number_format(2) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div style="width: 48%; float: right;">
+            <div class="section-title">EMBL. COST</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Embl. Type</th>
+                        <th>Qty</th>
+                        <th>Price</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in costing.embl_costs %}
+                    <tr>
+                        <td>{{ item.embl_name }} - {{ item.color }}</td>
+                        <td class="text-right">{{ item.quantity|number_format(0) }}</td>
+                        <td class="text-right">{{ item.unit_price|number_format(2) }}</td>
+                        <td class="text-right">{{ (item.quantity * item.unit_price)|number_format(2) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="section-title">OTHER COST & CM</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th>UOM</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Value</th>
+                <th>Supplier</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in costing.other_costs %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td>{{ item.uom }}</td>
+                <td class="text-right">{{ item.quantity|number_format(2) }}</td>
+                <td class="text-right">{{ item.unit_price|number_format(4) }}</td>
+                <td class="text-right">{{ (item.quantity * item.unit_price)|number_format(2) }}</td>
+                <td>{{ item.supplier_name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="clearfix">
+        <div class="summary-box">
+            <div class="summary-item"><strong>Summary</strong></div>
+            <hr>
+            <div class="summary-item"><span>Total Order Value:</span><span>$ {{ total_orig_val|number_format(2) }}</span></div>
+            <div class="summary-item"><span>Less Commission:</span><span>{{ (costing.local_commission_pct + costing.foreign_commission_pct + costing.early_payment_cost_pct) }}%</span></div>
+            <div class="summary-item"><strong>Net Order Value:</strong><strong>$ {{ costing.order_value|number_format(2) }}</strong></div>
+            <div class="summary-item"><span>Total Costing Value:</span><span>$ {{ costing.total_costing_value|number_format(2) }}</span></div>
+            <hr>
+            <div class="summary-item"><strong>Gross Profit:</strong><strong>$ {{ costing.profit_amount|number_format(2) }}</strong></div>
+        </div>
+
+        <div class="signatures">
+            <div class="sig-box">Merchandiser</div>
+            <div class="sig-box">Merchandising Manager</div>
+            <div class="sig-box">Managing Director</div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,90 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Define Weekend | HR Module{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4 p-4 rounded-3 text-white shadow-sm" style="background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);">
+        <div>
+            <span class="badge bg-white text-primary mb-2 font-monospace"><i class="fas fa-calendar-week me-1"></i> WEEKLY OFF CONFIGURATION</span>
+            <h2 class="mb-1 font-weight-bold">Define Factory Weekend</h2>
+            <p class="mb-0 opacity-75">Configure weekly off days (Friday/Saturday/Sunday) per department or factory production unit.</p>
+        </div>
+    </div>
+
+    {% if flash_success %}
+        <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4">
+            <i class="fas fa-check-circle me-1"></i> {{ flash_success }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-lg-5 mb-4">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 text-primary fw-bold"><i class="fas fa-sliders-h me-2"></i>Weekend Configuration</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form action="{{ BASE_URL }}/hr/attendance/define-weekend" method="POST">
+                        {{ csrf_field() | raw }}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Department / Section</label>
+                            <select name="department_id" class="form-select border-primary">
+                                <option value="">Entire Factory (All Departments)</option>
+                                {% for dept in departments %}
+                                    <option value="{{ dept.department_id }}">{{ dept.department_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Weekly Off Day *</label>
+                            <select name="weekend_day" class="form-select border-primary fw-bold" required>
+                                <option value="Friday">Friday (RMG Standard)</option>
+                                <option value="Saturday">Saturday</option>
+                                <option value="Sunday">Sunday</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary text-white rounded-pill w-100 fw-bold py-2"><i class="fas fa-save me-1"></i> Save Weekend Rule</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7 mb-4">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 text-primary fw-bold"><i class="fas fa-list me-2"></i>Current Factory Weekend Rules</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Department</th>
+                                    <th>Weekly Off Day</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for w in weekends %}
+                                <tr>
+                                    <td><span class="fw-bold text-dark">{{ w.department_name|default('Entire Factory') }}</span></td>
+                                    <td><span class="badge bg-primary text-white rounded-pill px-3">{{ w.weekend_day }}</span></td>
+                                    <td><span class="badge bg-success rounded-pill px-3">{{ w.status|capitalize }}</span></td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-4 text-muted">No specific weekend rules configured. Default: Friday.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

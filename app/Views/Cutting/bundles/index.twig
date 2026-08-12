@@ -1,0 +1,215 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Bundle Generation{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Page Header -->
+    <div class="col-12 mb-4">
+        <div class="page-header d-flex justify-content-between align-items-center p-4 bg-white rounded shadow-sm">
+            <div class="page-title">
+                <h1 class="h3 text-primary fw-bold mb-1">Bundle Generation</h1>
+                <p class="text-muted mb-0">Generate and manage cutting bundles</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBundleModal">
+                    <i class="fas fa-plus me-2"></i>Generate Bundle
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="col-12 mb-4">
+        <div class="stats-grid">
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.total_bundles }}</h3>
+                <p class="text-muted mb-0">Total Bundles</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.active_bundles }}</h3>
+                <p class="text-muted mb-0">Active Bundles</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.completed_bundles }}</h3>
+                <p class="text-muted mb-0">Completed Bundles</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.total_pieces|number_format }}</h3>
+                <p class="text-muted mb-0">Total Pieces</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bundles Table -->
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fas fa-box me-2"></i>Bundles</span>
+                <input type="text" class="form-control form-control-sm w-auto" id="searchInput" placeholder="Search bundles...">
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="bundlesTable">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="p-3 border-0">Bundle Number</th>
+                                <th class="p-3 border-0">Marker</th>
+                                <th class="p-3 border-0">Style</th>
+                                <th class="p-3 border-0">Size</th>
+                                <th class="p-3 border-0">Quantity (Pieces)</th>
+                                <th class="p-3 border-0">Pieces Status</th>
+                                <th class="p-3 border-0">Date</th>
+                                <th class="p-3 border-0">Status</th>
+                                <th class="p-3 border-0">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bundle in bundles %}
+                            {% set progress = bundle.quantity > 0 ? (bundle.finished_pieces / bundle.quantity) * 100 : 0 %}
+                            <tr>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ bundle.bundle_number }}</div>
+                                    <small class="text-muted">{{ bundle.bundle_type }} Bundle</small>
+                                </td>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ bundle.marker_number }}</div>
+                                    <small class="text-muted">{{ bundle.cutting_room_name }}</small>
+                                </td>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ bundle.style_code }}</div>
+                                    <small class="text-muted">{{ bundle.style_name }}</small>
+                                </td>
+                                <td class="p-3">{{ bundle.size_name }}</td>
+                                <td class="p-3">
+                                     {{ bundle.finished_pieces|number_format }} / {{ bundle.quantity|number_format }}
+                                     <div class="progress mt-1" style="height: 6px;">
+                                        <div class="progress-bar bg-success" style="width:{{ progress }}%"></div>
+                                     </div>
+                                </td>
+                                <td class="p-3 small">
+                                    <span class="text-info">●</span> {{ bundle.cut_pieces }} Cut<br>
+                                    <span class="text-warning">●</span> {{ bundle.sewing_pieces }} Sewing<br>
+                                    <span class="text-success">●</span> {{ bundle.finished_pieces }} Finished
+                                </td>
+                                <td class="p-3">{{ bundle.generated_date|date('M d, Y') }}</td>
+                                <td class="p-3">
+                                    <span class="status-badge status-{{ bundle.status == 'completed' ? 'completed' : 'design' }}">
+                                        {{ bundle.status|replace({'_': ' '})|title }}
+                                    </span>
+                                </td>
+                                <td class="p-3">
+                                    <form action="{{ BASE_URL }}/cutting/bundles/{{ bundle.bundle_id }}/delete" method="POST" onsubmit="return confirm('Delete this bundle?')" style="display:inline;">
+    {{ csrf_field() | raw }}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center p-4 text-muted">No bundles found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal fade" id="addBundleModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <form action="{{ BASE_URL }}/cutting/bundles" method="POST" class="modal-content">
+    {{ csrf_field() | raw }}
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Generate Bundle</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Bundle Number</label>
+                        <input type="text" class="form-control" name="bundle_number" value="BD-{{ 'now'|date('Y-m-d') }}-001" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Marker</label>
+                        <select class="form-select" name="marker_id" required>
+                            <option value="">Select Marker</option>
+                            {% for marker in markers %}
+                            <option value="{{ marker.marker_id }}">{{ marker.marker_number }} - {{ marker.style_code }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Style</label>
+                        <select class="form-select" name="style_id" required>
+                            <option value="">Select Style</option>
+                            {% for style in styles %}
+                            <option value="{{ style.style_id }}">{{ style.style_code }} - {{ style.style_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-2">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Size</label>
+                        <input type="text" class="form-control" name="size_name" placeholder="e.g. L" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Quantity (Pieces)</label>
+                        <input type="number" class="form-control" name="bundle_quantity" required>
+                    </div>
+                     <div class="col-md-3">
+                        <label class="form-label fw-bold">Type</label>
+                        <select class="form-select" name="bundle_type">
+                            <option value="Standard">Standard</option>
+                            <option value="Sample">Sample</option>
+                            <option value="Reject">Reject</option>
+                            <option value="Special">Special</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Room</label>
+                        <select class="form-select" name="cutting_room_id" required>
+                            <option value="">Select Room</option>
+                            {% for room in cutting_rooms %}
+                            <option value="{{ room.cutting_room_id }}">{{ room.cutting_room_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                 <div class="row g-3 mt-2">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Date</label>
+                        <input type="date" class="form-control" name="generated_date" value="{{ 'now'|date('Y-m-d') }}" required>
+                    </div>
+                     <div class="col-md-6">
+                        <label class="form-label fw-bold">Notes</label>
+                        <textarea class="form-control" name="notes" rows="1"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Generate Bundle</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function(e) {
+    const term = e.target.value.toLowerCase();
+    document.querySelectorAll('#bundlesTable tbody tr').forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+    });
+});
+</script>
+
+{% endblock %}

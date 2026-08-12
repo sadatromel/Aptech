@@ -1,0 +1,74 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Add New Currency | Master Library{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Add New Currency</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library/currencies">Currencies</a></li>
+        <li class="breadcrumb-item active">Add New</li>
+    </ol>
+
+    <div class="card shadow-lg border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <h5 class="mb-0 text-primary"><i class="fas fa-plus me-1"></i> New Currency Details</h5>
+        </div>
+        <div class="card-body p-4">
+            <form action="{{ BASE_URL }}/master_library/currencies/create" method="POST">
+    {{ csrf_field() | raw }}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3 mb-md-0">
+                            <input class="form-control" id="currency_code" name="currency_code" type="text" placeholder="Enter currency code" required maxlength="3" />
+                            <label for="currency_code">Currency Code (ISO-3)</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input class="form-control" id="currency_name" name="currency_name" type="text" placeholder="Enter currency name" required />
+                            <label for="currency_name">Currency Name</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3 mb-md-0">
+                            <input class="form-control" id="symbol" name="symbol" type="text" placeholder="Enter symbol" maxlength="5" />
+                            <label for="symbol">Symbol</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                         <div class="form-floating">
+                            <input class="form-control" id="exchange_rate" name="exchange_rate" type="number" step="0.0001" placeholder="Enter exchange rate" required />
+                            <label for="exchange_rate">Exchange Rate (vs Base)</label>
+                        </div>
+                    </div>
+                </div>
+
+                 <div class="row mb-3">
+                     <div class="col-md-6">
+                        <div class="form-floating">
+                            <select class="form-select" id="status" name="status">
+                                <option value="active" selected>Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                            <label for="status">Status</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 mb-0">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ BASE_URL }}/master_library/currencies" class="btn btn-light me-md-2 px-4 rounded-pill border">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 rounded-pill">Save Currency</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,399 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Parts Inventory - Transport{% endblock %}
+
+{% block styles %}
+<style>
+/* Page specific styles only */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.page-header p {
+    color: var(--text-secondary);
+    margin: 0.5rem 0 0 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title">
+        <h1><i class="fas fa-boxes me-2"></i>Parts Inventory Management</h1>
+        <p class="text-muted mb-0">Manage vehicle parts and inventory levels</p>
+    </div>
+    <div class="page-actions">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPartModal">
+            <i class="fas fa-plus"></i> Add Part
+        </button>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="stats-grid">
+    <div class="stat-card vehicles">
+        <div class="icon">
+            <i class="fas fa-boxes"></i>
+        </div>
+        <div class="number">{{ stats.total }}</div>
+        <div class="label">Total Parts</div>
+    </div>
+    <div class="stat-card maintenance">
+        <div class="icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="number">{{ stats.low_stock }}</div>
+        <div class="label">Low Stock Items</div>
+    </div>
+    <div class="stat-card revenue">
+        <div class="icon">
+            <i class="fas fa-taka-sign"></i>
+        </div>
+        <div class="number">BDT {{ stats.total_value|number_format(2) }}</div>
+        <div class="label">Total Value</div>
+    </div>
+</div>
+
+<!-- Add Part Modal -->
+<div class="modal fade" id="addPartModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Part</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addPartForm">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Part Name</label>
+                            <input type="text" name="part_name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Part Code</label>
+                            <input type="text" name="part_number" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Quantity in Stock</label>
+                            <input type="number" name="quantity_on_hand" class="form-control" value="0" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Minimum Quantity</label>
+                            <input type="number" name="min_stock_level" class="form-control" value="10" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Unit Price (BDT)</label>
+                            <input type="number" name="unit_price" class="form-control" step="0.01" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Supplier</label>
+                            <input type="text" name="supplier" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select" required>
+                                <option value="active">Active</option>
+                                <option value="discontinued">Discontinued</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Location</label>
+                            <input type="text" name="location" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Part</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Parts Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Parts Inventory</h5>
+    </div>
+    <div class="card-body">
+        <!-- Search Form -->
+        <form method="GET" class="mb-3">
+            <div class="row">
+                <div class="col-md-8">
+                    <input type="text" name="search" class="form-control" value="{{ filters.search }}" placeholder="Search by name, part number, or supplier...">
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary">Search</button>
+                    <a href="{{ BASE_URL }}/transport.php" class="btn btn-secondary">Clear</a>
+                </div>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Part Number</th>
+                        <th>Part Name</th>
+                        <th>Description</th>
+                        <th>Quantity</th>
+                        <th>Reorder Level</th>
+                        <th>Unit Price</th>
+                        <th>Total Value</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for part in parts %}
+                    <tr>
+                        <td>{{ part.part_number }}</td>
+                        <td>{{ part.part_name }}</td>
+                        <td>{{ part.description|default('') }}</td>
+                        <td>{{ part.quantity_on_hand }}</td>
+                        <td>{{ part.min_stock_level }}</td>
+                        <td>BDT {{ part.unit_price|number_format(2) }}</td>
+                        <td>BDT {{ (part.quantity_on_hand * part.unit_price)|number_format(2) }}</td>
+                        <td>
+                            {% if part.quantity_on_hand <= part.min_stock_level %}
+                                <span class="badge bg-warning"><i class="fas fa-exclamation"></i> Low Stock</span>
+                            {% else %}
+                                <span class="badge bg-success"><i class="fas fa-check"></i> OK</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="editPart({{ part.part_id }})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deletePart({{ part.part_id }}, '{{ part.part_name }}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center py-4">
+                            <i class="fas fa-inbox fa-2x text-muted"></i>
+                            <p class="text-muted mt-2">No parts found.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Part Modal -->
+<div class="modal fade" id="editPartModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Part</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editPartForm">
+                <input type="hidden" name="part_id" id="edit_part_id">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Part Name</label>
+                            <input type="text" name="part_name" id="edit_part_name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Part Code</label>
+                            <input type="text" name="part_number" id="edit_part_number" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" id="edit_description" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Quantity in Stock</label>
+                            <input type="number" name="quantity_on_hand" id="edit_quantity" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Reorder Level</label>
+                            <input type="number" name="min_stock_level" id="edit_min_stock_level" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Unit Price (BDT)</label>
+                            <input type="number" name="unit_price" id="edit_unit_price" class="form-control" step="0.01" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Supplier</label>
+                            <input type="text" name="supplier" id="edit_supplier" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Location</label>
+                            <input type="text" name="location" id="edit_location" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Status</label>
+                            <select name="status" id="edit_status" class="form-select" required>
+                                <option value="active">Active</option>
+                                <option value="discontinued">Discontinued</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Part</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deletePartModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the part "<span id="delete_part_name"></span>"?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add Part
+document.getElementById('addPartForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    
+    try {
+        const response = await fetch('{{ BASE_URL }}/transport.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            bootstrap.Modal.getInstance(document.getElementById('addPartModal')).hide();
+            location.reload();
+        } else {
+            alert(result.message || 'Error adding part');
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+});
+
+// Edit Part
+async function editPart(id) {
+    try {
+        const response = await fetch(`{{ BASE_URL }}/transport.php?id=${id}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            const part = result.data;
+            document.getElementById('edit_part_id').value = part.part_id;
+            document.getElementById('edit_part_name').value = part.part_name;
+            document.getElementById('edit_part_number').value = part.part_number;
+            document.getElementById('edit_description').value = part.description || '';
+            document.getElementById('edit_quantity').value = part.quantity_on_hand;
+            document.getElementById('edit_min_stock_level').value = part.min_stock_level;
+            document.getElementById('edit_unit_price').value = part.unit_price;
+            document.getElementById('edit_supplier').value = part.supplier;
+            document.getElementById('edit_location').value = part.location || '';
+            document.getElementById('edit_status').value = part.status || 'active';
+            
+            new bootstrap.Modal(document.getElementById('editPartModal')).show();
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
+// Update Part
+document.getElementById('editPartForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    const id = data.part_id;
+    delete data.part_id;
+    
+    try {
+        const response = await fetch(`{{ BASE_URL }}/transport.php?id=${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            bootstrap.Modal.getInstance(document.getElementById('editPartModal')).hide();
+            location.reload();
+        } else {
+            alert(result.message || 'Error updating part');
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+});
+
+// Delete Part
+function deletePart(id, name) {
+    document.getElementById('delete_part_name').textContent = name;
+    document.getElementById('confirmDeleteBtn').onclick = async () => {
+        try {
+            const response = await fetch(`{{ BASE_URL }}/transport.php?id=${id}`, {
+                method: 'DELETE'
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                bootstrap.Modal.getInstance(document.getElementById('deletePartModal')).hide();
+                location.reload();
+            } else {
+                alert(result.message || 'Error deleting part');
+            }
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    };
+    
+    new bootstrap.Modal(document.getElementById('deletePartModal')).show();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Seat Allotments{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="text-white"><i class="fas fa-chair me-2"></i>Seat Allotments</h2>
+            <a href="?page=employee_seat_allotment&action=create" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> Assign Seat
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card bg-dark text-white border-0 shadow-sm">
+    <div class="card-header bg-dark border-secondary">
+        <h5 class="mb-0 text-primary">Allotment List</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Vehicle</th>
+                        <th>Route</th>
+                        <th>Seat</th>
+                        <th>Valid From</th>
+                        <th>Valid To</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for allotment in allotments %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold">{{ allotment.first_name }} {{ allotment.last_name }}</div>
+                            <small class="text-muted">{{ allotment.employee_code }}</small>
+                        </td>
+                        <td>
+                            <div>{{ allotment.vehicle_number }}</div>
+                            <small class="text-muted">{{ allotment.registration_number }}</small>
+                        </td>
+                        <td>
+                            <div>{{ allotment.route_name }}</div>
+                            <small class="text-muted">{{ allotment.start_location }} &rarr; {{ allotment.end_location }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ allotment.seat_number }}</span>
+                        </td>
+                        <td>{{ allotment.valid_from }}</td>
+                        <td>{{ allotment.valid_to ?: 'Permanent' }}</td>
+                        <td>
+                            {% if allotment.status == 'active' %}
+                                <span class="badge bg-success rounded-pill"><i class="fas fa-check-circle me-1"></i>Active</span>
+                            {% else %}
+                                <span class="badge bg-danger rounded-pill"><i class="fas fa-times-circle me-1"></i>{{ allotment.status|title }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                             <form action="?page=employee_seat_allotment&action=delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this allotment?');">
+    {{ csrf_field() | raw }}
+                                <input type="hidden" name="id" value="{{ allotment.allotment_id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">No seat allotments found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

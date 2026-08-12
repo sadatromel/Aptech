@@ -1,0 +1,336 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Wash Batch Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Page Header -->
+    <div class="col-12 mb-4">
+        <div class="page-header d-flex justify-content-between align-items-center p-4 bg-white rounded shadow-sm">
+            <div class="page-title">
+                <h1 class="h3 text-primary fw-bold mb-1">Wash Batch Management</h1>
+                <p class="text-muted mb-0">Manage washing batches and chemical usage</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBatchModal">
+                    <i class="fas fa-plus me-2"></i>New Wash Batch
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="col-12 mb-4">
+        <div class="stats-grid">
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.total_batches }}</h3>
+                <p class="text-muted mb-0">Total Batches</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.active_batches }}</h3>
+                <p class="text-muted mb-0">Active Batches</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.completed_batches }}</h3>
+                <p class="text-muted mb-0">Completed Batches</p>
+            </div>
+            <div class="stat-card bg-white p-4 rounded shadow-sm text-center">
+                <h3 class="fw-bold text-primary mb-0">{{ stats.total_washed|number_format }}</h3>
+                <p class="text-muted mb-0">Total Washed</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Batches Table -->
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white p-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fas fa-tint me-2"></i>Wash Batches</span>
+                <input type="text" class="form-control form-control-sm w-auto" id="searchInput" placeholder="Search batches...">
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="batchesTable">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="p-3 border-0">Batch Number</th>
+                                <th class="p-3 border-0">Order/Style</th>
+                                <th class="p-3 border-0">Wash Type</th>
+                                <th class="p-3 border-0">Quantity</th>
+                                <th class="p-3 border-0">Progress</th>
+                                <th class="p-3 border-0">Wash Date</th>
+                                <th class="p-3 border-0">Chemicals</th>
+                                <th class="p-3 border-0">Status</th>
+                                <th class="p-3 border-0">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for batch in batches %}
+                            {% set progress = batch.completion_rate %}
+                            {% set progress_class = progress >= 95 ? 'bg-success' : (progress >= 75 ? 'bg-warning' : 'bg-danger') %}
+                            <tr>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ batch.batch_number }}</div>
+                                    <div class="small text-muted">{{ batch.washing_line }} Line</div>
+                                </td>
+                                <td class="p-3">
+                                    <div class="fw-bold">{{ batch.order_number }}</div>
+                                    <div class="small text-muted">{{ batch.style_code }} - {{ batch.style_name }}</div>
+                                </td>
+                                <td class="p-3">
+                                    <span class="badge rounded-pill bg-light text-dark border">{{ batch.wash_type }}</span>
+                                </td>
+                                <td class="p-3">
+                                    {{ batch.completed_quantity|number_format }} / {{ batch.total_quantity|number_format }}
+                                    <div class="progress mt-1" style="height: 6px;">
+                                        <div class="progress-bar {{ progress_class }}" role="progressbar" style="width: {{ progress }}%"></div>
+                                    </div>
+                                </td>
+                                <td class="p-3">{{ progress|number_format(1) }}%</td>
+                                <td class="p-3">{{ batch.wash_date|date('M j, Y') }}</td>
+                                <td class="p-3">
+                                    {{ batch.chemical_count }} chemicals
+                                    <div class="small text-muted">{{ batch.supervisor_name }}</div>
+                                </td>
+                                <td class="p-3">
+                                    <span class="badge rounded-pill bg-{{ batch.status == 'completed' ? 'success' : (batch.status == 'in_progress' ? 'info' : (batch.status == 'cancelled' ? 'danger' : 'warning')) }}">
+                                        {{ batch.status|replace({'_': ' '})|title }}
+                                    </span>
+                                </td>
+                                <td class="p-3">
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-outline-info" onclick="viewBatch({{ batch.batch_id }})">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="updateBatchStatus({{ batch.batch_id }})">
+                                            <i class="fas fa-tasks"></i>
+                                        </button>
+                                        <form action="/washing/batches/{{ batch.batch_id }}/delete" method="POST" onsubmit="return confirm('Delete this batch?')" style="display:inline;">
+    {{ csrf_field() | raw }}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center p-4 text-muted">No wash batches found. Add your first wash batch to get started.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Wash Batch Modal -->
+<div class="modal fade" id="addBatchModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <form action="/washing/batches" method="POST" class="modal-content">
+    {{ csrf_field() | raw }}
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">New Wash Batch</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Batch Number</label>
+                        <input type="text" class="form-control" name="batch_number" value="WB-{{ 'now'|date('Y-m-d') }}-001" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Order *</label>
+                        <select class="form-select" name="order_id" required>
+                            <option value="">Select Order</option>
+                            {% for order in orders %}
+                            <option value="{{ order.order_id }}" data-style="{{ order.style_code }}">{{ order.order_number }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Style</label>
+                        <select class="form-select" name="style_id" required>
+                            <option value="">Select Style</option>
+                            {% for style in styles %}
+                            <option value="{{ style.style_id }}">{{ style.style_code }} - {{ style.style_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Wash Type *</label>
+                        <select class="form-select" name="wash_type" required>
+                            <option value="Normal">Normal</option>
+                            <option value="Stone">Stone</option>
+                            <option value="Enzyme">Enzyme</option>
+                            <option value="Bleach">Bleach</option>
+                            <option value="Acid">Acid</option>
+                            <option value="Garment Dye">Garment Dye</option>
+                            <option value="Tie Dye">Tie Dye</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Total Quantity *</label>
+                        <input type="number" class="form-control" name="total_quantity" min="1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Wash Date *</label>
+                        <input type="date" class="form-control" name="wash_date" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Washing Line</label>
+                        <input type="text" class="form-control" name="washing_line" placeholder="e.g., Line A">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Supervisor</label>
+                        <select class="form-select" name="supervisor_id">
+                            <option value="">Select Supervisor</option>
+                            {% for supervisor in supervisors %}
+                            <option value="{{ supervisor.employee_id }}">{{ supervisor.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                     <h6>Chemicals Used</h6>
+                     <div id="chemicalsContainer">
+                        <div class="row g-2 mb-2 chemical-row">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" name="chemicals[0][chemical_name]" placeholder="Chemical Name" required>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="number" class="form-control" name="chemicals[0][quantity]" placeholder="Qty" step="0.01" required>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" name="chemicals[0][unit]" required>
+                                    <option value="Liters">Liters</option>
+                                    <option value="Kilograms">Kilograms</option>
+                                    <option value="Grams">Grams</option>
+                                    <option value="Milliliters">Milliliters</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.chemical-row').remove()">×</button>
+                            </div>
+                        </div>
+                     </div>
+                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addChemical()">+ Add Chemical</button>
+                </div>
+
+                <div class="mt-3">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-control" name="notes" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Create Batch</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Update Status Modal -->
+<div class="modal fade" id="updateStatusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="" method="POST" class="modal-content" id="updateStatusForm">
+    {{ csrf_field() | raw }}
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Update Batch Status</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" name="action" value="update_status">
+                <div class="mb-3">
+                    <label class="form-label">Status *</label>
+                    <select class="form-select" name="status" id="updateStatusSelect" required>
+                        <option value="pending">Pending</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Completed Quantity</label>
+                    <input type="number" class="form-control" name="completed_quantity" id="updateCompletedQty" min="0">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Rejection Quantity</label>
+                    <input type="number" class="form-control" name="rejection_quantity" id="updateRejectionQty" min="0" value="0">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Completion Date</label>
+                    <input type="date" class="form-control" name="actual_completion_date" id="updateCompletionDate">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let chemicalIndex = 1;
+
+function addChemical() {
+    const html = `
+    <div class="row g-2 mb-2 chemical-row">
+        <div class="col-md-4">
+            <input type="text" class="form-control" name="chemicals[${chemicalIndex}][chemical_name]" placeholder="Chemical Name" required>
+        </div>
+        <div class="col-md-3">
+            <input type="number" class="form-control" name="chemicals[${chemicalIndex}][quantity]" placeholder="Qty" step="0.01" required>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" name="chemicals[${chemicalIndex}][unit]" required>
+                <option value="Liters">Liters</option>
+                <option value="Kilograms">Kilograms</option>
+                <option value="Grams">Grams</option>
+                <option value="Milliliters">Milliliters</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.chemical-row').remove()">×</button>
+        </div>
+    </div>`;
+    document.getElementById('chemicalsContainer').insertAdjacentHTML('beforeend', html);
+    chemicalIndex++;
+}
+
+document.getElementById('searchInput').addEventListener('keyup', function(e) {
+    const term = e.target.value.toLowerCase();
+    document.querySelectorAll('#batchesTable tbody tr').forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+    });
+});
+
+function updateBatchStatus(id) {
+    // Fetch current data to populate modal
+    fetch(`/washing/batches/${id}/data`)
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('updateStatusForm').action = `/washing/batches/${id}/status`;
+            document.getElementById('updateStatusSelect').value = data.status;
+            document.getElementById('updateCompletedQty').value = data.completed_quantity;
+            document.getElementById('updateRejectionQty').value = data.rejection_quantity;
+            document.getElementById('updateCompletionDate').value = data.actual_completion_date;
+            
+            new bootstrap.Modal(document.getElementById('updateStatusModal')).show();
+        });
+}
+
+function viewBatch(id) {
+    // View logic could be a modal or alert or console log for now
+    fetch(`/washing/batches/${id}/data`).then(r => r.json()).then(d => {
+        console.log("Viewing Batch", d);
+        alert(`Batch: ${d.batch_number}\nOrder: ${d.order_number}\nStyle: ${d.style_code}\nQuantity: ${d.total_quantity}`);
+    });
+}
+</script>
+{% endblock %}

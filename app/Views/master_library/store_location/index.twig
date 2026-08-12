@@ -1,0 +1,225 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Store Locations | Master Library{% endblock %}
+
+{% block styles %}
+<style>
+    .hover-translate-y {
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .hover-translate-y:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.08) !important;
+    }
+    .stats-icon-box {
+        width: 52px;
+        height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .table > :not(caption) > * > * {
+        padding: 0.75rem 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Store Locations</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ BASE_URL }}/master_library">Master Library</a></li>
+        <li class="breadcrumb-item active">Store Locations</li>
+    </ol>
+
+    {# Statistics Cards #}
+    {% set total = locations|length %}
+    {% set active = 0 %}
+    {% set inactive = 0 %}
+    {% for loc in locations %}
+        {% if loc.status == 'active' %}
+            {% set active = active + 1 %}
+        {% else %}
+            {% set inactive = inactive + 1 %}
+        {% endif %}
+    {% endfor %}
+
+    <div class="row g-4 mb-4">
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 hover-translate-y">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Total Locations</span>
+                            <h3 class="mb-0 fw-bold text-dark">{{ total }}</h3>
+                        </div>
+                        <div class="flex-shrink-0 ms-3">
+                            <div class="stats-icon-box bg-primary bg-opacity-10 text-primary rounded-3">
+                                <i class="fas fa-boxes fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 hover-translate-y">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Active Locations</span>
+                            <h3 class="mb-0 fw-bold text-dark">{{ active }}</h3>
+                        </div>
+                        <div class="flex-shrink-0 ms-3">
+                            <div class="stats-icon-box bg-success bg-opacity-10 text-success rounded-3">
+                                <i class="fas fa-toggle-on fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 hover-translate-y">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Inactive Locations</span>
+                            <h3 class="mb-0 fw-bold text-dark">{{ inactive }}</h3>
+                        </div>
+                        <div class="flex-shrink-0 ms-3">
+                            <div class="stats-icon-box bg-secondary bg-opacity-10 text-secondary rounded-3">
+                                <i class="fas fa-toggle-off fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Main Card #}
+    <div class="card shadow-sm border-0 rounded-3 mb-4">
+        <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+            <div class="h5 mb-0 text-primary">
+                <i class="fas fa-list me-2"></i>Location List
+            </div>
+            <a href="{{ BASE_URL }}/master_library/store_locations/create" class="btn btn-primary px-4 rounded-pill">
+                <i class="fas fa-plus me-1"></i> Add New Locations
+            </a>
+        </div>
+        <div class="card-body p-4">
+            {# Search Bar #}
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="text" id="searchInput" class="form-control border-start-0 ps-0" placeholder="Search locations...">
+                    </div>
+                </div>
+            </div>
+
+            {# Table #}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="locationsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Factory</th>
+                            <th>Store</th>
+                            <th>Zone / Aisle / Level / Bin</th>
+                            <th>Capacity (Wt/Vol)</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        {% for loc in locations %}
+                        <tr>
+                            <td class="fw-semibold text-dark">{{ loc.rack_code }}</td>
+                            <td>{{ loc.rack_name }}</td>
+                            <td>{{ loc.factory_name|default('—') }}</td>
+                            <td>{{ loc.store_name|default('—') }}</td>
+                            <td>
+                                {% set coords = [] %}
+                                {% if loc.zone %}{% set coords = coords|merge(['Zone: ' ~ loc.zone]) %}{% endif %}
+                                {% if loc.aisle %}{% set coords = coords|merge(['Aisle: ' ~ loc.aisle]) %}{% endif %}
+                                {% if loc.level %}{% set coords = coords|merge(['Lvl: ' ~ loc.level]) %}{% endif %}
+                                {% if loc.bin %}{% set coords = coords|merge(['Bin: ' ~ loc.bin]) %}{% endif %}
+                                {{ coords|join(' | ')|default('—') }}
+                            </td>
+                            <td>
+                                {% if loc.capacity_weight or loc.capacity_volume %}
+                                    {{ loc.capacity_weight|default('0.00') }} kg / {{ loc.capacity_volume|default('0.00') }} m³
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge rounded-pill bg-{{ loc.status == 'active' ? 'success' : (loc.status == 'maintenance' ? 'warning' : 'secondary') }} bg-opacity-10 text-{{ loc.status == 'active' ? 'success' : (loc.status == 'maintenance' ? 'warning' : 'secondary') }}">
+                                    {{ loc.status|capitalize }}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ BASE_URL }}/master_library/store_locations/edit/{{ loc.rack_id }}"
+                                       class="btn btn-light rounded-circle me-1" title="Edit">
+                                        <i class="fas fa-edit text-warning"></i>
+                                    </a>
+                                    <form action="{{ BASE_URL }}/master_library/store_locations/delete"
+                                          method="POST" class="d-inline"
+                                          onsubmit="return confirm('Are you sure you want to delete location \'{{ loc.rack_name }}\'? This cannot be undone.');">
+                                        {{ csrf_field() | raw }}
+                                        <input type="hidden" name="id" value="{{ loc.rack_id }}">
+                                        <button type="submit" class="btn btn-light rounded-circle" title="Delete">
+                                            <i class="fas fa-trash text-danger"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                <i class="fas fa-folder-open fa-2x d-block mb-2"></i>
+                                No store locations found.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function () {
+            const query = this.value.toLowerCase().trim();
+            const rows  = document.querySelectorAll('#tableBody tr');
+            rows.forEach(row => {
+                if (row.cells.length === 1 && row.cells[0].colSpan === 8) return;
+                const code = row.cells[0].textContent.toLowerCase();
+                const name = row.cells[1].textContent.toLowerCase();
+                const factory = row.cells[2].textContent.toLowerCase();
+                const store = row.cells[3].textContent.toLowerCase();
+                if (code.includes(query) || name.includes(query) || factory.includes(query) || store.includes(query)) {
+                    row.style.setProperty('display', '', 'important');
+                } else {
+                    row.style.setProperty('display', 'none', 'important');
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

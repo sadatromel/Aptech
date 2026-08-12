@@ -1,0 +1,225 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}Payroll Management | HR Module{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4 p-4 rounded-3 text-white shadow-sm" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);">
+        <div>
+            <span class="badge bg-white text-indigo mb-2 font-monospace" style="color: #4f46e5;"><i class="fas fa-money-check-dollar me-1"></i> PAYROLL & PAYSLIPS</span>
+            <h2 class="mb-1 font-weight-bold">Monthly Payroll Management</h2>
+            <p class="mb-0 opacity-75">Calculate basic salaries, overtime, attendance allowances, and generate bank disbursement slips.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-light rounded-pill px-4 font-weight-bold text-indigo shadow-sm" style="color: #4f46e5;" data-bs-toggle="modal" data-bs-target="#generatePayrollModal"><i class="fas fa-calculator me-1"></i> Generate Monthly Payroll</button>
+        </div>
+    </div>
+
+    <!-- Top KPI Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-4 border-indigo" style="border-color: #4f46e5 !important;">
+                <div class="small text-muted font-weight-bold text-uppercase">Monthly Payroll Budget</div>
+                <div class="h3 font-weight-bold text-indigo my-1" style="color: #4f46e5;">৳ 4,230,000</div>
+                <div class="small text-muted"><i class="fas fa-money-bill-wave me-1"></i> Total Gross Overhead</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-4 border-success">
+                <div class="small text-muted font-weight-bold text-uppercase">Net Disbursed</div>
+                <div class="h3 font-weight-bold text-success my-1">৳ 3,850,000</div>
+                <div class="small text-success"><i class="fas fa-check-circle me-1"></i> Bank Accounts Transferred</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-4 border-info">
+                <div class="small text-muted font-weight-bold text-uppercase">Beneficiaries</div>
+                <div class="h3 font-weight-bold text-info my-1">{{ payroll|length }} Staff</div>
+                <div class="small text-muted"><i class="fas fa-users me-1"></i> Processed Payslips</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white border-start border-4 border-warning">
+                <div class="small text-muted font-weight-bold text-uppercase">Tax & PF Withheld</div>
+                <div class="h3 font-weight-bold text-warning my-1">৳ 380,000</div>
+                <div class="small text-muted"><i class="fas fa-piggy-bank me-1"></i> Statutory Deductions</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold" style="color: #4f46e5;"><i class="fas fa-file-invoice-dollar me-2"></i>Payroll Register & Slips</h5>
+            <form class="d-flex gap-2" method="GET">
+                <input type="hidden" name="page" value="payroll">
+                <input type="month" name="month" class="form-control form-control-sm rounded-pill px-3" value="{{ selectedMonth }}">
+                <select name="department" class="form-select form-select-sm rounded-pill" onchange="this.form.submit()">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept.department_id }}" {{ selectedDepartment == dept.department_id ? 'selected' : '' }}>
+                            {{ dept.department_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-sm text-white rounded-pill px-3" style="background-color: #4f46e5;"><i class="fas fa-filter me-1"></i> Filter</button>
+            </form>
+        </div>
+        <div class="card-body p-0">
+            {% if request.success %}
+                <div class="alert alert-success alert-dismissible fade show m-3">
+                    {{ request.success }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endif %}
+            
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Period</th>
+                            <th>Employee</th>
+                            <th>Department</th>
+                            <th>Net Payable Salary</th>
+                            <th>Disbursement Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in payroll %}
+                        <tr>
+                            <td><span class="badge bg-light text-dark border font-monospace">{{ record.payroll_period }}</span></td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ record.first_name }} {{ record.last_name }}</div>
+                                <div class="small text-muted font-monospace">{{ record.employee_code }}</div>
+                            </td>
+                            <td><span class="fw-semibold text-dark">{{ record.department_name }}</span></td>
+                            <td class="fw-bold text-success">৳ {{ record.net_salary|number_format(2) }}</td>
+                            <td><small class="text-muted">{{ record.payment_date|date("M j, Y") }}</small></td>
+                            <td>
+                                {% set statusClass = {
+                                    'Paid': 'bg-success text-white',
+                                    'Approved': 'bg-info text-white',
+                                    'Pending': 'bg-warning text-dark'
+                                } %}
+                                <span class="badge {{ statusClass[record.status] }} rounded-pill px-3">
+                                    {{ record.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ BASE_URL }}/hr/payroll/{{ record.payroll_id }}" class="btn btn-sm btn-outline-primary me-1 rounded-circle" title="View Payslip">
+                                        <i class="fas fa-file-invoice"></i>
+                                    </a>
+                                    {% if record.status == 'Pending' %}
+                                        <button class="btn btn-sm btn-outline-success me-1 rounded-circle approve-btn" data-id="{{ record.payroll_id }}" title="Approve">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    {% endif %}
+                                    {% if record.status == 'Approved' %}
+                                        <button class="btn btn-sm btn-outline-info me-1 rounded-circle pay-btn" data-id="{{ record.payroll_id }}" title="Mark Paid">
+                                            <i class="fas fa-dollar-sign"></i>
+                                        </button>
+                                    {% endif %}
+                                     <button class="btn btn-sm btn-outline-danger rounded-circle delete-btn" data-id="{{ record.payroll_id }}" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="fas fa-file-invoice-dollar fa-2x mb-2 text-indigo opacity-50" style="color: #4f46e5;"></i><br>
+                                No payroll records found for this period.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Generate Modal -->
+<div class="modal fade" id="generatePayrollModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content rounded-3 border-0 shadow-lg">
+            <div class="modal-header text-white" style="background-color: #4f46e5;">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-calculator me-1"></i> Generate Monthly Payroll</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ BASE_URL }}/hr/payroll/generate" method="POST">
+                {{ csrf_field() | raw }}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Payroll Month *</label>
+                        <input type="month" name="payroll_period" class="form-control form-control-lg border-indigo fw-bold" value="{{ selectedMonth }}" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Attendance Start Date *</label>
+                            <input type="date" name="start_date" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Attendance End Date *</label>
+                            <input type="date" name="end_date" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Disbursement Date *</label>
+                        <input type="date" name="payment_date" class="form-control" required>
+                    </div>
+                    <div class="alert alert-info py-2 small mb-0">
+                        <i class="fas fa-info-circle me-1"></i> Running this calculates basic salaries, attendance bonuses, OT hours, and statutory deductions for all active workers.
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-3">
+                    <button type="button" class="btn btn-light rounded-pill border" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn text-white rounded-pill px-4 fw-bold" style="background-color: #4f46e5;"><i class="fas fa-play me-1"></i> Start Batch Generation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.approve-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if(confirm('Approve this payroll record?')) {
+                apiCall('{{ BASE_URL }}/hr/payroll/' + this.dataset.id + '/approve');
+            }
+        });
+    });
+
+    document.querySelectorAll('.pay-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if(confirm('Mark this record as Paid?')) {
+                apiCall('{{ BASE_URL }}/hr/payroll/' + this.dataset.id + '/pay');
+            }
+        });
+    });
+    
+     document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if(confirm('Delete this payroll record?')) {
+                apiCall('{{ BASE_URL }}/hr/payroll/' + this.dataset.id + '/destroy');
+            }
+        });
+    });
+
+    function apiCall(url) {
+        fetch(url, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) location.reload();
+                else alert(data.message || 'Error');
+            });
+    }
+});
+</script>
+{% endblock %}

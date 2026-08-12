@@ -1,0 +1,490 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Financial Reports, Assets & Budgets{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 bg-transparent px-0">
+                <li class="breadcrumb-item"><a href="{{ BASE_URL }}/finance/dashboard" class="text-decoration-none">Finance</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Financial Reports</li>
+            </ol>
+        </nav>
+        <h4 class="mb-0 font-weight-bold">Financial Reports, Assets & Budgets</h4>
+    </div>
+
+    <!-- Alerts -->
+    {% if session.success_message %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ session.success_message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+    {% if session.error_message %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ session.error_message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs nav-tabs-custom mb-4" id="reportsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="trial-tab" data-bs-toggle="tab" data-bs-target="#trial-pane" type="button" role="tab"><i class="fas fa-balance-scale me-2"></i>Trial Balance</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="pl-tab" data-bs-toggle="tab" data-bs-target="#pl-pane" type="button" role="tab"><i class="fas fa-chart-line me-2"></i>Profit & Loss</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="bs-tab" data-bs-toggle="tab" data-bs-target="#bs-pane" type="button" role="tab"><i class="fas fa-chart-pie me-2"></i>Balance Sheet</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="assets-tab" data-bs-toggle="tab" data-bs-target="#assets-pane" type="button" role="tab"><i class="fas fa-industry me-2"></i>Fixed Assets & Depreciation</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="budget-tab" data-bs-toggle="tab" data-bs-target="#budget-pane" type="button" role="tab"><i class="fas fa-calculator me-2"></i>Department Budgets</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tax-tab" data-bs-toggle="tab" data-bs-target="#tax-pane" type="button" role="tab"><i class="fas fa-landmark me-2"></i>Bangladesh VAT & TDS</button>
+        </li>
+    </ul>
+
+    <!-- Tabs Content -->
+    <div class="tab-content" id="reportsTabsContent">
+        
+        <!-- TRIAL BALANCE -->
+        <div class="tab-pane fade show active" id="trial-pane" role="tabpanel">
+            <!-- Multi-Parameter Search Toolbar -->
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-body bg-light">
+                    <form method="GET" action="{{ BASE_URL }}/finance/reports" class="row g-2 align-items-end">
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold text-primary mb-1">Company</label>
+                            <select name="company" class="form-select form-select-sm">
+                                <option value="Big Boss Corporation" {{ filters.company == 'Big Boss Corporation' ? 'selected' : '' }}>Biq Boss Corporation</option>
+                                <option value="Aptech Garments Ltd" {{ filters.company == 'Aptech Garments Ltd' ? 'selected' : '' }}>Aptech Garments Ltd</option>
+                                <option value="All Companies" {{ filters.company == 'All Companies' ? 'selected' : '' }}>All Companies</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label small fw-bold mb-1">A/C Year</label>
+                            <select name="ac_year" class="form-select form-select-sm">
+                                <option value="2025-2026" {{ filters.ac_year == '2025-2026' ? 'selected' : '' }}>2025-2026</option>
+                                <option value="2026-2027" {{ filters.ac_year == '2026-2027' ? 'selected' : '' }}>2026-2027</option>
+                                <option value="2024-2025" {{ filters.ac_year == '2024-2025' ? 'selected' : '' }}>2024-2025</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold mb-1">Main Group</label>
+                            <select name="main_group" class="form-select form-select-sm">
+                                <option value="">All Main Groups</option>
+                                <option value="Asset" {{ filters.main_group == 'Asset' ? 'selected' : '' }}>Asset</option>
+                                <option value="Liability" {{ filters.main_group == 'Liability' ? 'selected' : '' }}>Liability</option>
+                                <option value="Equity" {{ filters.main_group == 'Equity' ? 'selected' : '' }}>Equity</option>
+                                <option value="Income" {{ filters.main_group == 'Income' ? 'selected' : '' }}>Income</option>
+                                <option value="Expense" {{ filters.main_group == 'Expense' ? 'selected' : '' }}>Expense</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold mb-1">Sub Group</label>
+                            <input type="text" name="sub_group" class="form-control form-control-sm" placeholder="Write/Double Click" value="{{ filters.sub_group }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold mb-1">Sub Sub Group</label>
+                            <input type="text" name="sub_sub_group" class="form-control form-control-sm" placeholder="Write/Double Click" value="{{ filters.sub_sub_group }}">
+                        </div>
+                        <div class="col-md-2">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label small fw-bold mb-0">A/C Code</label>
+                                <label class="small text-muted mb-0"><input type="checkbox" name="with_sub_code" value="1" {{ filters.with_sub_code ? 'checked' : '' }}> With Sub Code</label>
+                            </div>
+                            <input type="text" name="account_code" class="form-control form-control-sm" placeholder="Write/Double Click" value="{{ filters.account_code }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-bold mb-1">Balance Type</label>
+                            <select name="balance_type" class="form-select form-select-sm">
+                                <option value="without_zero" {{ filters.balance_type == 'without_zero' ? 'selected' : '' }}>Without (0) Bal</option>
+                                <option value="with_zero" {{ filters.balance_type == 'with_zero' ? 'selected' : '' }}>With (0) Bal</option>
+                                <option value="debit_only" {{ filters.balance_type == 'debit_only' ? 'selected' : '' }}>Debit Balances Only</option>
+                                <option value="credit_only" {{ filters.balance_type == 'credit_only' ? 'selected' : '' }}>Credit Balances Only</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-primary mb-1">Date Range</label>
+                            <div class="input-group input-group-sm">
+                                <input type="date" name="date_from" class="form-control" value="{{ filters.date_from }}">
+                                <span class="input-group-text bg-white">To</span>
+                                <input type="date" name="date_to" class="form-control" value="{{ filters.date_to }}">
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex">
+                            <button type="submit" class="btn btn-primary btn-sm me-1 flex-grow-1"><i class="fas fa-search me-1"></i> Filter</button>
+                            <a href="{{ BASE_URL }}/finance/reports" class="btn btn-outline-secondary btn-sm me-1" title="Reset"><i class="fas fa-redo"></i></a>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="window.print()" title="Print"><i class="fas fa-print"></i></button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="mb-0 font-weight-bold">Trial Balance Ledger Statement</h5>
+                    <button class="btn btn-outline-primary btn-sm rounded-pill px-3" onclick="window.print()"><i class="fas fa-print me-1"></i>Print Report</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead>
+                            <tr class="table-light text-muted font-size-12 text-uppercase">
+                                <th>Account Code</th>
+                                <th>Account Name</th>
+                                <th>Account Type</th>
+                                <th class="text-end">Opening Balance ($)</th>
+                                <th class="text-end">Debit Balance ($)</th>
+                                <th class="text-end">Credit Balance ($)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tb in trialBalance %}
+                            <tr>
+                                <td class="font-weight-bold text-primary">{{ tb.account_code }}</td>
+                                <td class="font-weight-bold">{{ tb.account_name }}</td>
+                                <td><span class="badge bg-light text-dark">{{ tb.account_type }}</span></td>
+                                <td class="text-end font-weight-bold text-dark">{% if tb.opening_balance != 0 %}${{ tb.opening_balance|number_format(2) }}{% else %}-{% endif %}</td>
+                                <td class="text-end font-weight-bold text-success">{% if tb.total_debit > 0 %}${{ tb.total_debit|number_format(2) }}{% else %}-{% endif %}</td>
+                                <td class="text-end font-weight-bold text-danger">{% if tb.total_credit > 0 %}${{ tb.total_credit|number_format(2) }}{% else %}-{% endif %}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="6" class="text-center py-3 text-muted">No accounts found matching search criteria.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="fw-bold table-active fs-6">
+                                <td colspan="3" class="text-end text-uppercase">Grand Total</td>
+                                <td class="text-end text-dark">${{ totalOpening|number_format(2) }}</td>
+                                <td class="text-end text-success">${{ totalTBDebit|number_format(2) }}</td>
+                                <td class="text-end text-danger">${{ totalTBCredit|number_format(2) }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROFIT & LOSS -->
+        <div class="tab-pane fade" id="pl-pane" role="tabpanel">
+            <div class="card border-0 shadow-sm p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="mb-0 font-weight-bold"><i class="fas fa-file-invoice-dollar text-primary me-2"></i>Profit & Loss Statement (Income Statement)</h5>
+                    <a href="{{ BASE_URL }}/finance/reports/profit-and-loss" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="fas fa-external-link-alt me-1"></i>Full Report Page</a>
+                </div>
+
+                <!-- KPI Summary Pills -->
+                {% set gross_margin_pct = (totalIncome > 0) ? ((totalIncome - totalExpense) / totalIncome * 100) : 0 %}
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded border-start border-4 border-success">
+                            <span class="text-muted small text-uppercase">Total Revenues</span>
+                            <h4 class="mb-0 text-success font-weight-bold mt-1">${{ totalIncome|number_format(2) }}</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded border-start border-4 border-danger">
+                            <span class="text-muted small text-uppercase">Total Expenses</span>
+                            <h4 class="mb-0 text-danger font-weight-bold mt-1">${{ totalExpense|number_format(2) }}</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded border-start border-4 {{ netProfit >= 0 ? 'border-primary' : 'border-danger' }}">
+                            <span class="text-muted small text-uppercase">Net Profit Margin</span>
+                            <h4 class="mb-0 {{ netProfit >= 0 ? 'text-primary' : 'text-danger' }} font-weight-bold mt-1">${{ netProfit|number_format(2) }}</h4>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row g-4">
+                    <!-- Income/Revenue section -->
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold text-success text-uppercase mb-3"><i class="fas fa-plus-circle me-1"></i>1. Operating Revenues</h6>
+                        <ul class="list-group list-group-flush mb-4">
+                            {% for inc in incomeStatement.income %}
+                            <li class="list-group-item bg-transparent d-flex justify-content-between">
+                                <span><strong class="text-primary me-2">{{ inc.account_code }}</strong> {{ inc.account_name }}</span>
+                                <span class="font-weight-bold text-success">${{ inc.balance|abs|number_format(2) }}</span>
+                            </li>
+                            {% else %}
+                            <li class="list-group-item bg-transparent text-muted">No revenue posted yet.</li>
+                            {% endfor %}
+                        </ul>
+                        <div class="d-flex justify-content-between p-3 bg-light rounded fw-bold fs-6 border">
+                            <span>Total Operating Revenue</span>
+                            <span class="text-success">${{ totalIncome|number_format(2) }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Expenses section -->
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold text-danger text-uppercase mb-3"><i class="fas fa-minus-circle me-1"></i>2. Operating Expenses (OPEX & Direct Costs)</h6>
+                        <ul class="list-group list-group-flush mb-4">
+                            {% for exp in incomeStatement.expense %}
+                            <li class="list-group-item bg-transparent d-flex justify-content-between">
+                                <span><strong class="text-primary me-2">{{ exp.account_code }}</strong> {{ exp.account_name }}</span>
+                                <span class="font-weight-bold text-danger">${{ exp.balance|abs|number_format(2) }}</span>
+                            </li>
+                            {% else %}
+                            <li class="list-group-item bg-transparent text-muted">No operating expenses posted yet.</li>
+                            {% endfor %}
+                        </ul>
+                        <div class="d-flex justify-content-between p-3 bg-light rounded fw-bold fs-6 border">
+                            <span>Total Expenses</span>
+                            <span class="text-danger">${{ totalExpense|number_format(2) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 p-3 {{ netProfit >= 0 ? 'bg-success text-white' : 'bg-danger text-white' }} rounded shadow-sm d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 font-weight-bold text-uppercase"><i class="fas fa-chart-line me-2"></i>Net Profit / (Loss) for the Period</h5>
+                    <h4 class="mb-0 font-weight-bold">${{ netProfit|number_format(2) }}</h4>
+                </div>
+            </div>
+        </div>
+
+        <!-- BALANCE SHEET -->
+        <div class="tab-pane fade" id="bs-pane" role="tabpanel">
+            <div class="card border-0 shadow-sm p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="mb-0 font-weight-bold"><i class="fas fa-balance-scale text-primary me-2"></i>Statement of Financial Position (Balance Sheet)</h5>
+                    <a href="{{ BASE_URL }}/finance/reports/balance-sheet" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="fas fa-external-link-alt me-1"></i>Full Report Page</a>
+                </div>
+
+                {% set bs_balanced = (totalAssets - (totalLiabilities + totalEquity))|abs < 0.01 %}
+                <div class="alert {{ bs_balanced ? 'alert-success' : 'alert-danger' }} d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <i class="fas {{ bs_balanced ? 'fa-check-circle' : 'fa-exclamation-triangle' }} me-2 fs-5"></i>
+                        <strong>Balance Sheet Status:</strong> {{ bs_balanced ? 'Assets match Total Liabilities & Equity perfectly.' : 'Imbalance detected between Assets and Liabilities.' }}
+                    </div>
+                    <span class="badge {{ bs_balanced ? 'bg-success' : 'bg-danger' }} fs-6">
+                        {{ bs_balanced ? 'Balanced' : 'Diff: $' ~ (totalAssets - (totalLiabilities + totalEquity))|abs|number_format(2) }}
+                    </span>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Assets -->
+                    <div class="col-md-6 border-end pe-4">
+                        <h6 class="font-weight-bold text-uppercase mb-3 text-success"><i class="fas fa-coins me-1"></i>Assets</h6>
+                        <ul class="list-group list-group-flush mb-3">
+                            {% for asset in balanceSheet.assets %}
+                            <li class="list-group-item bg-transparent d-flex justify-content-between">
+                                <span><strong class="text-primary me-2">{{ asset.code }}</strong> {{ asset.name }}</span>
+                                <span class="font-weight-bold text-success">${{ asset.balance|number_format(2) }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        <div class="d-flex justify-content-between p-3 bg-success text-white rounded fw-bold fs-6">
+                            <span>Total Assets</span>
+                            <span>${{ totalAssets|number_format(2) }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Liabilities & Equity -->
+                    <div class="col-md-6 ps-4">
+                        <h6 class="font-weight-bold text-uppercase mb-3 text-danger"><i class="fas fa-balance-scale me-1"></i>Liabilities & Equity</h6>
+                        
+                        <div class="small fw-bold text-muted text-uppercase mb-2">Liabilities</div>
+                        <ul class="list-group list-group-flush mb-3">
+                            {% for liab in balanceSheet.liabilities %}
+                            <li class="list-group-item bg-transparent d-flex justify-content-between">
+                                <span><strong class="text-primary me-2">{{ liab.code }}</strong> {{ liab.name }}</span>
+                                <span class="font-weight-bold text-danger">${{ liab.balance|abs|number_format(2) }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+
+                        <div class="small fw-bold text-muted text-uppercase mb-2 mt-3">Shareholders' Equity</div>
+                        <ul class="list-group list-group-flush mb-3">
+                            {% for eq in balanceSheet.equity %}
+                            <li class="list-group-item bg-transparent d-flex justify-content-between">
+                                <span><strong class="text-primary me-2">{{ eq.code }}</strong> {{ eq.name }}</span>
+                                <span class="font-weight-bold text-info">${{ eq.balance|abs|number_format(2) }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+
+                        <div class="d-flex justify-content-between p-3 bg-danger text-white rounded fw-bold fs-6">
+                            <span>Total Liabilities & Equity</span>
+                            <span>${{ (totalLiabilities + totalEquity)|number_format(2) }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FIXED ASSETS -->
+        <div class="tab-pane fade" id="assets-pane" role="tabpanel">
+            <div class="row g-4">
+                <!-- Assets list -->
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm p-4">
+                        <h5 class="mb-4 font-weight-bold">Corporate Fixed Assets Register</h5>
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr class="text-muted">
+                                        <th>Asset Code</th>
+                                        <th>Asset Name</th>
+                                        <th>Purchase Cost</th>
+                                        <th>Depr. Rate</th>
+                                        <th>Accumulated Depr.</th>
+                                        <th>Net Book Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for asset in assets %}
+                                    <tr>
+                                        <td class="font-weight-bold text-primary">{{ asset.asset_code }}</td>
+                                        <td>{{ asset.asset_name }}</td>
+                                        <td class="font-weight-bold">${{ asset.purchase_cost|number_format(2) }}</td>
+                                        <td>{{ asset.depr_rate }}</td>
+                                        <td class="text-danger font-weight-bold">${{ asset.accum_depr|number_format(2) }}</td>
+                                        <td class="text-success font-weight-bold">${{ asset.book_value|number_format(2) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Depreciation Posting panel -->
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm p-4">
+                        <h5 class="mb-3 font-weight-bold">Depreciation Posting</h5>
+                        <p class="text-muted font-size-13">Post monthly asset values depreciation against corresponding overhead cost centers.</p>
+                        <form action="{{ BASE_URL }}/finance/reports/depreciation" method="POST">
+                            {{ csrf_field() | raw }}
+                            <div class="mb-3">
+                                <label class="form-label font-weight-bold">Depreciation Month</label>
+                                <input type="month" class="form-control" required value="{{ 'now'|date('Y-m') }}">
+                            </div>
+                            <button type="submit" class="btn btn-warning w-100 rounded-pill"><i class="fas fa-calculator me-1"></i>Post Depreciation</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DEPARTMENT BUDGETS -->
+        <div class="tab-pane fade" id="budget-pane" role="tabpanel">
+            <div class="row g-4">
+                <!-- Budgets list -->
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm p-4">
+                        <h5 class="mb-4 font-weight-bold">Annual Departmental Budgets</h5>
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr class="text-muted">
+                                        <th>Department / Unit</th>
+                                        <th>Fiscal Period</th>
+                                        <th>Annual Allocation</th>
+                                        <th>Actual Spent</th>
+                                        <th>Remaining Variance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for b in budgets %}
+                                    <tr>
+                                        <td class="font-weight-bold">{{ b.department }}</td>
+                                        <td>{{ b.fiscal_year }}</td>
+                                        <td class="font-weight-bold">${{ b.budget_amount|number_format(2) }}</td>
+                                        <td class="text-danger font-weight-bold">${{ b.actual_spent|number_format(2) }}</td>
+                                        <td class="text-success font-weight-bold">${{ b.variance|number_format(2) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Budget allocations panel -->
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm p-4">
+                        <h5 class="mb-3 font-weight-bold">Set Department Budget</h5>
+                        <p class="text-muted font-size-13">Allocate department operational limits for current fiscal year.</p>
+                        <form action="{{ BASE_URL }}/finance/reports/budget" method="POST">
+                            {{ csrf_field() | raw }}
+                            <div class="mb-3">
+                                <label class="form-label font-weight-bold">Department</label>
+                                <input type="text" class="form-control" name="department" placeholder="e.g. Production (Sewing)" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label font-weight-bold">Amount Allocation ($)</label>
+                                <input type="number" step="0.01" class="form-control" name="amount" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 rounded-pill"><i class="fas fa-save me-1"></i>Save Budget Limit</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAX/VAT PANELS -->
+        <div class="tab-pane fade" id="tax-pane" role="tabpanel">
+            <div class="row g-4">
+                <!-- VAT return records -->
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm p-4">
+                        <h5 class="mb-4 font-weight-bold">Bangladesh VAT return submissions (NBR Form 9.1)</h5>
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr class="text-muted">
+                                        <th>Reporting Period</th>
+                                        <th>VAT Input (Credit)</th>
+                                        <th>VAT Output (Liability)</th>
+                                        <th>NBR Payable</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for vat in vatRecords %}
+                                    <tr>
+                                        <td class="font-weight-bold">{{ vat.period }}</td>
+                                        <td class="text-success font-weight-bold">${{ vat.vat_input|number_format(2) }}</td>
+                                        <td class="text-danger font-weight-bold">${{ vat.vat_output|number_format(2) }}</td>
+                                        <td class="font-weight-bold">${{ vat.payable|number_format(2) }}</td>
+                                        <td>
+                                            <span class="badge {% if vat.status == 'Paid' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                                {{ vat.status }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit VAT form panel -->
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm p-4">
+                        <h5 class="mb-3 font-weight-bold">NBR Form 9.1 Submission</h5>
+                        <p class="text-muted font-size-13">Post output tax liability adjustments and submit monthly report details directly to NBR portals.</p>
+                        <form action="{{ BASE_URL }}/finance/reports/vat" method="POST">
+                            {{ csrf_field() | raw }}
+                            <div class="mb-3">
+                                <label class="form-label font-weight-bold">Reporting Period</label>
+                                <input type="month" class="form-control" required value="{{ 'now'|date('Y-m') }}">
+                            </div>
+                            <button type="submit" class="btn btn-success w-100 rounded-pill"><i class="fas fa-file-invoice me-1"></i>Submit to NBR Portal</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

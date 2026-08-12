@@ -1,0 +1,324 @@
+{% extends 'layouts/app.twig' %}
+
+{% block title %}Store & Inventory Dashboard{% endblock %}
+
+{% block styles %}
+<style>
+    .premium-glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05);
+        border-radius: var(--border-radius);
+    }
+    [data-theme="dark"] .premium-glass-card {
+        background: rgba(30, 41, 59, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    
+    .metric-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    }
+    
+    .gradient-purple-blue {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .gradient-green-teal {
+        background: linear-gradient(135deg, #13f1fc 0%, #0470dc 100%);
+        color: white;
+    }
+    .gradient-orange-red {
+        background: linear-gradient(135deg, #ff9966 0%, #ff5e62 100%);
+        color: white;
+    }
+    .gradient-yellow-orange {
+        background: linear-gradient(135deg, #f12711 0%, #f5af19 100%);
+        color: white;
+    }
+    
+    .recent-transaction-row:hover {
+        background-color: var(--primary-light);
+        transition: background-color 0.2s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumbs -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 bg-transparent px-0">
+                <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard" class="text-decoration-none"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Store & Inventory Dashboard</li>
+            </ol>
+        </nav>
+        <h4 class="mb-0 font-weight-bold">Store & Inventory Overview</h4>
+    </div>
+
+    <!-- Alert Panel if any low stock items exist -->
+    {% if stats.lowStockCount > 0 %}
+    <div class="alert alert-warning premium-glass-card d-flex align-items-center mb-4 border-start border-4 border-warning" role="alert">
+        <i class="fas fa-exclamation-triangle fa-2x text-warning me-3"></i>
+        <div>
+            <h5 class="alert-heading mb-1 font-weight-bold">Low Stock Warning!</h5>
+            <p class="mb-0">There are <strong>{{ stats.lowStockCount }} items</strong> at or below their designated safety/minimum stock thresholds. Check the alerts list below for replenishment details.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Metric KPI Grid -->
+    <div class="row g-4 mb-4">
+        <!-- Total Items -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 premium-glass-card metric-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle p-3 gradient-purple-blue me-3">
+                        <i class="fas fa-boxes fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1 text-uppercase font-size-12">Total Active Items</h6>
+                        <h3 class="mb-0 font-weight-bold">{{ stats.totalItems }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Total Stock Value -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 premium-glass-card metric-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle p-3 gradient-green-teal me-3">
+                        <i class="fas fa-dollar-sign fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1 text-uppercase font-size-12">Stock Valuation</h6>
+                        <h3 class="mb-0 font-weight-bold">${{ stats.totalValue|number_format(2) }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Pending Approvals -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 premium-glass-card metric-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle p-3 gradient-orange-red me-3">
+                        <i class="fas fa-hourglass-half fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1 text-uppercase font-size-12">Pending Approvals</h6>
+                        <h3 class="mb-0 font-weight-bold">{{ stats.totalPending }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Today's Transactions -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 premium-glass-card metric-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle p-3 gradient-yellow-orange me-3">
+                        <i class="fas fa-exchange-alt fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1 text-uppercase font-size-12">Today's Transactions</h6>
+                        <h3 class="mb-0 font-weight-bold">{{ stats.todayTransactions }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts and Insights Grid -->
+    <div class="row g-4 mb-4">
+        <!-- Stock Value Top List -->
+        <div class="col-xl-6">
+            <div class="card border-0 premium-glass-card h-100">
+                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-4 px-4">
+                    <h5 class="mb-0 font-weight-bold"><i class="fas fa-chart-pie me-2 text-primary"></i>Top 5 Items by Stock Value</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <canvas id="topStockChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Inventory Value Trend -->
+        <div class="col-xl-6">
+            <div class="card border-0 premium-glass-card h-100">
+                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-4 px-4">
+                    <h5 class="mb-0 font-weight-bold"><i class="fas fa-chart-line me-2 text-success"></i>Monthly Inventory Transaction Volume</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <canvas id="monthlyTrendChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid for Lists -->
+    <div class="row g-4">
+        <!-- Alerts & Low Stock List -->
+        <div class="col-xl-5">
+            <div class="card border-0 premium-glass-card h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h5 class="mb-0 font-weight-bold text-danger"><i class="fas fa-bell me-2"></i>Critical Replenishment Alerts</h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="table-responsive">
+                        <table class="table align-middle table-borderless">
+                            <thead>
+                                <tr class="text-muted font-size-12 text-uppercase">
+                                    <th>Item Code</th>
+                                    <th>Item Name</th>
+                                    <th class="text-end">Current Stock</th>
+                                    <th class="text-end">Min/Safety</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if alertsList is empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">No low stock alerts found. All items are stable!</td>
+                                </tr>
+                                {% else %}
+                                    {% for alert in alertsList %}
+                                    <tr class="recent-transaction-row">
+                                        <td class="font-weight-bold text-primary">{{ alert.item_code }}</td>
+                                        <td>{{ alert.item_name }}</td>
+                                        <td class="text-end text-danger font-weight-bold">{{ alert.current_stock }} <small class="text-muted">{{ alert.unit_of_measure }}</small></td>
+                                        <td class="text-end font-weight-bold">{{ alert.min_stock_level }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Movements -->
+        <div class="col-xl-7">
+            <div class="card border-0 premium-glass-card h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 font-weight-bold"><i class="fas fa-history me-2 text-info"></i>Recent Stock Movements</h5>
+                    <a href="{{ BASE_URL }}/inventory/transactions" class="btn btn-sm btn-outline-primary rounded-pill px-3">View All</a>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="table-responsive">
+                        <table class="table align-middle table-borderless">
+                            <thead>
+                                <tr class="text-muted font-size-12 text-uppercase">
+                                    <th>Date</th>
+                                    <th>Ref No</th>
+                                    <th>Item</th>
+                                    <th>Type</th>
+                                    <th class="text-end">Quantity</th>
+                                    <th class="text-end">Total Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if recentMovements is empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">No recent stock transaction logs found.</td>
+                                </tr>
+                                {% else %}
+                                    {% for move in recentMovements %}
+                                    <tr class="recent-transaction-row">
+                                        <td>{{ move.created_at|date('d-M-Y H:i') }}</td>
+                                        <td class="font-weight-bold text-dark">{{ move.reference_no }}</td>
+                                        <td>
+                                            <div class="font-weight-bold">{{ move.item_code }}</div>
+                                            <small class="text-muted">{{ move.item_name }}</small>
+                                        </td>
+                                        <td>
+                                            {% if move.movement_type == 'in' or move.movement_type == 'transfer_in' %}
+                                                <span class="badge bg-success rounded-pill">Inflow</span>
+                                            {% else %}
+                                                <span class="badge bg-danger rounded-pill">Outflow</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end font-weight-bold">{{ move.quantity }}</td>
+                                        <td class="text-end font-weight-bold text-success">${{ move.total_cost|number_format(2) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // 1. Top Stock Items Chart
+    const ctxTop = document.getElementById('topStockChart').getContext('2d');
+    const topStockData = {
+        labels: [{% for item in topStockItems %}"{{ item.item_name|slice(0, 15) }}...",{% endfor %}],
+        datasets: [{
+            label: 'Stock Value ($)',
+            data: [{% for item in topStockItems %}{{ item.stock_val }},{% endfor %}],
+            backgroundColor: [
+                'rgba(102, 126, 234, 0.85)',
+                'rgba(19, 241, 252, 0.85)',
+                'rgba(255, 153, 102, 0.85)',
+                'rgba(241, 39, 17, 0.85)',
+                'rgba(76, 75, 162, 0.85)'
+            ],
+            borderColor: [
+                '#667eea', '#13f1fc', '#ff9966', '#f12711', '#764ba2'
+            ],
+            borderWidth: 1
+        }]
+    };
+    new Chart(ctxTop, {
+        type: 'doughnut',
+        data: topStockData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    // 2. Monthly Trend Chart
+    const ctxTrend = document.getElementById('monthlyTrendChart').getContext('2d');
+    const trendData = {
+        labels: [{% for trend in monthlyTrends %}"{{ trend.month_label }}",{% endfor %}],
+        datasets: [{
+            label: 'Transaction Value',
+            data: [{% for trend in monthlyTrends %}{{ trend.total_val }},{% endfor %}],
+            borderColor: '#3182ce',
+            backgroundColor: 'rgba(49, 130, 206, 0.15)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4
+        }]
+    };
+    new Chart(ctxTrend, {
+        type: 'line',
+        data: trendData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
