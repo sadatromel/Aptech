@@ -8,7 +8,7 @@ session_start();
 require_once __DIR__ . '/../config/paths.php';
 require_once __DIR__ . '/../core/legacy_helpers.php';
 
-$page_title = 'Your Page Title - Aptech RMG ERP';
+$page_title = 'Your Page Title - RMG PRO ERP';
 require_once __DIR__ . '/../includes/page_header.php';
 ?>
 

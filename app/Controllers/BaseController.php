@@ -53,6 +53,7 @@ abstract class BaseController extends Controller
             }
             $twig->addGlobal('BASE_URL', defined('BASE_URL') ? BASE_URL : '');
             $twig->addGlobal('session', $_SESSION ?? []);
+            $twig->addGlobal('is_super_or_system_admin', $this->auth->isSuperAdminOrSystemAdmin());
 
             // Clear flash messages after passing to Twig
             unset($_SESSION['success_message'], $_SESSION['error_message']);

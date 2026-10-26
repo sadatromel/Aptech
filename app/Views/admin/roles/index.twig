@@ -1,6 +1,6 @@
 {% extends "layouts/app.twig" %}
 
-{% block title %}User Roles Management - RMG ERP{% endblock %}
+{% block title %}User Roles Management - RMG PRO ERP{% endblock %}
 
 {% block styles %}
 <style>
@@ -164,6 +164,7 @@
                 </thead>
                 <tbody>
                     {% for role in roles %}
+                    {% if is_super_or_system_admin or (role.role_name|lower not in ['system administrator', 'supper admin', 'super admin'] and role.role_id not in [1, 2]) %}
                     <tr data-role-name="{{ role.role_name|lower }}" data-description="{{ role.description|lower }}">
                         <td>
                             <span class="role-badge {{ role.role_name|lower }}">{{ role.role_name }}</span>
@@ -189,6 +190,7 @@
                             </button>
                         </td>
                     </tr>
+                    {% endif %}
                     {% endfor %}
                 </tbody>
             </table>

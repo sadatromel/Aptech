@@ -22,18 +22,25 @@ class UserController extends BaseController
         $this->requireAuth();
         $this->requireRole('admin');
 
+        $isSuperOrSystemAdmin = $this->auth->isSuperAdminOrSystemAdmin();
+
         $filters = [
             'search' => $this->request->get('search', ''),
             'role_id' => $this->request->get('role_id', ''),
             'status' => $this->request->get('status', ''),
         ];
 
+        // If not super/system admin and someone filtered by privileged role_id, clear filter
+        if (!$isSuperOrSystemAdmin && !empty($filters['role_id']) && $this->auth->isPrivilegedRole($filters['role_id'])) {
+            $filters['role_id'] = '';
+        }
+
         $this->view('admin/users/index', [
-            'users' => $this->userService->listUsers($filters),
+            'users' => $this->userService->listUsers($filters, $isSuperOrSystemAdmin),
             'access_applications' => $this->userService->getAccessApplications('pending'),
-            'stats' => $this->userService->getStats(),
+            'stats' => $this->userService->getStats($isSuperOrSystemAdmin),
             'filters' => $filters,
-            'roles' => $this->userService->getRoles(),
+            'roles' => $this->userService->getRoles($isSuperOrSystemAdmin),
         ]);
     }
 
@@ -42,8 +49,10 @@ class UserController extends BaseController
         $this->requireAuth();
         $this->requireRole('admin');
 
+        $isSuperOrSystemAdmin = $this->auth->isSuperAdminOrSystemAdmin();
+
         $this->view('admin/users/create', [
-            'roles' => $this->userService->getRoles(),
+            'roles' => $this->userService->getRoles($isSuperOrSystemAdmin),
         ]);
     }
 
@@ -53,6 +62,7 @@ class UserController extends BaseController
         $this->requireAuth();
         $this->requireRole('admin');
 
+        $isSuperOrSystemAdmin = $this->auth->isSuperAdminOrSystemAdmin();
         $data = $this->request->all();
         
         // Basic validation
@@ -64,6 +74,10 @@ class UserController extends BaseController
         if (empty($data['password'])) $errors[] = 'Password is required';
         if (strlen($data['password'] ?? '') < 6) $errors[] = 'Password must be at least 6 characters';
         if (empty($data['role_id'])) $errors[] = 'Role is required';
+
+        if (!$isSuperOrSystemAdmin && !empty($data['role_id']) && $this->auth->isPrivilegedRole($data['role_id'])) {
+            $errors[] = 'You do not have permission to assign this role.';
+        }
 
         if (!empty($errors)) {
             $this->json(['errors' => $errors], 422);
@@ -89,6 +103,12 @@ class UserController extends BaseController
             return;
         }
 
+        $isSuperOrSystemAdmin = $this->auth->isSuperAdminOrSystemAdmin();
+        if (!$isSuperOrSystemAdmin && $this->auth->isPrivilegedRole($user['role_id'] ?? $user['role_name'] ?? '')) {
+            $this->json(['error' => 'User not found'], 404);
+            return;
+        }
+
         $this->json(['data' => $user]);
     }
 
@@ -103,9 +123,15 @@ class UserController extends BaseController
             return;
         }
 
+        $isSuperOrSystemAdmin = $this->auth->isSuperAdminOrSystemAdmin();
+        if (!$isSuperOrSystemAdmin && $this->auth->isPrivilegedRole($user['role_id'] ?? $user['role_name'] ?? '')) {
+            $this->redirect('/admin/users');
+            return;
+        }
+
         $this->view('admin/users/edit', [
             'user' => $user,
-            'roles' => $this->userService->getRoles(),
+            'roles' => $this->userService->getRoles($isSuperOrSystemAdmin),
         ]);
     }
 
@@ -114,6 +140,18 @@ class UserController extends BaseController
         $this->verifyCsrf();
         $this->requireAuth();
         $this->requireRole('admin');
+
+        $user = $this->userService->getUser($id);
+        if (!$user) {
+            $this->json(['success' => false, 'message' => 'User not found.'], 404);
+            return;
+        }
+
+        $isSuperOrSystemAdmin = $this->auth->isSuperAdminOrSystemAdmin();
+        if (!$isSuperOrSystemAdmin && $this->auth->isPrivilegedRole($user['role_id'] ?? $user['role_name'] ?? '')) {
+            $this->json(['success' => false, 'message' => 'Access denied.'], 403);
+            return;
+        }
 
         $data = $this->request->all();
         
@@ -124,6 +162,10 @@ class UserController extends BaseController
         if (empty($data['email'])) $errors[] = 'Email is required';
         if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) $errors[] = 'Invalid email format';
         if (empty($data['role_id'])) $errors[] = 'Role is required';
+
+        if (!$isSuperOrSystemAdmin && !empty($data['role_id']) && $this->auth->isPrivilegedRole($data['role_id'])) {
+            $errors[] = 'You do not have permission to assign this role.';
+        }
 
         if (!empty($errors)) {
             $this->json(['errors' => $errors], 422);
@@ -150,6 +192,18 @@ class UserController extends BaseController
             return;
         }
 
+        $user = $this->userService->getUser($id);
+        if (!$user) {
+            $this->json(['success' => false, 'message' => 'User not found.'], 404);
+            return;
+        }
+
+        $isSuperOrSystemAdmin = $this->auth->isSuperAdminOrSystemAdmin();
+        if (!$isSuperOrSystemAdmin && $this->auth->isPrivilegedRole($user['role_id'] ?? $user['role_name'] ?? '')) {
+            $this->json(['success' => false, 'message' => 'Access denied.'], 403);
+            return;
+        }
+
         if ($this->userService->deleteUser($id)) {
             $this->json(['success' => true, 'message' => 'User deleted successfully.']);
             return;
@@ -162,6 +216,18 @@ class UserController extends BaseController
     {
         $this->requireAuth();
         $this->requireRole('admin');
+
+        $user = $this->userService->getUser($id);
+        if (!$user) {
+            $this->json(['errors' => ['User not found.']], 404);
+            return;
+        }
+
+        $isSuperOrSystemAdmin = $this->auth->isSuperAdminOrSystemAdmin();
+        if (!$isSuperOrSystemAdmin && $this->auth->isPrivilegedRole($user['role_id'] ?? $user['role_name'] ?? '')) {
+            $this->json(['errors' => ['Access denied.']], 403);
+            return;
+        }
 
         $data = $this->request->all();
         
@@ -198,6 +264,12 @@ class UserController extends BaseController
         $user = $this->userService->getUser($id);
         if (!$user) {
             $this->json(['success' => false, 'message' => 'User not found.'], 404);
+            return;
+        }
+
+        $isSuperOrSystemAdmin = $this->auth->isSuperAdminOrSystemAdmin();
+        if (!$isSuperOrSystemAdmin && $this->auth->isPrivilegedRole($user['role_id'] ?? $user['role_name'] ?? '')) {
+            $this->json(['success' => false, 'message' => 'Access denied.'], 403);
             return;
         }
 

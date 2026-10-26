@@ -127,13 +127,70 @@ class Auth
             return false;
         }
         $role = strtolower($_SESSION['user_role']);
-        // Fix #7: Removed 'supper admin' typo — normalize DB roles to 'admin' or 'super_admin
         return in_array($role, [
             'admin',
             'super admin',
+            'supper admin',
             'super_admin',
             'system administrator',
-        ]);
+            'system_administrator',
+        ], true);
+    }
+
+    public function isSuperAdminOrSystemAdmin(): bool
+    {
+        if (!isset($_SESSION['user_role'])) {
+            return false;
+        }
+        $role = strtolower(trim($_SESSION['user_role']));
+        return in_array($role, [
+            'super admin',
+            'supper admin',
+            'super_admin',
+            'system administrator',
+            'system_administrator',
+        ], true);
+    }
+
+    public function isPrivilegedRole(mixed $roleOrId): bool
+    {
+        if (empty($roleOrId)) {
+            return false;
+        }
+
+        if (is_numeric($roleOrId)) {
+            $roleId = (int) $roleOrId;
+            if (in_array($roleId, [1, 2], true)) {
+                return true;
+            }
+
+            try {
+                $stmt = $this->db->prepare('SELECT role_name FROM roles WHERE role_id = ? LIMIT 1');
+                $stmt->execute([$roleId]);
+                $role = $stmt->fetchColumn();
+                if ($role) {
+                    return in_array(strtolower(trim((string) $role)), [
+                        'super admin',
+                        'supper admin',
+                        'super_admin',
+                        'system administrator',
+                        'system_administrator',
+                    ], true);
+                }
+            } catch (\Throwable $e) {
+                // Ignore DB error
+            }
+
+            return false;
+        }
+
+        return in_array(strtolower(trim((string) $roleOrId)), [
+            'super admin',
+            'supper admin',
+            'super_admin',
+            'system administrator',
+            'system_administrator',
+        ], true);
     }
 
     public function can(string $permissionName): bool

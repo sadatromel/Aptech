@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Aptech ERP System</title>
+    <title>ERP System</title>
+    <!-- Open Graph Meta Tags for Link Previews (WhatsApp, Facebook, etc.) -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="ERP System">
+    <meta property="og:site_name" content="ERP System">
+    <meta property="og:description" content="Enterprise Resource Planning System">
+    <meta name="description" content="ERP System">
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Icons -->

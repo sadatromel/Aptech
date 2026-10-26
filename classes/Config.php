@@ -31,7 +31,7 @@ class Config {
         // Default configuration
         self::$config = [
             'app' => [
-                'name' => 'Aptech ERP System',
+                'name' => 'RMG PRO ERP',
                 'version' => '2.0',
                 'timezone' => 'Asia/Dhaka',
                 'debug' => false,

@@ -37,21 +37,13 @@ if (!defined('VEHICLE_MANAGEMENT_PATH')) define('VEHICLE_MANAGEMENT_PATH', BASEP
 if (!defined('WASHING_PATH')) define('WASHING_PATH', BASEPATH . '/washing');
 
 // URL paths (for web access)
-// Detect if we're running from public directory or root
-    // For Aptech project, BASE_URL should consistently be /Aptech
-    // and correctly handle if we are running from /public
-    $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
-    $publicPos = strpos($scriptName, '/public');
-    
-    if ($publicPos !== false) {
-        define('BASE_URL', '/Aptech');
-    } else {
-        define('BASE_URL', '/Aptech');
-    }
+$isSubdomain = (isset($_SERVER['HTTP_HOST']) && stripos($_SERVER['HTTP_HOST'], 'erp.') !== false);
+$baseUrl = $isSubdomain ? '' : '/Aptech';
 
+if (!defined('BASE_URL')) define('BASE_URL', $baseUrl);
 if (!defined('CORE_URL')) define('CORE_URL', BASE_URL . '/core');
-if (!defined('ASSETS_URL')) define('ASSETS_URL', '/Aptech/assets'); // Assets are in root, not public
-if (!defined('UPLOADS_URL')) define('UPLOADS_URL', '/Aptech/uploads'); // Uploads are in root, not public
+if (!defined('ASSETS_URL')) define('ASSETS_URL', $isSubdomain ? '/assets' : '/Aptech/assets');
+if (!defined('UPLOADS_URL')) define('UPLOADS_URL', $isSubdomain ? '/uploads' : '/Aptech/uploads');
 
 // Ensure include path is set
 set_include_path(get_include_path() . PATH_SEPARATOR . CORE_PATH . PATH_SEPARATOR . CONFIG_PATH);

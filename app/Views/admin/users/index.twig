@@ -1,6 +1,6 @@
 {% extends "layouts/app.twig" %}
 
-{% block title %}User Management - RMG ERP{% endblock %}
+{% block title %}User Management - RMG PRO ERP{% endblock %}
 
 {% block styles %}
 <style>
@@ -231,9 +231,11 @@
                 <select class="form-select" id="roleFilter">
                     <option value="">All Roles</option>
                     {% for role in roles %}
+                        {% if is_super_or_system_admin or role.role_name|lower not in ['system administrator', 'supper admin', 'super admin'] %}
                         <option value="{{ role.role_id }}" {% if filters.role_id == role.role_id %}selected{% endif %}>
                             {{ role.role_name }}
                         </option>
+                        {% endif %}
                     {% endfor %}
                 </select>
             </div>
@@ -294,6 +296,7 @@
                         </thead>
                         <tbody>
                             {% for user in users %}
+                            {% if is_super_or_system_admin or (user.role_name|lower not in ['system administrator', 'supper admin', 'super admin'] and user.role_id not in [1, 2]) %}
                             <tr data-name="{{ (user.first_name ~ ' ' ~ user.last_name)|lower }}" data-email="{{ user.email|lower }}" data-role="{{ user.role_name|lower }}">
                                 <td>
                                     <div class="d-flex align-items-center">
@@ -352,6 +355,7 @@
                                     {% endif %}
                                 </td>
                             </tr>
+                            {% endif %}
                             {% endfor %}
                         </tbody>
                     </table>
@@ -508,7 +512,9 @@
                         <label class="form-label">Role *</label>
                         <select class="form-select" id="editRole" name="role_id" required>
                             {% for role in roles %}
+                                {% if is_super_or_system_admin or role.role_name|lower not in ['system administrator', 'supper admin', 'super admin'] %}
                                 <option value="{{ role.role_id }}">{{ role.role_name }}</option>
+                                {% endif %}
                             {% endfor %}
                         </select>
                     </div>
@@ -637,7 +643,9 @@
                                     <select class="form-select" name="role_id" required>
                                         <option value="">Select role...</option>
                                         {% for role in roles %}
+                                            {% if is_super_or_system_admin or role.role_name|lower not in ['system administrator', 'supper admin', 'super admin'] %}
                                             <option value="{{ role.role_id }}">{{ role.role_name }}</option>
+                                            {% endif %}
                                         {% endfor %}
                                     </select>
                                 </div>

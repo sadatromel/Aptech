@@ -95,7 +95,56 @@ class Auth {
      * Check if user is admin
      */
     public function isAdmin() {
-        return in_array($this->getRole(), ['Super Admin', 'Admin', 'System Administrator']);
+        return in_array($this->getRole(), ['Super Admin', 'Supper Admin', 'Admin', 'System Administrator']);
+    }
+
+    public function isSuperAdminOrSystemAdmin(): bool {
+        $role = strtolower(trim($this->getRole() ?? ''));
+        return in_array($role, [
+            'super admin',
+            'supper admin',
+            'super_admin',
+            'system administrator',
+            'system_administrator',
+        ], true);
+    }
+
+    public function isPrivilegedRole($roleOrId): bool {
+        if (empty($roleOrId)) {
+            return false;
+        }
+
+        if (is_numeric($roleOrId)) {
+            $roleId = (int) $roleOrId;
+            if (in_array($roleId, [1, 2], true)) {
+                return true;
+            }
+
+            try {
+                $role = $this->db->fetch("SELECT role_name FROM roles WHERE role_id = ?", [$roleId]);
+                if (!empty($role['role_name'])) {
+                    return in_array(strtolower(trim($role['role_name'])), [
+                        'super admin',
+                        'supper admin',
+                        'super_admin',
+                        'system administrator',
+                        'system_administrator',
+                    ], true);
+                }
+            } catch (\Throwable $e) {
+                // Ignore DB error
+            }
+
+            return false;
+        }
+
+        return in_array(strtolower(trim((string)$roleOrId)), [
+            'super admin',
+            'supper admin',
+            'super_admin',
+            'system administrator',
+            'system_administrator',
+        ], true);
     }
     
     /**

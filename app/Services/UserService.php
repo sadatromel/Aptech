@@ -12,8 +12,30 @@ class UserService
     {
     }
 
-    public function getStats(): array
+    public function getStats(bool $includeSystemAdmin = true): array
     {
+        if (!$includeSystemAdmin) {
+            $total = (int) ($this->db->count('users', [
+                'role_id[!]' => [1, 2]
+            ]) ?? 0);
+            $active = (int) ($this->db->count('users', [
+                'status' => 'active',
+                'role_id[!]' => [1, 2]
+            ]) ?? 0);
+            $inactive = (int) ($this->db->count('users', [
+                'status' => 'inactive',
+                'role_id[!]' => [1, 2]
+            ]) ?? 0);
+            $admin = 0;
+
+            return [
+                'total' => $total,
+                'active' => $active,
+                'inactive' => $inactive,
+                'admin' => $admin,
+            ];
+        }
+
         // Get stats
         $total = (int) ($this->db->count('users') ?? 0);
         $active = (int) ($this->db->count('users', ['status' => 'active']) ?? 0);
@@ -30,7 +52,7 @@ class UserService
         ];
     }
 
-    public function listUsers(array $filters = []): array
+    public function listUsers(array $filters = [], bool $includeSystemAdmin = true): array
     {
         $selectColumns = [
             'users.user_id',
@@ -45,6 +67,11 @@ class UserService
         ];
         
         $where = ['ORDER' => ['users.created_at' => 'DESC']];
+
+        if (!$includeSystemAdmin) {
+            $where['AND']['users.role_id[!]'] = [1, 2];
+            $where['AND']['roles.role_name[!]'] = ['System Administrator', 'Supper Admin', 'Super Admin'];
+        }
         
         if (!empty($filters['search'])) {
             $term = '%' . $filters['search'] . '%';
@@ -110,14 +137,20 @@ class UserService
         ];
     }
 
-    public function getRoles(): array
+    public function getRoles(bool $includePrivileged = true): array
     {
+        $where = ['ORDER' => ['role_name' => 'ASC']];
+        if (!$includePrivileged) {
+            $where['AND'] = [
+                'role_id[!]' => [1, 2],
+                'role_name[!]' => ['System Administrator', 'Supper Admin', 'Super Admin'],
+            ];
+        }
+
         return $this->db->select('roles', [
             'role_id',
             'role_name',
-        ], [
-            'ORDER' => ['role_name' => 'ASC'],
-        ]) ?? [];
+        ], $where) ?? [];
     }
 
     public function createUser(array $data, int $createdBy): int

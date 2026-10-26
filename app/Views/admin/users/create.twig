@@ -1,6 +1,6 @@
 {% extends "layouts/app.twig" %}
 
-{% block title %}Register New User | RMG ERP{% endblock %}
+{% block title %}Register New User | RMG PRO ERP{% endblock %}
 
 {% block styles %}
 <style>
@@ -221,7 +221,9 @@
                                     <select class="form-select" name="role_id" required>
                                         <option value="" selected disabled>Select Role...</option>
                                         {% for role in roles %}
+                                            {% if is_super_or_system_admin or role.role_name|lower not in ['system administrator', 'supper admin', 'super admin'] %}
                                             <option value="{{ role.role_id }}">{{ role.role_name }}</option>
+                                            {% endif %}
                                         {% endfor %}
                                     </select>
                                 </div>

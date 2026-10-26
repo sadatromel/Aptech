@@ -43,6 +43,12 @@ class AccessApplicationController extends BaseController
             return;
         }
 
+        $isSuperOrSystemAdmin = $this->auth->isSuperAdminOrSystemAdmin();
+        if (!$isSuperOrSystemAdmin && !empty($data['role_id']) && $this->auth->isPrivilegedRole($data['role_id'])) {
+            $this->json(['success' => false, 'message' => 'You do not have permission to assign this role.'], 403);
+            return;
+        }
+
         try {
             // Create user
             $names = explode(' ', $app['full_name'], 2);

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Aptech RMG ERP system includes a comprehensive navigation bar and dark/light theme switching system that works consistently across all pages. This guide explains how to properly integrate these features into your pages.
+The RMG PRO ERP system includes a comprehensive navigation bar and dark/light theme switching system that works consistently across all pages. This guide explains how to properly integrate these features into your pages.
 
 ## Quick Start
 
@@ -17,7 +17,7 @@ require_once __DIR__ . '/../config/paths.php';
 require_once __DIR__ . '/../core/legacy_helpers.php';
 
 // Set page title
-$page_title = 'Your Page Title - Aptech RMG ERP';
+$page_title = 'Your Page Title - RMG PRO ERP';
 
 // Include page header (HTML head with theme initialization)
 require_once __DIR__ . '/../includes/page_header.php';

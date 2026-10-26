@@ -13,19 +13,35 @@ class RoleController extends BaseController
         $this->requireAuth();
         $this->requireRole('admin');
 
-        // Get roles with user counts
-        $sql = "
-            SELECT r.*, COUNT(u.user_id) as user_count
-            FROM roles r
-            LEFT JOIN users u ON r.role_id = u.role_id
-            GROUP BY r.role_id
-            ORDER BY r.role_name ASC
-        ";
-        $roles = $this->db->query($sql)->fetchAll(\PDO::FETCH_ASSOC);
+        $isSuperOrSystemAdmin = $this->auth->isSuperAdminOrSystemAdmin();
 
-        // Get stats
-        $totalUsers = $this->db->count('users');
-        $activeRoles = $this->db->count('roles'); // Assuming all roles are active as there is no status column in roles table usually, or check schema. View shows "Active" for all.
+        if ($isSuperOrSystemAdmin) {
+            // Get all roles with user counts
+            $sql = "
+                SELECT r.*, COUNT(u.user_id) as user_count
+                FROM roles r
+                LEFT JOIN users u ON r.role_id = u.role_id
+                GROUP BY r.role_id
+                ORDER BY r.role_name ASC
+            ";
+            $roles = $this->db->query($sql)->fetchAll(\PDO::FETCH_ASSOC);
+            $totalUsers = $this->db->count('users');
+            $activeRoles = count($roles);
+        } else {
+            // Exclude Super Admin and System Administrator roles and info
+            $sql = "
+                SELECT r.*, COUNT(u.user_id) as user_count
+                FROM roles r
+                LEFT JOIN users u ON r.role_id = u.role_id AND u.role_id NOT IN (1, 2)
+                WHERE r.role_id NOT IN (1, 2)
+                  AND LOWER(r.role_name) NOT IN ('system administrator', 'supper admin', 'super admin', 'super_admin', 'system_administrator')
+                GROUP BY r.role_id
+                ORDER BY r.role_name ASC
+            ";
+            $roles = $this->db->query($sql)->fetchAll(\PDO::FETCH_ASSOC);
+            $totalUsers = (int) ($this->db->count('users', ['role_id[!]' => [1, 2]]) ?? 0);
+            $activeRoles = count($roles);
+        }
 
         $this->view('admin/roles/index', [
             'roles' => $roles,
@@ -106,6 +122,12 @@ class RoleController extends BaseController
         $this->requireAuth();
         $this->requireRole('admin');
 
+        $isSuperOrSystemAdmin = $this->auth->isSuperAdminOrSystemAdmin();
+        if (!$isSuperOrSystemAdmin && $this->auth->isPrivilegedRole($id)) {
+            $this->redirect('/admin/roles');
+            return;
+        }
+
         $role = $this->db->get('roles', '*', ['role_id' => $id]);
         if (!$role) {
             $this->redirect('/admin/roles');
@@ -123,6 +145,12 @@ class RoleController extends BaseController
         $this->requireAuth();
         $this->requireRole('admin');
 
+        $isSuperOrSystemAdmin = $this->auth->isSuperAdminOrSystemAdmin();
+        if (!$isSuperOrSystemAdmin && $this->auth->isPrivilegedRole($id)) {
+            $this->json(['success' => false, 'message' => 'Access denied.'], 403);
+            return;
+        }
+
         $data = $this->request->all();
         
         $rules = [
@@ -131,6 +159,10 @@ class RoleController extends BaseController
         ];
 
         $errors = $this->validate($rules, $data);
+
+        if (!$isSuperOrSystemAdmin && !empty($data['name']) && $this->auth->isPrivilegedRole($data['name'])) {
+            $errors['name'] = ['You cannot assign this role name.'];
+        }
 
         if (!empty($errors)) {
             $this->json(['errors' => $errors], 422);
@@ -166,6 +198,12 @@ class RoleController extends BaseController
         $this->verifyCsrf();
         $this->requireAuth();
         $this->requireRole('admin');
+
+        $isSuperOrSystemAdmin = $this->auth->isSuperAdminOrSystemAdmin();
+        if (!$isSuperOrSystemAdmin && $this->auth->isPrivilegedRole($id)) {
+            $this->json(['success' => false, 'message' => 'Access denied.'], 403);
+            return;
+        }
 
         // Check if role is in use
         $usersWithRole = $this->db->count('users', ['role_id' => $id]);
@@ -205,6 +243,12 @@ class RoleController extends BaseController
     {
         $this->requireAuth();
         $this->requireRole('admin');
+
+        $isSuperOrSystemAdmin = $this->auth->isSuperAdminOrSystemAdmin();
+        if (!$isSuperOrSystemAdmin && $this->auth->isPrivilegedRole($id)) {
+            $this->redirect('/admin/roles');
+            return;
+        }
 
         $role = $this->db->get('roles', '*', ['role_id' => $id]);
         if (!$role) {
@@ -404,6 +448,12 @@ class RoleController extends BaseController
         $this->verifyCsrf();
         $this->requireAuth();
         $this->requireRole('admin');
+
+        $isSuperOrSystemAdmin = $this->auth->isSuperAdminOrSystemAdmin();
+        if (!$isSuperOrSystemAdmin && $this->auth->isPrivilegedRole($id)) {
+            $this->json(['success' => false, 'message' => 'Access denied.'], 403);
+            return;
+        }
 
         // Check if database table exists before trying (Handling migration gap)
         try {
