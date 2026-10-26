@@ -234,9 +234,11 @@
 
     <div class="login-container">
         <div class="login-header">
+            {% if settings.logo_url and 'aptech' not in settings.logo_url|lower and 'b1e1f7e0123dc037de3b69f7458cea10' not in settings.logo_url %}
             <div class="logo-container">
-                 <img src="{{ constant('ASSETS_URL') is defined ? constant('ASSETS_URL') : '/Aptech/assets' }}/img/aptech-group.png" onerror="this.src='{{ constant('ASSETS_URL') is defined ? constant('ASSETS_URL') : '/Aptech/assets' }}/img/aptech-group.png'" alt="Aptech Group" class="logo">
+                <img src="{{ settings.logo_url }}" alt="Logo" class="logo">
             </div>
+            {% endif %}
             <h1>Create Account</h1>
             <p>Join the workspace</p>
         </div>

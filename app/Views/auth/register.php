@@ -234,9 +234,11 @@
 
     <div class="login-container">
         <div class="login-header">
+            <?php if (!empty($settings['logo_url']) && stripos($settings['logo_url'], 'aptech') === false && stripos($settings['logo_url'], 'b1e1f7e0123dc037de3b69f7458cea10') === false): ?>
             <div class="logo-container">
-                 <img src="<?php echo defined('ASSETS_URL') ? ASSETS_URL : '/Aptech/assets'; ?>/img/aptech-group.png" onerror="this.src='<?php echo defined('ASSETS_URL') ? ASSETS_URL : '/Aptech/assets'; ?>/img/aptech-group.png'" alt="Aptech Group" class="logo">
+                <img src="<?php echo htmlspecialchars($settings['logo_url']); ?>" alt="Logo" class="logo">
             </div>
+            <?php endif; ?>
             <h1>Create Account</h1>
             <p>Join the workspace</p>
         </div>
