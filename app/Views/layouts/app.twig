@@ -78,12 +78,14 @@
     
     /* Apply Glass Effects if Enabled */
     {% if settings.glass_effects == 'on' %}
-    .navbar, .sidebar, .card {
+    .navbar, .sidebar, 
+    .card:not([style*="background"]):not([style*="linear-gradient"]):not(.text-white):not([class*="bg-"]):not([class*="card-stat-"]):not([class*="stat-card"]) {
         backdrop-filter: blur(var(--glass-blur));
         -webkit-backdrop-filter: blur(var(--glass-blur));
         background-color: rgba(255, 255, 255, var(--glass-opacity));
     }
-    [data-theme="dark"] .navbar, [data-theme="dark"] .sidebar, [data-theme="dark"] .card {
+    [data-theme="dark"] .navbar, [data-theme="dark"] .sidebar, 
+    [data-theme="dark"] .card:not([style*="background"]):not([style*="linear-gradient"]):not(.text-white):not([class*="bg-"]):not([class*="card-stat-"]):not([class*="stat-card"]) {
         background-color: rgba(30, 41, 59, var(--glass-opacity));
     }
     {% endif %}

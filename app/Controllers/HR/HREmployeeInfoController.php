@@ -213,10 +213,12 @@ class HREmployeeInfoController extends BaseController
             $this->verifyCsrf();
             $data = $this->request->all();
 
+            $policyName = $data['policy_name'] ?? $data['attendance_policy'] ?? $data['leave_policy'] ?? $data['holiday_policy'] ?? 'Standard Company Policy';
+
             $stmt = $this->pdo->prepare("INSERT INTO employee_policy_tags (employee_id, policy_name, policy_type, effective_date, expiry_date, status, remarks) VALUES (?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $data['employee_id'],
-                $data['policy_name'],
+                $policyName,
                 $data['policy_type'] ?? 'Operational',
                 $data['effective_date'] ?? date('Y-m-d'),
                 $data['expiry_date'] ?? null,
@@ -372,8 +374,8 @@ class HREmployeeInfoController extends BaseController
                 $data['blood_group'] ?? 'O+',
                 $data['height_cm'] ?? null,
                 $data['weight_kg'] ?? null,
-                $data['medical_conditions'] ?? '',
-                $data['allergies'] ?? '',
+                $data['medical_conditions'] ?? $data['medical_fitness'] ?? '',
+                $data['allergies'] ?? $data['doctor_remarks'] ?? '',
                 $data['doctor_clearance_date'] ?? null,
                 $data['checkup_date'] ?? date('Y-m-d'),
                 $data['insurance_no'] ?? ''
@@ -412,7 +414,7 @@ class HREmployeeInfoController extends BaseController
                 $data['tin_number'],
                 $data['tax_circle'] ?? '',
                 $data['tax_zone'] ?? '',
-                $data['assessment_year'] ?? '2025-2026',
+                $data['assessment_year'] ?? $data['tax_year'] ?? '2025-2026',
                 $data['tax_amount'] ?? 0.00,
                 $data['tds_deducted'] ?? 0.00,
                 $data['submission_status'] ?? 'Submitted',

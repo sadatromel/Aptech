@@ -3,7 +3,6 @@ DirectoryIndex index.php
 
 # Enable Rewrite Engine
 RewriteEngine On
-RewriteBase /Aptech/
 
 # Allow direct access to index.php with parameters
 <Files "index.php">

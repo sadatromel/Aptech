@@ -101,7 +101,19 @@ class Auth
             return true;
         }
 
-        return strtolower($_SESSION['user_role']) === strtolower($role);
+        $currentRole = strtolower(trim((string)$_SESSION['user_role']));
+        $targetRole = strtolower(trim($role));
+
+        if ($currentRole === $targetRole) {
+            return true;
+        }
+
+        // If user has 'Manager' role, satisfy departmental manager roles (e.g. merchandising_manager, procurement_manager)
+        if ($currentRole === 'manager' && (str_ends_with($targetRole, '_manager') || str_starts_with($targetRole, 'manager_'))) {
+            return true;
+        }
+
+        return false;
     }
     
     public function hasAnyRole(array $roles): bool
@@ -110,15 +122,17 @@ class Auth
             return false;
         }
 
-        // Admin bypass - use the central isAdmin check
         if ($this->isAdmin()) {
             return true;
         }
         
-        $currentRole = strtolower($_SESSION['user_role']);
-        $roles = array_map('strtolower', $roles);
+        foreach ($roles as $role) {
+            if ($this->hasRole((string)$role)) {
+                return true;
+            }
+        }
         
-        return in_array($currentRole, $roles);
+        return false;
     }
 
     public function isAdmin(): bool
@@ -203,29 +217,21 @@ class Auth
             return true;
         }
 
-        // Fix #2: Load all permissions for this user once per request and cache them.
-        // This avoids N+1 DB queries when multiple requirePermission() calls are made
-        // in a single request (e.g. checking hr.view, hr.create, hr.delete).
-        if ($this->permissionsCache === null) {
-            $stmt = $this->db->prepare("
-                SELECT p.permission_name, p.permission_code
-                FROM role_permissions rp
-                JOIN permissions p ON rp.permission_id = p.permission_id
-                JOIN users u ON rp.role_id = u.role_id
-                WHERE u.user_id = ?
-            ");
-            $stmt->execute([$_SESSION['user_id']]);
-            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            $this->permissionsCache = [];
-            foreach ($rows as $row) {
-                $this->permissionsCache[] = $row['permission_name'];
-                if (!empty($row['permission_code'])) {
-                    $this->permissionsCache[] = $row['permission_code'];
-                }
-            }
+        if (!function_exists('checkUserPermission')) {
+            require_once __DIR__ . '/permission_helper.php';
         }
 
-        return in_array($permissionName, $this->permissionsCache, true);
+        $action = 'view';
+        if (str_starts_with($permissionName, 'create_') || str_starts_with($permissionName, 'add_')) {
+            $action = 'create';
+        } elseif (str_starts_with($permissionName, 'edit_') || str_starts_with($permissionName, 'update_')) {
+            $action = 'edit';
+        } elseif (str_starts_with($permissionName, 'delete_') || str_starts_with($permissionName, 'destroy_')) {
+            $action = 'delete';
+        } elseif (str_starts_with($permissionName, 'approve_')) {
+            $action = 'approve';
+        }
+
+        return checkUserPermission($this->db, (int)$_SESSION['user_id'], '', $permissionName, $action);
     }
 }

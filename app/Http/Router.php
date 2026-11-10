@@ -22,6 +22,10 @@ class Router
                 $r->get('/users/{id}', ['App\Controllers\Api\UserController', 'show']);
                 $r->put('/users/{id}', ['App\Controllers\Api\UserController', 'update']);
                 $r->delete('/users/{id}', ['App\Controllers\Api\UserController', 'destroy']);
+
+                // HR APIs
+                $r->get('/hr/employee-details', ['App\Controllers\HR\LeaveController', 'getEmployeeDetailsApi']);
+                $r->get('/hr/leave-balance', ['App\Controllers\HR\LeaveController', 'getLeaveBalanceApi']);
             });
 
             // Cutting Routes
@@ -58,6 +62,12 @@ class Router
                 $r->get('/roles/{id:\d+}/permissions', ['App\Controllers\Admin\RoleController', 'permissions']);
                 $r->post('/roles/{id:\d+}/update-permissions', ['App\Controllers\Admin\RoleController', 'updatePermissions']);
                 
+                // User Permissions Management
+                $r->addRoute(['GET', 'POST'], '/permissions', ['App\Controllers\Admin\PermissionController', 'index']);
+                $r->addRoute(['GET', 'POST'], '/permissions/{userId:\d+}', ['App\Controllers\Admin\PermissionController', 'index']);
+                $r->post('/permissions/update', ['App\Controllers\Admin\PermissionController', 'update']);
+                $r->post('/permissions/reset', ['App\Controllers\Admin\PermissionController', 'reset']);
+
                 // User Management
                 $r->get('/users', ['App\Controllers\Admin\UserController', 'index']);
                 $r->get('/users/create', ['App\Controllers\Admin\UserController', 'create']);
@@ -121,6 +131,12 @@ class Router
                 $r->post('/attendance', ['App\Controllers\HR\AttendanceController', 'store']);
                 
                 $r->get('/payroll', ['App\Controllers\HR\PayrollController', 'index']);
+                $r->post('/payroll/generate', ['App\Controllers\HR\PayrollController', 'generate']);
+                $r->get('/payroll/{id:\d+}', ['App\Controllers\HR\PayrollController', 'show']);
+                $r->post('/payroll/{id:\d+}/approve', ['App\Controllers\HR\PayrollController', 'approve']);
+                $r->post('/payroll/{id:\d+}/pay', ['App\Controllers\HR\PayrollController', 'pay']);
+                $r->post('/payroll/{id:\d+}/destroy', ['App\Controllers\HR\PayrollController', 'destroy']);
+                $r->delete('/payroll/{id:\d+}', ['App\Controllers\HR\PayrollController', 'destroy']);
 
                 // Extended HR Payroll Processes
                 $r->addRoute(['GET', 'POST'], '/payroll/bonus-reprocess', ['App\Controllers\HR\HRPayrollProcessController', 'bonusReprocess']);
@@ -170,6 +186,24 @@ class Router
                 $r->get('/leave/create', ['App\Controllers\HR\LeaveController', 'create']);
                 $r->post('/leave', ['App\Controllers\HR\LeaveController', 'store']);
                 $r->post('/leave/update-status', ['App\Controllers\HR\LeaveController', 'updateStatus']);
+                $r->get('/leaves', ['App\Controllers\HR\LeaveController', 'index']);
+                $r->post('/leaves', ['App\Controllers\HR\LeaveController', 'store']);
+                $r->addRoute(['GET', 'POST'], '/leave-entry', ['App\Controllers\HR\LeaveController', 'entryPage']);
+                $r->post('/leave-entry/store', ['App\Controllers\HR\LeaveController', 'storeEntry']);
+                $r->addRoute(['GET', 'POST'], '/leave-delete', ['App\Controllers\HR\LeaveController', 'deletePage']);
+                $r->post('/leave-delete/perform', ['App\Controllers\HR\LeaveController', 'deletePerform']);
+
+                // RMG Compliance Routes
+                $r->get('/rmg-compliance', ['App\Controllers\HR\RmgComplianceController', 'index']);
+                $r->get('/rmg-compliance/wage-compliance', ['App\Controllers\HR\RmgComplianceController', 'wageCompliance']);
+                $r->get('/rmg-compliance/attendance-bonus', ['App\Controllers\HR\RmgComplianceController', 'attendanceBonus']);
+                $r->get('/rmg-compliance/festival-bonus', ['App\Controllers\HR\RmgComplianceController', 'festivalBonus']);
+                $r->get('/rmg-compliance/maternity', ['App\Controllers\HR\RmgComplianceController', 'maternity']);
+                $r->post('/rmg-compliance/maternity', ['App\Controllers\HR\RmgComplianceController', 'createMaternityCase']);
+                $r->post('/rmg-compliance/maternity/{id:\d+}/approve', ['App\Controllers\HR\RmgComplianceController', 'approveMaternityCase']);
+                $r->post('/rmg-compliance/maternity/{id:\d+}/payout', ['App\Controllers\HR\RmgComplianceController', 'payoutMaternity']);
+                $r->delete('/rmg-compliance/maternity/{id:\d+}', ['App\Controllers\HR\RmgComplianceController', 'deleteMaternityCase']);
+                $r->post('/rmg-compliance/maternity/{id:\d+}/delete', ['App\Controllers\HR\RmgComplianceController', 'deleteMaternityCase']);
                 
                 // HR Reports
                 $r->get('/reports', ['App\Controllers\HR\HRReportController', 'index']);
@@ -341,6 +375,16 @@ class Router
                 $r->get('/bulk-costing/{id:\d+}/report', ['App\Controllers\Merchandising\BulkCostingController', 'report']);
                 $r->put('/bulk-costing/{id:\d+}', ['App\Controllers\Merchandising\BulkCostingController', 'update']);
                 $r->delete('/bulk-costing/{id:\d+}', ['App\Controllers\Merchandising\BulkCostingController', 'destroy']);
+
+                // Costing aliases matching sidebar & views
+                $r->get('/costing', ['App\Controllers\Merchandising\BulkCostingController', 'index']);
+                $r->get('/costing/create', ['App\Controllers\Merchandising\BulkCostingController', 'create']);
+                $r->post('/costing', ['App\Controllers\Merchandising\BulkCostingController', 'store']);
+                $r->get('/costing/{id:\d+}', ['App\Controllers\Merchandising\BulkCostingController', 'show']);
+                $r->get('/costing/{id:\d+}/edit', ['App\Controllers\Merchandising\BulkCostingController', 'edit']);
+                $r->get('/costing/{id:\d+}/report', ['App\Controllers\Merchandising\BulkCostingController', 'report']);
+                $r->put('/costing/{id:\d+}', ['App\Controllers\Merchandising\BulkCostingController', 'update']);
+                $r->delete('/costing/{id:\d+}', ['App\Controllers\Merchandising\BulkCostingController', 'destroy']);
 
                 $r->get('/bom', ['App\Controllers\Merchandising\BomController', 'index']);
                 $r->post('/bom', ['App\Controllers\Merchandising\BomController', 'store']);

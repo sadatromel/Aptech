@@ -37,7 +37,7 @@ $requestUri = '/' . ltrim($requestUri, '/');
 $routeResult = $router->dispatch($httpMethod, $requestUri);
 if ($routeResult[0] === 200) {
     $handler = $routeResult[1];
-    $vars = $routeResult[2] ?? [];
+    $vars = array_values($routeResult[2] ?? []);
     try {
         if ($handler instanceof \Closure) {
             call_user_func_array($handler, $vars);
@@ -47,7 +47,7 @@ if ($routeResult[0] === 200) {
             call_user_func_array([$controllerInstance, $method], $vars);
         }
         exit;
-    } catch (\Exception $e) {
+    } catch (\Throwable $e) {
         // Fallback to switch block if dispatching fails
     }
 }
@@ -359,6 +359,18 @@ switch ($page) {
             } else {
                 $controller->permissions((int)$_GET['id']);
             }
+        } else {
+            $controller->index();
+        }
+        break;
+
+    case 'admin/permissions':
+    case 'permissions':
+        $controller = $container->get(\App\Controllers\Admin\PermissionController::class);
+        if ($action === 'update' || ($_SERVER['REQUEST_METHOD'] === 'POST' && $action !== 'reset')) {
+            $controller->update();
+        } elseif ($action === 'reset') {
+            $controller->reset();
         } else {
             $controller->index();
         }

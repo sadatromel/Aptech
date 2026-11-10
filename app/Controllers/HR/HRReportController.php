@@ -206,19 +206,21 @@ class HRReportController extends BaseController
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Monthly Detailed Attendance');
 
+        $lastColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(9 + $reportData['daysInMonth']);
+
         // Company Header
         $sheet->setCellValue('A1', $this->settings['company_name'] ?? 'Big Boss Corporation Ltd.');
-        $sheet->mergeCells('A1:AK1');
+        $sheet->mergeCells("A1:{$lastColLetter}1");
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         $sheet->setCellValue('A2', $this->settings['company_address'] ?? '30 Sarabo, Kashimpur, Gazipur');
-        $sheet->mergeCells('A2:AK2');
+        $sheet->mergeCells("A2:{$lastColLetter}2");
         $sheet->getStyle('A2')->getFont()->setSize(10);
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         $sheet->setCellValue('A3', "Detail Attendance Report for the month of {$reportData['startDate']} to {$reportData['endDate']}");
-        $sheet->mergeCells('A3:AK3');
+        $sheet->mergeCells("A3:{$lastColLetter}3");
         $sheet->getStyle('A3')->getFont()->setBold(true)->setSize(11);
         $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
@@ -246,43 +248,47 @@ class HRReportController extends BaseController
         foreach ($reportData['groups'] as $group) {
             // Group Header
             $sheet->setCellValue("A{$rowIdx}", "Department: {$group['department_name']} | Section: {$group['section_name']} | Line: {$group['line_name']}");
-            $sheet->mergeCells("A{$rowIdx}:AK{$rowIdx}");
+            $sheet->mergeCells("A{$rowIdx}:{$lastColLetter}{$rowIdx}");
             $sheet->getStyle("A{$rowIdx}")->getFont()->setBold(true);
             $sheet->getStyle("A{$rowIdx}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D1E7DD');
             $rowIdx++;
 
             foreach ($group['employees'] as $emp) {
-                $c = 'A';
-                $sheet->setCellValue($c++ . $rowIdx, $emp['sl']);
-                $sheet->setCellValue($c++ . $rowIdx, $emp['id']);
-                $sheet->setCellValue($c++ . $rowIdx, $emp['name'] . "\n" . $emp['designation']);
-                $sheet->getStyle('C' . $rowIdx)->getAlignment()->setWrapText(true);
-                $sheet->setCellValue($c++ . $rowIdx, $emp['jd']);
-                $sheet->setCellValue($c++ . $rowIdx, $emp['ld']);
-                $sheet->setCellValue($c++ . $rowIdx, $emp['qd']);
+                $colIdx = 1;
+                $sheet->setCellValue([$colIdx++, $rowIdx], $emp['sl']);
+                $sheet->setCellValueExplicit([$colIdx++, $rowIdx], (string)$emp['id'], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                $sheet->setCellValue([$colIdx, $rowIdx], $emp['name'] . "\n" . $emp['designation']);
+                $sheet->getStyle([$colIdx, $rowIdx])->getAlignment()->setWrapText(true);
+                $colIdx++;
+                $sheet->setCellValue([$colIdx++, $rowIdx], $emp['jd']);
+                $sheet->setCellValue([$colIdx++, $rowIdx], $emp['ld']);
+                $sheet->setCellValue([$colIdx++, $rowIdx], $emp['qd']);
 
                 for ($d = 1; $d <= $reportData['daysInMonth']; $d++) {
                     $dayData = $emp['days'][$d] ?? ['status' => '-', 'in' => '00:00', 'out' => '00:00', 'ot' => '0.00'];
                     $cellVal = "{$dayData['status']}\n{$dayData['in']}\n{$dayData['out']}\n{$dayData['ot']}";
-                    $sheet->setCellValue($c . $rowIdx, $cellVal);
-                    $sheet->getStyle($c . $rowIdx)->getAlignment()->setWrapText(true);
-                    $sheet->getStyle($c . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $c++;
+                    $sheet->setCellValue([$colIdx, $rowIdx], $cellVal);
+                    $sheet->getStyle([$colIdx, $rowIdx])->getAlignment()->setWrapText(true);
+                    $sheet->getStyle([$colIdx, $rowIdx])->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $colIdx++;
                 }
 
-                $sheet->setCellValue($c++ . $rowIdx, number_format($emp['total_ot'], 2));
-                $sheet->setCellValue($c++ . $rowIdx, $emp['total_pay_days'] . "\n" . "P:{$emp['present_days']}\nL:{$emp['late_days']}\nA:{$emp['absent_days']}");
-                $sheet->getStyle(chr(ord($c)-1) . $rowIdx)->getAlignment()->setWrapText(true);
+                $sheet->setCellValue([$colIdx++, $rowIdx], number_format($emp['total_ot'], 2));
 
-                $sheet->setCellValue($c . $rowIdx, "HW:{$emp['total_hw']}\nW:{$emp['weekend_days']}\nOSD:{$emp['osd_days']}\nL:{$emp['leave_days']}");
-                $sheet->getStyle($c . $rowIdx)->getAlignment()->setWrapText(true);
+                $sheet->setCellValue([$colIdx, $rowIdx], $emp['total_pay_days'] . "\n" . "P:{$emp['present_days']}\nL:{$emp['late_days']}\nA:{$emp['absent_days']}");
+                $sheet->getStyle([$colIdx, $rowIdx])->getAlignment()->setWrapText(true);
+                $colIdx++;
+
+                $sheet->setCellValue([$colIdx, $rowIdx], "HW:{$emp['total_hw']}\nW:{$emp['weekend_days']}\nOSD:{$emp['osd_days']}\nL:{$emp['leave_days']}");
+                $sheet->getStyle([$colIdx, $rowIdx])->getAlignment()->setWrapText(true);
+                $colIdx++;
 
                 $rowIdx++;
             }
 
             // Line Summary Row
             $sheet->setCellValue("A{$rowIdx}", "Line Total: {$group['line_total']} | Two Hour OT: " . number_format($group['two_hour_ot'], 2) . " | Extra Hour OT: " . number_format($group['extra_hour_ot'], 2) . " | E Extra Hour OT: " . number_format($group['e_extra_hour_ot'], 2) . " | Total OT: " . number_format($group['total_ot'], 2));
-            $sheet->mergeCells("A{$rowIdx}:AK{$rowIdx}");
+            $sheet->mergeCells("A{$rowIdx}:{$lastColLetter}{$rowIdx}");
             $sheet->getStyle("A{$rowIdx}")->getFont()->setBold(true);
             $sheet->getStyle("A{$rowIdx}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FFF3CD');
             $rowIdx++;
@@ -290,7 +296,7 @@ class HRReportController extends BaseController
 
         // Grand Total Row
         $sheet->setCellValue("A{$rowIdx}", "Grand Total: {$reportData['grandTotal']['count']} | Two Hour OT: " . number_format($reportData['grandTotal']['two_hour_ot'], 2) . " | Extra Hour OT: " . number_format($reportData['grandTotal']['extra_hour_ot'], 2) . " | E Extra Hour OT: " . number_format($reportData['grandTotal']['e_extra_hour_ot'], 2) . " | Total OT: " . number_format($reportData['grandTotal']['total_ot'], 2));
-        $sheet->mergeCells("A{$rowIdx}:AK{$rowIdx}");
+        $sheet->mergeCells("A{$rowIdx}:{$lastColLetter}{$rowIdx}");
         $sheet->getStyle("A{$rowIdx}")->getFont()->setBold(true)->setSize(11);
         $sheet->getStyle("A{$rowIdx}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('CFF4FC');
 
@@ -478,17 +484,16 @@ class HRReportController extends BaseController
             $params[] = $filters['joining_to'];
         }
 
-        // Order By
+        // Order By with primary department/section/line grouping
+        $baseOrder = "COALESCE(d.department_name, 'Admin') ASC, COALESCE(s.section_name, 'MIS') ASC, COALESCE(l.line_name, 'MIS_No Line') ASC";
         if ($filters['order_by'] === 'name') {
-            $sql .= " ORDER BY e.first_name ASC, e.last_name ASC";
+            $sql .= " ORDER BY {$baseOrder}, e.first_name ASC, e.last_name ASC";
         } elseif ($filters['order_by'] === 'joining_date') {
-            $sql .= " ORDER BY e.hire_date ASC";
-        } elseif ($filters['order_by'] === 'department') {
-            $sql .= " ORDER BY d.department_name ASC, s.section_name ASC, e.employee_code ASC";
+            $sql .= " ORDER BY {$baseOrder}, e.hire_date ASC";
         } elseif ($filters['order_by'] === 'designation') {
-            $sql .= " ORDER BY p.position_name ASC, e.employee_code ASC";
+            $sql .= " ORDER BY {$baseOrder}, p.position_name ASC, e.employee_code ASC";
         } else {
-            $sql .= " ORDER BY d.department_name ASC, s.section_name ASC, l.line_name ASC, e.employee_code ASC";
+            $sql .= " ORDER BY {$baseOrder}, e.employee_code ASC";
         }
 
         $stmt = $this->db->query($sql, $params);
@@ -665,6 +670,15 @@ class HRReportController extends BaseController
         $grandTotal['extra_hour_ot'] = array_sum(array_column($groupedData, 'extra_hour_ot'));
         $grandTotal['e_extra_hour_ot'] = array_sum(array_column($groupedData, 'e_extra_hour_ot'));
 
+        // Ensure SL numbers are strictly sequential 1..N across display groups
+        $sl = 1;
+        foreach ($groupedData as &$grp) {
+            foreach ($grp['employees'] as &$empRecord) {
+                $empRecord['sl'] = $sl++;
+            }
+        }
+        unset($grp, $empRecord);
+
         return [
             'yearMonth' => $yearMonth,
             'startDate' => $startDate,
@@ -818,32 +832,17 @@ class HRReportController extends BaseController
             ]);
 
             if ($employee) {
-                $leaves = $this->db->select('leaves', [
-                    '[>]employees(sub)' => ['leaves.job_responsible_id' => 'sub.employee_id']
-                ], [
-                    'leaves.id',
-                    'leaves.leave_type',
-                    'leaves.days_part',
-                    'leaves.start_date',
-                    'leaves.end_date',
-                    'leaves.total_days',
-                    'leaves.reason',
-                    'leaves.status',
-                    'leaves.created_at',
-                    'leaves.during_destination',
-                    'leaves.during_contact_person',
-                    'leaves.during_contact_no',
-                    'sub.first_name(sub_first)',
-                    'sub.last_name(sub_last)',
-                    'sub.employee_code(sub_code)'
-                ], [
-                    'WHERE' => [
-                        'leaves.employee_id' => (int)$empId,
-                        'leaves.start_date[>=]' => "{$year}-01-01",
-                        'leaves.start_date[<=]' => "{$year}-12-31"
-                    ],
-                    'ORDER' => ['leaves.start_date' => 'DESC']
-                ]);
+                $leaves = $this->db->query("
+                    SELECT 
+                        l.id, l.leave_type, l.days_part, l.start_date, l.end_date, l.total_days, 
+                        l.reason, l.status, l.created_at, l.during_destination, 
+                        l.during_contact_person, l.during_contact_no,
+                        sub.first_name as sub_first, sub.last_name as sub_last, sub.employee_code as sub_code
+                    FROM leaves l
+                    LEFT JOIN employees sub ON l.job_responsible_id = sub.employee_id
+                    WHERE l.employee_id = ? AND l.start_date >= ? AND l.start_date <= ?
+                    ORDER BY l.start_date DESC
+                ", [(int)$empId, "{$year}-01-01", "{$year}-12-31"])->fetchAll(\PDO::FETCH_ASSOC);
 
                 // Calculate Leave Balances for this employee
                 $entitlements = [

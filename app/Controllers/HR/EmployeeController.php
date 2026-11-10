@@ -168,7 +168,7 @@ class EmployeeController extends BaseController
             'previous_company' => $data['previous_company'] ?? '',
             'skills' => $data['skills'] ?? '',
             'notes' => $data['notes'] ?? '',
-            'created_by' => $this->auth->user()['id'],
+            'created_by' => $this->auth->user()['user_id'] ?? $this->auth->user()['id'] ?? $_SESSION['user_id'] ?? 1,
             'status' => 'active',
             'created_at' => date('Y-m-d H:i:s')
         ];

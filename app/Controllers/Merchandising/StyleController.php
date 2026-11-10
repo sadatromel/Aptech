@@ -168,17 +168,43 @@ class StyleController extends BaseController
     {
         $this->requireAuth();
         
-        $style = $this->styleModel->find($id);
+        $style = $this->styleModel->findWithBuyer($id) ?? $this->styleModel->find($id);
         if (!$style) {
-            http_response_code(404);
-            echo json_encode(['error' => 'Style not found']);
+            $isJson = $this->request->isAjax()
+                || (isset($_SERVER['HTTP_ACCEPT']) && str_contains(strtolower($_SERVER['HTTP_ACCEPT']), 'application/json'))
+                || (isset($_GET['format']) && $_GET['format'] === 'json');
+
+            if ($isJson) {
+                http_response_code(404);
+                header('Content-Type: application/json');
+                echo json_encode(['error' => 'Style not found']);
+                return;
+            }
+
+            $_SESSION['error_message'] = "Style not found";
+            $this->redirect('merchandising/styles');
             return;
         }
 
-        $style['size_ranges'] = $this->styleModel->breakdowns($id) ?? [];
+        $breakdowns = $this->styleModel->breakdowns($id) ?? [];
+        $style['size_ranges'] = $breakdowns;
 
-        header('Content-Type: application/json');
-        echo json_encode(['data' => $style]);
+        $accept = strtolower($_SERVER['HTTP_ACCEPT'] ?? '');
+        $isHtmlRequest = str_contains($accept, 'text/html');
+        $isJson = (isset($_GET['format']) && $_GET['format'] === 'json')
+            || ($this->request->isAjax() && !$isHtmlRequest)
+            || (str_contains($accept, 'application/json') && !$isHtmlRequest);
+
+        if ($isJson) {
+            header('Content-Type: application/json');
+            echo json_encode(['data' => $style]);
+            return;
+        }
+
+        $this->view('merchandising/styles/show', [
+            'style' => $style,
+            'breakdowns' => $breakdowns
+        ]);
     }
 
     /**

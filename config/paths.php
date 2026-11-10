@@ -37,13 +37,14 @@ if (!defined('VEHICLE_MANAGEMENT_PATH')) define('VEHICLE_MANAGEMENT_PATH', BASEP
 if (!defined('WASHING_PATH')) define('WASHING_PATH', BASEPATH . '/washing');
 
 // URL paths (for web access)
-$isSubdomain = (isset($_SERVER['HTTP_HOST']) && stripos($_SERVER['HTTP_HOST'], 'erp.') !== false);
-$baseUrl = $isSubdomain ? '' : '/Aptech';
+$scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+$isSubfolder = (strpos($scriptName, '/Aptech') === 0);
+$baseUrl = $isSubfolder ? '/Aptech' : '';
 
 if (!defined('BASE_URL')) define('BASE_URL', $baseUrl);
 if (!defined('CORE_URL')) define('CORE_URL', BASE_URL . '/core');
-if (!defined('ASSETS_URL')) define('ASSETS_URL', $isSubdomain ? '/assets' : '/Aptech/assets');
-if (!defined('UPLOADS_URL')) define('UPLOADS_URL', $isSubdomain ? '/uploads' : '/Aptech/uploads');
+if (!defined('ASSETS_URL')) define('ASSETS_URL', $isSubfolder ? '/Aptech/assets' : '/assets');
+if (!defined('UPLOADS_URL')) define('UPLOADS_URL', $isSubfolder ? '/uploads' : '/uploads');
 
 // Ensure include path is set
 set_include_path(get_include_path() . PATH_SEPARATOR . CORE_PATH . PATH_SEPARATOR . CONFIG_PATH);

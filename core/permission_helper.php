@@ -20,8 +20,8 @@
  * @return bool True if user has permission, false otherwise
  */
 function checkUserPermission($conn, $user_id, $module, $page, $action) {
-    // Super Admin / Admin / Manager Bypass
-    $bypass_roles = ['super admin', 'admin', 'manager', 'system administrator'];
+    // Only true Super Admins / System Admins bypass permissions
+    $bypass_roles = ['super admin', 'admin', 'supper admin', 'super_admin', 'system administrator', 'system_administrator'];
     
     $role = strtolower($_SESSION['role_name'] ?? $_SESSION['user_role'] ?? '');
     
@@ -33,16 +33,27 @@ function checkUserPermission($conn, $user_id, $module, $page, $action) {
         }
     }
     
-    if (in_array($role, $bypass_roles)) {
+    if (in_array($role, $bypass_roles, true)) {
         return true;
+    }
+
+    if (empty($user_id)) {
+        $user_id = (int)($_SESSION['user_id'] ?? 0);
+    }
+    if ($user_id <= 0) {
+        return false;
     }
 
     // Map action to database column
     $action_map = [
         'view' => 'can_view',
         'create' => 'can_create',
+        'add' => 'can_create',
+        'store' => 'can_create',
         'edit' => 'can_edit',
+        'update' => 'can_edit',
         'delete' => 'can_delete',
+        'destroy' => 'can_delete',
         'approve' => 'can_approve'
     ];
     
@@ -51,62 +62,94 @@ function checkUserPermission($conn, $user_id, $module, $page, $action) {
     }
     
     $column = $action_map[$action];
-    $cache_key = "perm_{$user_id}_{$module}_{$page}";
 
-    // Check session cache if available (optional optimization)
-    if (isset($_SESSION['permissions_cache'][$cache_key])) {
-        // return $_SESSION['permissions_cache'][$cache_key][$action] ?? false;
-        // Commented out for now to ensure real-time updates without re-login
+    // Build candidate page names (handles prefixes like 'view_' and punctuation variations)
+    $cleanPage = preg_replace('/^(view|create|add|edit|update|delete|destroy|approve)_/i', '', $page);
+    $pageCandidates = array_values(array_unique(array_filter([
+        $page,
+        $cleanPage,
+        str_replace('_', '-', $cleanPage),
+        str_replace('-', '_', $cleanPage),
+        str_replace('_', ' ', $cleanPage),
+        ucwords(str_replace('_', ' ', $cleanPage)),
+    ])));
+
+    $placeholders = implode(',', array_fill(0, count($pageCandidates), '?'));
+
+    // Check if user has ANY custom overrides in user_permissions
+    static $userOverridesCache = [];
+    if (!isset($userOverridesCache[$user_id])) {
+        $cntStmt = $conn->prepare("SELECT COUNT(*) FROM user_permissions WHERE user_id = ?");
+        $cntStmt->execute([$user_id]);
+        $userOverridesCache[$user_id] = ((int)$cntStmt->fetchColumn() > 0);
     }
-    
-    // Check specific user permissions
-    $stmt = $conn->prepare("
-        SELECT $column 
-        FROM user_permissions 
-        WHERE user_id = ? AND module = ? AND page_name = ?
-    ");
-    $stmt->execute([$user_id, $module, $page]);
-    $result = $stmt->fetch();
-    
-    // If explicit user override exists, return it
-    if ($result) {
-        return (bool)$result[$column];
-    }
-    
-    // Use role from session
-    $role = $_SESSION['user_role'] ?? '';
-    
-    if (empty($role)) {
-        // Fetch role if not in session?
-         $stmt = $conn->prepare("SELECT r.role_name, r.role_id FROM users u LEFT JOIN roles r ON u.role_id = r.role_id WHERE u.user_id = ?");
-         $stmt->execute([$user_id]);
-         $user_data = $stmt->fetch();
-         $role_id = $user_data['role_id'] ?? 0;
-    } else {
-        // Get role_id from role name (Optimally this should be in session too)
-        // For now, let's query.
-        // Optimization: Store role_id in session during login
-        $stmt = $conn->prepare("SELECT role_id FROM roles WHERE role_name = ?");
-        $stmt->execute([$role]);
-        $role_row = $stmt->fetch();
-        $role_id = $role_row['role_id'] ?? 0;
+    $hasOverrides = $userOverridesCache[$user_id];
+
+    if ($hasOverrides) {
+        // In Custom Overrides mode: check user_permissions only
+        if (!empty($module)) {
+            $stmt = $conn->prepare("
+                SELECT $column 
+                FROM user_permissions 
+                WHERE user_id = ? AND LOWER(module) = LOWER(?) AND page_name IN ($placeholders)
+                LIMIT 1
+            ");
+            $stmt->execute(array_merge([$user_id, $module], $pageCandidates));
+            $result = $stmt->fetch();
+            if ($result !== false && isset($result[$column])) {
+                return (bool)$result[$column];
+            }
+        }
+
+        $stmt = $conn->prepare("
+            SELECT $column 
+            FROM user_permissions 
+            WHERE user_id = ? AND page_name IN ($placeholders)
+            LIMIT 1
+        ");
+        $stmt->execute(array_merge([$user_id], $pageCandidates));
+        $result = $stmt->fetch();
+        if ($result !== false && isset($result[$column])) {
+            return (bool)$result[$column];
+        }
+
+        // In Custom Overrides mode, pages not in user_permissions are denied
+        return false;
     }
 
-    if ($role_id) {
-        // Check role permissions
+    // Role Defaults mode: check role_permissions for user's role
+    $stmt = $conn->prepare("SELECT role_id FROM users WHERE user_id = ? LIMIT 1");
+    $stmt->execute([$user_id]);
+    $role_id = (int)$stmt->fetchColumn();
+
+    if ($role_id > 0) {
+        if (!empty($module)) {
+            $stmt = $conn->prepare("
+                SELECT $column 
+                FROM role_permissions 
+                WHERE role_id = ? AND LOWER(module) = LOWER(?) AND page_name IN ($placeholders)
+                LIMIT 1
+            ");
+            $stmt->execute(array_merge([$role_id, $module], $pageCandidates));
+            $role_result = $stmt->fetch();
+            if ($role_result !== false && isset($role_result[$column])) {
+                return (bool)$role_result[$column];
+            }
+        }
+
         $stmt = $conn->prepare("
             SELECT $column 
             FROM role_permissions 
-            WHERE role_id = ? AND module = ? AND page_name = ?
+            WHERE role_id = ? AND page_name IN ($placeholders)
+            LIMIT 1
         ");
-        $stmt->execute([$role_id, $module, $page]);
+        $stmt->execute(array_merge([$role_id], $pageCandidates));
         $role_result = $stmt->fetch();
-
-        if ($role_result) {
-             return (bool)$role_result[$column];
+        if ($role_result !== false && isset($role_result[$column])) {
+            return (bool)$role_result[$column];
         }
     }
-    
+
     // Default to FALSE for security
     return false;
 }

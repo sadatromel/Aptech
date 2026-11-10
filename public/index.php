@@ -50,7 +50,7 @@ switch ($routeResult[0]) {
         
     case 200:
         [$controller, $method] = $routeResult[1];
-        $vars = $routeResult[2] ?? [];
+        $vars = array_values($routeResult[2] ?? []);
         
         try {
             // Instantiate controller with dependency injection
@@ -58,7 +58,7 @@ switch ($routeResult[0]) {
             
             // Call the method with parameters
             call_user_func_array([$controllerInstance, $method], $vars);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             error_log($e->getMessage());
             
             if (getenv('APP_ENV') === 'development') {

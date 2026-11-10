@@ -1,11 +1,11 @@
 {% extends "layouts/app.twig" %}
 
 {% block content %}
-<div class="container-fluid px-4">
+<div class="container-fluid px-4 py-3">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <h1 class="h3 mb-0 text-gray-800">Role Permissions: {{ role.role_name }}</h1>
+            <h1 class="h3 mb-0" style="color: var(--text-primary);">Role Permissions: {{ role.role_name }}</h1>
             <p class="text-muted small mb-0">Define default access capabilities for all users with this role.</p>
         </div>
         <div class="btn-group">
@@ -28,30 +28,30 @@
     <!-- Stats Cards -->
     <div class="row mb-4 g-3">
         <div class="col-md-4">
-            <div class="card bg-dark text-white border-0 h-100 shadow-sm position-relative overflow-hidden">
+            <div class="card border-0 h-100 shadow-sm position-relative overflow-hidden" style="background: var(--bg-card); border: 1px solid var(--border-color) !important; color: var(--text-primary);">
                 <div class="card-body">
                     <h6 class="text-muted text-uppercase small fw-bold">Total Pages</h6>
-                    <h2 class="mb-0 display-6 fw-bold">{{ stats.total_pages }}</h2>
+                    <h2 class="mb-0 display-6 fw-bold" style="color: var(--text-primary);">{{ stats.total_pages }}</h2>
                     <i class="fas fa-file-alt position-absolute text-primary opacity-25" style="font-size: 4rem; bottom: -1rem; right: -1rem;"></i>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card bg-dark text-white border-0 h-100 shadow-sm position-relative overflow-hidden">
+            <div class="card border-0 h-100 shadow-sm position-relative overflow-hidden" style="background: var(--bg-card); border: 1px solid var(--border-color) !important; color: var(--text-primary);">
                 <div class="card-body">
                     <h6 class="text-muted text-uppercase small fw-bold">Accessible Pages</h6>
-                    <h2 class="mb-0 display-6 fw-bold text-success">{{ stats.pages_with_access }}</h2>
+                    <h2 class="mb-0 display-6 fw-bold text-success" id="roleStatAccessibleCount">{{ stats.pages_with_access }}</h2>
                     <i class="fas fa-check-circle position-absolute text-success opacity-25" style="font-size: 4rem; bottom: -1rem; right: -1rem;"></i>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card bg-dark text-white border-0 h-100 shadow-sm position-relative overflow-hidden">
+            <div class="card border-0 h-100 shadow-sm position-relative overflow-hidden" style="background: var(--bg-card); border: 1px solid var(--border-color) !important; color: var(--text-primary);">
                <div class="card-body">
                     <h6 class="text-muted text-uppercase small fw-bold">Coverage</h6>
-                    <h2 class="mb-0 display-6 fw-bold text-info">{{ stats.coverage }}%</h2>
+                    <h2 class="mb-0 display-6 fw-bold text-info" id="roleStatCoverage">{{ stats.coverage }}%</h2>
                     <div class="progress mt-2" style="height: 4px;">
-                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ stats.coverage }}%"></div>
+                        <div class="progress-bar bg-info" id="roleStatCoverageBar" role="progressbar" style="width: {{ stats.coverage }}%"></div>
                     </div>
                 </div>
             </div>
@@ -65,22 +65,22 @@
 
         {% for module, permissions in grouped_permissions %}
             {% set module_class = 'module-' ~ module|replace({' ': '-'})|lower %}
-            <div class="card shadow mb-4 border-0 module-card" data-module="{{ module|lower }}">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+            <div class="card shadow-sm mb-4 border-0 module-card" data-module="{{ module|lower }}" style="background: var(--bg-card); border: 1px solid var(--border-color) !important;">
+                <div class="card-header d-flex justify-content-between align-items-center py-3" style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); color: var(--text-primary);">
                     <div class="d-flex align-items-center">
-                        <i class="fas fa-{{ module_icons[module]|default('circle') }} me-3 fa-lg text-secondary"></i>
+                        <i class="fas fa-{{ module_icons[module]|default('circle') }} me-3 fa-lg text-primary"></i>
                         <div>
-                            <h6 class="m-0 font-weight-bold">{{ module_names[module]|default(module|capitalize) }}</h6>
+                            <h6 class="m-0 font-weight-bold" style="color: var(--text-primary);">{{ module_names[module]|default(module|capitalize) }}</h6>
                         </div>
                     </div>
                     <div class="btn-group btn-group-sm">
-                        <button type="button" class="btn btn-outline-secondary text-light btn-grant-all" data-target="{{ module_class }}">
+                        <button type="button" class="btn btn-outline-secondary btn-grant-all" data-target="{{ module_class }}">
                             <i class="fas fa-check-double me-1 text-success"></i> Grant All
                         </button>
-                         <button type="button" class="btn btn-outline-secondary text-light btn-revoke-all" data-target="{{ module_class }}">
+                         <button type="button" class="btn btn-outline-secondary btn-revoke-all" data-target="{{ module_class }}">
                             <i class="fas fa-times me-1 text-danger"></i> Revoke All
                         </button>
-                         <button type="button" class="btn btn-outline-secondary text-light" data-bs-toggle="collapse" data-bs-target="#collapse{{ module|replace({' ': ''}) }}">
+                         <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#collapse{{ module|replace({' ': ''}) }}">
                             <i class="fas fa-chevron-down"></i>
                         </button>
                     </div>
@@ -88,14 +88,56 @@
                 
                 <div id="collapse{{ module|replace({' ': ''}) }}" class="collapse show">
                     <div class="table-responsive">
-                        <table class="table table-hover table-dark mb-0 align-middle">
-                            <thead style="background: #2b2d3c;">
+                        <table class="table table-hover mb-0 align-middle" style="color: var(--text-primary);">
+                            <thead style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);">
                                 <tr>
-                                    <th style="width: 40%;">PAGE</th>
-                                    <th class="text-center" style="width: 15%;"><i class="fas fa-eye text-primary"></i> VIEW</th>
-                                    <th class="text-center" style="width: 15%;"><i class="fas fa-plus text-success"></i> ADD</th>
-                                    <th class="text-center" style="width: 15%;"><i class="fas fa-edit text-warning"></i> EDIT</th>
-                                    <th class="text-center" style="width: 15%;"><i class="fas fa-trash text-danger"></i> DELETE</th>
+                                    <th style="width: 40%; color: var(--text-secondary);">PAGE</th>
+                                    <th class="text-center" style="width: 15%; color: var(--text-secondary);"><i class="fas fa-eye text-primary"></i> VIEW</th>
+                                    <th class="text-center" style="width: 15%; color: var(--text-secondary);"><i class="fas fa-plus text-success"></i> ADD</th>
+                                    <th class="text-center" style="width: 15%; color: var(--text-secondary);"><i class="fas fa-edit text-warning"></i> EDIT</th>
+                                    <th class="text-center" style="width: 15%; color: var(--text-secondary);"><i class="fas fa-trash text-danger"></i> DELETE</th>
+                                </tr>
+                                <tr class="column-toggle-row" style="background: var(--bg-tertiary); border-top: 1px solid var(--border-color); border-bottom: 2px solid var(--border-color);">
+                                    <th class="py-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 py-1 px-2" style="font-size: 0.72rem;">
+                                                <i class="fas fa-sliders-h me-1"></i>Column Toggle
+                                            </span>
+                                            <span class="text-muted small d-none d-md-inline" style="font-size: 0.73rem;">Toggle column for this module</span>
+                                        </div>
+                                    </th>
+                                    <th class="text-center py-2">
+                                        <div class="form-check form-switch d-inline-block">
+                                            <input class="form-check-input col-master-toggle" 
+                                                   type="checkbox" 
+                                                   data-col="view" 
+                                                   title="Toggle all VIEW in this module">
+                                        </div>
+                                    </th>
+                                    <th class="text-center py-2">
+                                        <div class="form-check form-switch d-inline-block">
+                                            <input class="form-check-input col-master-toggle" 
+                                                   type="checkbox" 
+                                                   data-col="create" 
+                                                   title="Toggle all ADD in this module">
+                                        </div>
+                                    </th>
+                                    <th class="text-center py-2">
+                                        <div class="form-check form-switch d-inline-block">
+                                            <input class="form-check-input col-master-toggle" 
+                                                   type="checkbox" 
+                                                   data-col="edit" 
+                                                   title="Toggle all EDIT in this module">
+                                        </div>
+                                    </th>
+                                    <th class="text-center py-2">
+                                        <div class="form-check form-switch d-inline-block">
+                                            <input class="form-check-input col-master-toggle" 
+                                                   type="checkbox" 
+                                                   data-col="delete" 
+                                                   title="Toggle all DELETE in this module">
+                                        </div>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -103,16 +145,16 @@
                                     {# Check permissions for this specific page #}
                                     {% set p = role_permissions[perm.permission_name] %}
                                     
-                                    <tr class="permission-row">
+                                    <tr class="permission-row" style="border-bottom: 1px solid var(--border-color);">
                                         <td>
                                             <div class="d-flex flex-column">
-                                                <span class="fw-bold">{{ perm.permission_name }}</span>
+                                                <span class="fw-bold" style="color: var(--text-primary);">{{ perm.permission_name }}</span>
                                                 <small class="text-muted">{{ perm.description }}</small>
                                             </div>
                                         </td>
                                         <td class="text-center">
                                             <div class="form-check form-switch d-inline-block">
-                                                <input class="form-check-input {{ module_class }} view-toggle" 
+                                                <input class="form-check-input {{ module_class }} view-toggle col-view" 
                                                        type="checkbox" 
                                                        name="permissions[{{ perm.permission_name }}][can_view]" 
                                                        value="1" 
@@ -121,7 +163,7 @@
                                         </td>
                                         <td class="text-center">
                                             <div class="form-check form-switch d-inline-block">
-                                                <input class="form-check-input {{ module_class }} action-toggle" 
+                                                <input class="form-check-input {{ module_class }} action-toggle col-create" 
                                                        type="checkbox" 
                                                        name="permissions[{{ perm.permission_name }}][can_create]" 
                                                        value="1" 
@@ -130,7 +172,7 @@
                                         </td>
                                         <td class="text-center">
                                             <div class="form-check form-switch d-inline-block">
-                                                <input class="form-check-input {{ module_class }} action-toggle" 
+                                                <input class="form-check-input {{ module_class }} action-toggle col-edit" 
                                                        type="checkbox" 
                                                        name="permissions[{{ perm.permission_name }}][can_edit]" 
                                                        value="1" 
@@ -139,7 +181,7 @@
                                         </td>
                                         <td class="text-center">
                                             <div class="form-check form-switch d-inline-block">
-                                                <input class="form-check-input {{ module_class }} action-toggle" 
+                                                <input class="form-check-input {{ module_class }} action-toggle col-delete" 
                                                        type="checkbox" 
                                                        name="permissions[{{ perm.permission_name }}][can_delete]" 
                                                        value="1" 
@@ -159,43 +201,125 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    
-    // Grant All
-    document.querySelectorAll('.btn-grant-all').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const target = this.dataset.target;
-            document.querySelectorAll('.' + target).forEach(chk => chk.checked = true);
+    const totalPagesCount = {{ stats.total_pages|default(1) }};
+
+    function recalculateStats() {
+        const viewToggles = document.querySelectorAll('.view-toggle:checked');
+        const accessible = viewToggles.length;
+        const coverage = Math.round((accessible / totalPagesCount) * 100);
+
+        const countEl = document.getElementById('roleStatAccessibleCount');
+        const covEl = document.getElementById('roleStatCoverage');
+        const barEl = document.getElementById('roleStatCoverageBar');
+
+        if (countEl) countEl.textContent = accessible;
+        if (covEl) covEl.textContent = coverage + '%';
+        if (barEl) barEl.style.width = coverage + '%';
+    }
+
+    // Sync header toggle state (checked, unchecked, or indeterminate) based on row switches
+    function syncModuleColumnToggles(card) {
+        if (!card) return;
+        ['view', 'create', 'edit', 'delete'].forEach(col => {
+            const allSwitches = card.querySelectorAll('.col-' + col);
+            const checkedSwitches = card.querySelectorAll('.col-' + col + ':checked');
+            const masterToggle = card.querySelector('.col-master-toggle[data-col="' + col + '"]');
+            if (masterToggle) {
+                if (allSwitches.length > 0 && checkedSwitches.length === allSwitches.length) {
+                    masterToggle.checked = true;
+                    masterToggle.indeterminate = false;
+                } else if (checkedSwitches.length === 0) {
+                    masterToggle.checked = false;
+                    masterToggle.indeterminate = false;
+                } else {
+                    masterToggle.checked = false;
+                    masterToggle.indeterminate = true;
+                }
+            }
+        });
+    }
+
+    // Column-wise master toggle change event
+    document.querySelectorAll('.col-master-toggle').forEach(masterToggle => {
+        masterToggle.addEventListener('change', function() {
+            const card = this.closest('.module-card');
+            if (!card) return;
+            const col = this.dataset.col;
+            const isChecked = this.checked;
+
+            card.querySelectorAll('.col-' + col).forEach(chk => {
+                chk.checked = isChecked;
+            });
+
+            if (isChecked && col !== 'view') {
+                card.querySelectorAll('.col-view').forEach(viewChk => {
+                    viewChk.checked = true;
+                });
+            }
+
+            if (!isChecked && col === 'view') {
+                card.querySelectorAll('.action-toggle').forEach(actChk => {
+                    actChk.checked = false;
+                });
+            }
+
+            syncModuleColumnToggles(card);
+            recalculateStats();
         });
     });
 
-    // Revoke All
+    // Grant All in module
+    document.querySelectorAll('.btn-grant-all').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const target = this.dataset.target;
+            const card = this.closest('.module-card');
+            document.querySelectorAll('.' + target).forEach(chk => chk.checked = true);
+            syncModuleColumnToggles(card);
+            recalculateStats();
+        });
+    });
+
+    // Revoke All in module
     document.querySelectorAll('.btn-revoke-all').forEach(btn => {
         btn.addEventListener('click', function() {
             const target = this.dataset.target;
+            const card = this.closest('.module-card');
             document.querySelectorAll('.' + target).forEach(chk => chk.checked = false);
+            syncModuleColumnToggles(card);
+            recalculateStats();
         });
     });
     
     // Auto-enable view if action is checked
     document.querySelectorAll('.action-toggle').forEach(toggle => {
         toggle.addEventListener('change', function() {
-            if(this.checked) {
-                const row = this.closest('tr');
+            const row = this.closest('tr');
+            const card = this.closest('.module-card');
+            if (this.checked) {
                 const viewToggle = row.querySelector('.view-toggle');
-                if(viewToggle) viewToggle.checked = true;
+                if (viewToggle) viewToggle.checked = true;
             }
+            syncModuleColumnToggles(card);
+            recalculateStats();
         });
     });
     
     // Auto-disable actions if view is unchecked
     document.querySelectorAll('.view-toggle').forEach(toggle => {
         toggle.addEventListener('change', function() {
-             if(!this.checked) {
-                const row = this.closest('tr');
+            const row = this.closest('tr');
+            const card = this.closest('.module-card');
+            if (!this.checked) {
                 row.querySelectorAll('.action-toggle').forEach(t => t.checked = false);
             }
+            syncModuleColumnToggles(card);
+            recalculateStats();
         });
     });
+
+    // Initial sync of column master toggles on page load
+    document.querySelectorAll('.module-card').forEach(syncModuleColumnToggles);
+    recalculateStats();
     
     // Form Submit handling via AJAX
     const form = document.getElementById('permissionsForm');
@@ -220,8 +344,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await response.json();
             
             if (response.ok && result.success) {
-                // Show success
-                 Swal.fire({
+                Swal.fire({
                     title: 'Saved!',
                     text: 'Role permissions updated successfully.',
                     icon: 'success',

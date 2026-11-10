@@ -391,6 +391,12 @@ return function (RouteCollector $r) {
         $r->addRoute(['POST'], '/roles/destroy', [\App\Controllers\Admin\RoleController::class, 'destroy']);
         $r->addRoute(['POST'], '/roles/update_permissions', [\App\Controllers\Admin\RoleController::class, 'updatePermissions']);
 
+        // User Permissions
+        $r->addRoute(['GET', 'POST'], '/permissions', [\App\Controllers\Admin\PermissionController::class, 'index']);
+        $r->addRoute(['GET', 'POST'], '/permissions/{userId:\d+}', [\App\Controllers\Admin\PermissionController::class, 'index']);
+        $r->addRoute(['POST'], '/permissions/update', [\App\Controllers\Admin\PermissionController::class, 'update']);
+        $r->addRoute(['POST'], '/permissions/reset', [\App\Controllers\Admin\PermissionController::class, 'reset']);
+
         // Settings
         $r->addRoute(['GET', 'POST'], '/settings', [\App\Controllers\Admin\SettingsController::class, 'index']);
 
@@ -501,6 +507,89 @@ return function (RouteCollector $r) {
         $r->addRoute(['GET'], '/reports/yearly-leave-balance', [\App\Controllers\HR\HRReportController::class, 'yearlyLeaveBalanceReport']);
         $r->addRoute(['GET'], '/reports/monthly-detailed-attendance', [\App\Controllers\HR\HRReportController::class, 'monthlyDetailedAttendance']);
         $r->addRoute(['GET'], '/reports/monthly-detailed-attendance/export-excel', [\App\Controllers\HR\HRReportController::class, 'exportMonthlyAttendanceExcel']);
+
+        // Employees
+        $r->addRoute(['GET'], '/employees', [\App\Controllers\HR\EmployeeController::class, 'index']);
+        $r->addRoute(['GET'], '/employees/create', [\App\Controllers\HR\EmployeeController::class, 'create']);
+        $r->addRoute(['POST'], '/employees', [\App\Controllers\HR\EmployeeController::class, 'store']);
+        $r->addRoute(['POST'], '/employees/search', [\App\Controllers\HR\EmployeeController::class, 'search']);
+        $r->addRoute(['GET'], '/employees/export', [\App\Controllers\HR\EmployeeController::class, 'export']);
+        $r->addRoute(['GET'], '/employees/{id:\d+}', [\App\Controllers\HR\EmployeeController::class, 'show']);
+        $r->addRoute(['GET'], '/employees/{id:\d+}/edit', [\App\Controllers\HR\EmployeeController::class, 'edit']);
+        $r->addRoute(['PUT', 'POST'], '/employees/{id:\d+}', [\App\Controllers\HR\EmployeeController::class, 'update']);
+        $r->addRoute(['DELETE', 'POST'], '/employees/{id:\d+}/destroy', [\App\Controllers\HR\EmployeeController::class, 'destroy']);
+
+        // Employee Career & Information
+        $r->addRoute(['GET', 'POST'], '/employees/increment-entry', [\App\Controllers\HR\HRCareerProcessController::class, 'incrementEntry']);
+        $r->addRoute(['GET', 'POST'], '/employees/increment-bulk', [\App\Controllers\HR\HRCareerProcessController::class, 'incrementBulk']);
+        $r->addRoute(['GET', 'POST'], '/employees/promotion-entry', [\App\Controllers\HR\HRCareerProcessController::class, 'promotionEntry']);
+        $r->addRoute(['GET', 'POST'], '/employees/promotion-bulk', [\App\Controllers\HR\HRCareerProcessController::class, 'promotionBulk']);
+        $r->addRoute(['GET', 'POST'], '/employees/lay-off', [\App\Controllers\HR\HRCareerProcessController::class, 'layoffEmployee']);
+        $r->addRoute(['GET', 'POST'], '/employees/weekend', [\App\Controllers\HR\HREmployeeInfoController::class, 'weekendInfo']);
+        $r->addRoute(['GET', 'POST'], '/employees/basic-info', [\App\Controllers\HR\HREmployeeInfoController::class, 'basicInfo']);
+        $r->addRoute(['GET', 'POST'], '/employees/details-info', [\App\Controllers\HR\HREmployeeInfoController::class, 'detailsInfo']);
+        $r->addRoute(['GET', 'POST'], '/employees/policy-tagging', [\App\Controllers\HR\HREmployeeInfoController::class, 'policyTagging']);
+        $r->addRoute(['GET', 'POST'], '/employees/salary-info', [\App\Controllers\HR\HREmployeeInfoController::class, 'salaryInfo']);
+        $r->addRoute(['GET', 'POST'], '/employees/submitted-documents', [\App\Controllers\HR\HREmployeeInfoController::class, 'submittedDocuments']);
+        $r->addRoute(['GET', 'POST'], '/employees/vaccination-info', [\App\Controllers\HR\HREmployeeInfoController::class, 'vaccinationInfo']);
+        $r->addRoute(['GET', 'POST'], '/employees/health-medical', [\App\Controllers\HR\HREmployeeInfoController::class, 'healthMedicalInfo']);
+        $r->addRoute(['GET', 'POST'], '/employees/tax-certificate', [\App\Controllers\HR\HREmployeeInfoController::class, 'taxCertificateInfo']);
+
+        // Attendance
+        $r->addRoute(['GET'], '/attendance', [\App\Controllers\HR\AttendanceController::class, 'index']);
+        $r->addRoute(['POST'], '/attendance', [\App\Controllers\HR\AttendanceController::class, 'store']);
+        $r->addRoute(['GET', 'POST'], '/attendance/movement-bulk', [\App\Controllers\HR\HRAttendanceOperationController::class, 'bulkMovement']);
+        $r->addRoute(['GET', 'POST'], '/attendance/date-transfer', [\App\Controllers\HR\HRAttendanceOperationController::class, 'dateAttendanceTransfer']);
+        $r->addRoute(['GET', 'POST'], '/attendance/define-holiday', [\App\Controllers\HR\HRAttendanceOperationController::class, 'defineHoliday']);
+        $r->addRoute(['GET', 'POST'], '/attendance/define-weekend', [\App\Controllers\HR\HRAttendanceOperationController::class, 'defineWeekend']);
+        $r->addRoute(['GET', 'POST'], '/attendance/roster-reprocess', [\App\Controllers\HR\HRAttendanceOperationController::class, 'dutyRosterReprocess']);
+        $r->addRoute(['GET', 'POST'], '/attendance/holiday-remove', [\App\Controllers\HR\HRAttendanceOperationController::class, 'holidayRemove']);
+        $r->addRoute(['GET', 'POST'], '/attendance/manual-entry', [\App\Controllers\HR\HRAttendanceOperationController::class, 'manualAttendanceEntry']);
+        $r->addRoute(['GET'], '/attendance/movement-register', [\App\Controllers\HR\HRAttendanceOperationController::class, 'movementRegister']);
+        $r->addRoute(['GET', 'POST'], '/attendance/ot-requisition', [\App\Controllers\HR\HRAttendanceOperationController::class, 'otRequisition']);
+
+        // Leaves
+        $r->addRoute(['GET'], '/leave', [\App\Controllers\HR\LeaveController::class, 'index']);
+        $r->addRoute(['GET'], '/leaves', [\App\Controllers\HR\LeaveController::class, 'index']);
+        $r->addRoute(['GET'], '/leave/create', [\App\Controllers\HR\LeaveController::class, 'create']);
+        $r->addRoute(['POST'], '/leave', [\App\Controllers\HR\LeaveController::class, 'store']);
+        $r->addRoute(['POST'], '/leaves', [\App\Controllers\HR\LeaveController::class, 'store']);
+        $r->addRoute(['POST'], '/leave/update-status', [\App\Controllers\HR\LeaveController::class, 'updateStatus']);
+        $r->addRoute(['GET', 'POST'], '/leave-entry', [\App\Controllers\HR\LeaveController::class, 'entryPage']);
+        $r->addRoute(['POST'], '/leave-entry/store', [\App\Controllers\HR\LeaveController::class, 'storeEntry']);
+        $r->addRoute(['GET', 'POST'], '/leave-delete', [\App\Controllers\HR\LeaveController::class, 'deletePage']);
+        $r->addRoute(['POST'], '/leave-delete/perform', [\App\Controllers\HR\LeaveController::class, 'deletePerform']);
+
+        // Payroll
+        $r->addRoute(['GET'], '/payroll', [\App\Controllers\HR\PayrollController::class, 'index']);
+        $r->addRoute(['POST'], '/payroll/generate', [\App\Controllers\HR\PayrollController::class, 'generate']);
+        $r->addRoute(['GET'], '/payroll/{id:\d+}', [\App\Controllers\HR\PayrollController::class, 'show']);
+        $r->addRoute(['POST'], '/payroll/{id:\d+}/approve', [\App\Controllers\HR\PayrollController::class, 'approve']);
+        $r->addRoute(['POST'], '/payroll/{id:\d+}/pay', [\App\Controllers\HR\PayrollController::class, 'pay']);
+        $r->addRoute(['POST', 'DELETE'], '/payroll/{id:\d+}/destroy', [\App\Controllers\HR\PayrollController::class, 'destroy']);
+        $r->addRoute(['GET', 'POST'], '/payroll/bonus-reprocess', [\App\Controllers\HR\HRPayrollProcessController::class, 'bonusReprocess']);
+        $r->addRoute(['GET', 'POST'], '/payroll/cost-center-salary', [\App\Controllers\HR\HRPayrollProcessController::class, 'costCenterSalary']);
+        $r->addRoute(['GET', 'POST'], '/payroll/earn-leave-monthly', [\App\Controllers\HR\HRPayrollProcessController::class, 'earnLeaveMonthly']);
+        $r->addRoute(['GET', 'POST'], '/payroll/earn-leave-yearly', [\App\Controllers\HR\HRPayrollProcessController::class, 'earnLeaveYearly']);
+        $r->addRoute(['GET', 'POST'], '/payroll/final-settlement', [\App\Controllers\HR\HRPayrollProcessController::class, 'finalSettlement']);
+        $r->addRoute(['GET', 'POST'], '/payroll/fraction-salary-reprocess', [\App\Controllers\HR\HRPayrollProcessController::class, 'fractionSalaryReprocess']);
+        $r->addRoute(['GET', 'POST'], '/payroll/holiday-allowance', [\App\Controllers\HR\HRPayrollProcessController::class, 'holidayAllowance']);
+        $r->addRoute(['GET', 'POST'], '/payroll/monthly-bill-process', [\App\Controllers\HR\HRPayrollProcessController::class, 'monthlyBillProcess']);
+        $r->addRoute(['GET', 'POST'], '/payroll/night-allowance', [\App\Controllers\HR\HRPayrollProcessController::class, 'nightAllowance']);
+        $r->addRoute(['GET', 'POST'], '/payroll/salary-adjustment', [\App\Controllers\HR\HRPayrollProcessController::class, 'salaryAdjustment']);
+        $r->addRoute(['GET', 'POST'], '/payroll/period-lock', [\App\Controllers\HR\HRPayrollProcessController::class, 'salaryPeriodLock']);
+        $r->addRoute(['GET', 'POST'], '/payroll/tiffin-bill', [\App\Controllers\HR\HRPayrollProcessController::class, 'tiffinBill']);
+
+        // RMG Compliance
+        $r->addRoute(['GET'], '/rmg-compliance', [\App\Controllers\HR\RmgComplianceController::class, 'index']);
+        $r->addRoute(['GET'], '/rmg-compliance/wage-compliance', [\App\Controllers\HR\RmgComplianceController::class, 'wageCompliance']);
+        $r->addRoute(['GET'], '/rmg-compliance/attendance-bonus', [\App\Controllers\HR\RmgComplianceController::class, 'attendanceBonus']);
+        $r->addRoute(['GET'], '/rmg-compliance/festival-bonus', [\App\Controllers\HR\RmgComplianceController::class, 'festivalBonus']);
+        $r->addRoute(['GET'], '/rmg-compliance/maternity', [\App\Controllers\HR\RmgComplianceController::class, 'maternity']);
+        $r->addRoute(['POST'], '/rmg-compliance/maternity', [\App\Controllers\HR\RmgComplianceController::class, 'createMaternityCase']);
+        $r->addRoute(['POST'], '/rmg-compliance/maternity/{id:\d+}/approve', [\App\Controllers\HR\RmgComplianceController::class, 'approveMaternityCase']);
+        $r->addRoute(['POST'], '/rmg-compliance/maternity/{id:\d+}/payout', [\App\Controllers\HR\RmgComplianceController::class, 'payoutMaternity']);
+        $r->addRoute(['DELETE', 'POST'], '/rmg-compliance/maternity/{id:\d+}/delete', [\App\Controllers\HR\RmgComplianceController::class, 'deleteMaternityCase']);
     });
 
     // Module Reports Hub Routes

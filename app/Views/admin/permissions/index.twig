@@ -1,0 +1,994 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}User Permissions: {{ target_user.first_name }} {{ target_user.last_name }} - RMG PRO ERP{% endblock %}
+
+{% block styles %}
+<style>
+    /* Theme-Aware Container & Card Styles */
+    .user-perm-hero {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 1.5rem 1.75rem;
+        margin-bottom: 1.75rem;
+        box-shadow: var(--card-shadow);
+        color: var(--text-primary);
+        transition: background 0.3s ease, border-color 0.3s ease;
+    }
+    [data-theme="dark"] .user-perm-hero,
+    body.dark-mode .user-perm-hero {
+        background: linear-gradient(135deg, #1e2235 0%, #292d42 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .user-avatar-badge {
+        width: 58px;
+        height: 58px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6rem;
+        color: #ffffff;
+        font-weight: 700;
+        box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+        flex-shrink: 0;
+    }
+
+    .perm-heading {
+        color: var(--text-primary);
+    }
+    [data-theme="dark"] .perm-heading,
+    body.dark-mode .perm-heading {
+        color: #f8fafc;
+    }
+
+    /* Badges */
+    .badge-override {
+        background: rgba(245, 158, 11, 0.15);
+        color: #b45309;
+        border: 1px solid rgba(245, 158, 11, 0.35);
+        font-size: 0.75rem;
+        padding: 0.35rem 0.65rem;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+    [data-theme="dark"] .badge-override,
+    body.dark-mode .badge-override {
+        background: rgba(245, 158, 11, 0.2);
+        color: #fbbf24;
+    }
+
+    .badge-inherited {
+        background: rgba(16, 185, 129, 0.15);
+        color: #047857;
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        font-size: 0.75rem;
+        padding: 0.35rem 0.65rem;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+    [data-theme="dark"] .badge-inherited,
+    body.dark-mode .badge-inherited {
+        background: rgba(16, 185, 129, 0.2);
+        color: #34d399;
+    }
+
+    /* Stat Cards */
+    .stat-card-custom {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: var(--card-shadow);
+        color: var(--text-primary);
+        transition: transform 0.2s ease, border-color 0.2s ease, background 0.3s ease;
+    }
+    .stat-card-custom:hover {
+        transform: translateY(-2px);
+        border-color: rgba(99, 102, 241, 0.5);
+    }
+    [data-theme="dark"] .stat-card-custom,
+    body.dark-mode .stat-card-custom {
+        background: #1e2235;
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .stat-number {
+        color: var(--text-primary);
+    }
+    [data-theme="dark"] .stat-number,
+    body.dark-mode .stat-number {
+        color: #f8fafc;
+    }
+
+    /* Sticky Actions Toolbar */
+    .sticky-actions-bar {
+        position: sticky;
+        top: 70px;
+        z-index: 99;
+        background: rgba(255, 255, 255, 0.94);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        padding: 0.85rem 1.15rem;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+        margin-bottom: 1.5rem;
+        transition: background 0.3s ease, border-color 0.3s ease;
+    }
+    [data-theme="dark"] .sticky-actions-bar,
+    body.dark-mode .sticky-actions-bar {
+        background: rgba(26, 29, 44, 0.92);
+        border-color: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Search & Inputs */
+    .search-perm-input {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        border-radius: 8px;
+        padding: 0.6rem 1rem 0.6rem 2.4rem;
+        transition: all 0.2s ease;
+    }
+    .search-perm-input:focus {
+        background: var(--bg-primary);
+        border-color: #6366f1;
+        color: var(--text-primary);
+        box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+    }
+    [data-theme="dark"] .search-perm-input,
+    body.dark-mode .search-perm-input {
+        background: #1e2235;
+        border-color: rgba(255, 255, 255, 0.12);
+        color: #f8fafc;
+    }
+    [data-theme="dark"] .search-perm-input:focus,
+    body.dark-mode .search-perm-input:focus {
+        background: #1e2235;
+        border-color: #6366f1;
+        color: #f8fafc;
+    }
+
+    .search-perm-icon {
+        position: absolute;
+        left: 0.9rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-tertiary);
+    }
+
+    .user-select-dropdown {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        border-radius: 8px;
+        font-size: 0.88rem;
+        padding: 0.45rem 1rem;
+        transition: all 0.2s ease;
+    }
+    [data-theme="dark"] .user-select-dropdown,
+    body.dark-mode .user-select-dropdown {
+        background: #252a3f;
+        border-color: rgba(255, 255, 255, 0.15);
+        color: #f8fafc;
+    }
+
+    /* Module Card & Header */
+    .module-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        box-shadow: var(--card-shadow);
+        transition: all 0.25s ease;
+    }
+    [data-theme="dark"] .module-card,
+    body.dark-mode .module-card {
+        background: #1e2235;
+        border-color: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .module-header {
+        background: var(--bg-secondary);
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        transition: background 0.3s ease, border-color 0.3s ease;
+    }
+    [data-theme="dark"] .module-header,
+    body.dark-mode .module-header {
+        background: #252a3f;
+        border-bottom-color: rgba(255, 255, 255, 0.06);
+        color: #f8fafc;
+    }
+
+    .module-title {
+        color: var(--text-primary);
+    }
+    [data-theme="dark"] .module-title,
+    body.dark-mode .module-title {
+        color: #f8fafc;
+    }
+
+    /* Permission Table */
+    .perm-table {
+        margin-bottom: 0;
+        color: var(--text-primary);
+        background-color: var(--bg-card);
+    }
+    .perm-table thead th {
+        background: var(--bg-secondary) !important;
+        color: var(--text-secondary);
+        font-size: 0.78rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border-color);
+        padding: 0.85rem 1rem;
+    }
+    .perm-table tbody tr {
+        background-color: var(--bg-card);
+        border-bottom: 1px solid var(--border-color);
+        transition: background-color 0.15s ease;
+    }
+    .perm-table tbody tr:hover {
+        background-color: var(--bg-secondary) !important;
+    }
+    .perm-table td {
+        padding: 0.85rem 1rem;
+        vertical-align: middle;
+        background-color: transparent !important;
+    }
+
+    .perm-name-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.92rem;
+    }
+    .perm-desc-subtitle {
+        color: var(--text-secondary);
+        font-size: 0.78rem;
+    }
+
+    /* Column-wise Toggle Header Row */
+    .column-toggle-row th {
+        background: var(--bg-tertiary) !important;
+        border-top: 1px solid var(--border-color) !important;
+        border-bottom: 2px solid var(--border-color) !important;
+        padding-top: 0.55rem !important;
+        padding-bottom: 0.55rem !important;
+        color: var(--text-primary);
+    }
+
+    /* Dark Mode Table Specifics */
+    [data-theme="dark"] .perm-table,
+    body.dark-mode .perm-table {
+        color: #e2e8f0;
+        background-color: #1e2235;
+    }
+    [data-theme="dark"] .perm-table thead th,
+    body.dark-mode .perm-table thead th {
+        background: #1a1d2c !important;
+        color: #94a3b8;
+        border-bottom-color: rgba(255, 255, 255, 0.08);
+    }
+    [data-theme="dark"] .perm-table tbody tr,
+    body.dark-mode .perm-table tbody tr {
+        background-color: #1e2235;
+        border-bottom-color: rgba(255, 255, 255, 0.05);
+    }
+    [data-theme="dark"] .perm-table tbody tr:hover,
+    body.dark-mode .perm-table tbody tr:hover {
+        background-color: rgba(255, 255, 255, 0.03) !important;
+    }
+    [data-theme="dark"] .perm-name-title,
+    body.dark-mode .perm-name-title {
+        color: #f8fafc;
+    }
+    [data-theme="dark"] .perm-desc-subtitle,
+    body.dark-mode .perm-desc-subtitle {
+        color: #94a3b8;
+    }
+    [data-theme="dark"] .column-toggle-row th,
+    body.dark-mode .column-toggle-row th {
+        background: #202438 !important;
+        border-top-color: rgba(255, 255, 255, 0.05) !important;
+        border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+        color: #f8fafc;
+    }
+
+    /* Switch Toggles */
+    .form-check-input {
+        cursor: pointer;
+        width: 2.75em;
+        height: 1.4em;
+        background-color: #cbd5e1;
+        border-color: #94a3b8;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .form-check-input:checked {
+        background-color: #4f46e5 !important;
+        border-color: #4f46e5 !important;
+    }
+    [data-theme="dark"] .form-check-input,
+    body.dark-mode .form-check-input {
+        background-color: #334155;
+        border-color: #475569;
+    }
+    [data-theme="dark"] .form-check-input:checked,
+    body.dark-mode .form-check-input:checked {
+        background-color: #6366f1 !important;
+        border-color: #6366f1 !important;
+    }
+
+    .col-master-toggle {
+        width: 2.5em;
+        height: 1.3em;
+    }
+    .col-master-toggle:indeterminate {
+        background-color: #6366f1 !important;
+        border-color: #6366f1 !important;
+        opacity: 0.8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="{{ BASE_URL }}/dashboard" class="text-decoration-none text-muted"><i class="fas fa-home me-1"></i>Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ BASE_URL }}/admin/users" class="text-decoration-none text-muted">User Management</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Manage Permissions</li>
+        </ol>
+    </nav>
+
+    <!-- User Profile Hero Banner -->
+    <div class="user-perm-hero d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="user-avatar-badge">
+                {{ target_user.first_name|first|upper }}{{ target_user.last_name|first|upper }}
+            </div>
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                    <h3 class="h4 perm-heading mb-0 fw-bold">{{ target_user.first_name }} {{ target_user.last_name }}</h3>
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1">
+                        <i class="fas fa-user-shield me-1"></i>Role: {{ target_user.role_name|default('General User') }}
+                    </span>
+                    {% if stats.has_custom %}
+                        <span class="badge-override"><i class="fas fa-sliders-h me-1"></i>Custom Overrides Active</span>
+                    {% else %}
+                        <span class="badge-inherited"><i class="fas fa-sitemap me-1"></i>Inherited From Role Defaults</span>
+                    {% endif %}
+                </div>
+                <div class="text-muted small">
+                    <span class="me-3"><i class="fas fa-envelope me-1"></i>{{ target_user.email }}</span>
+                    <span class="me-3"><i class="fas fa-user me-1"></i>@{{ target_user.username }}</span>
+                    <span><i class="fas fa-id-badge me-1"></i>User ID: #{{ target_user.user_id }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <!-- User Switcher Dropdown -->
+            <div class="d-flex align-items-center gap-2">
+                <label class="text-muted small mb-0 text-nowrap d-none d-md-inline"><i class="fas fa-random me-1"></i>Switch User:</label>
+                <select class="form-select user-select-dropdown" id="userSwitcher" onchange="if(this.value) window.location.href='{{ BASE_URL }}/admin/permissions?user_id=' + this.value;">
+                    {% for u in users_list %}
+                        <option value="{{ u.user_id }}" {% if u.user_id == target_user.user_id %}selected{% endif %}>
+                            {{ u.first_name }} {{ u.last_name }} (@{{ u.username }} - {{ u.role_name }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <a href="{{ BASE_URL }}/admin/users" class="btn btn-outline-secondary btn-sm text-nowrap">
+                <i class="fas fa-arrow-left me-1"></i>All Users
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-card-custom h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small text-uppercase fw-semibold mb-1">Total System Pages</div>
+                        <h3 class="stat-number mb-0 fw-bold">{{ stats.total_pages }}</h3>
+                    </div>
+                    <div class="p-3 bg-secondary bg-opacity-10 rounded-3 text-secondary">
+                        <i class="fas fa-layer-group fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-card-custom h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small text-uppercase fw-semibold mb-1">Accessible Pages</div>
+                        <h3 class="text-success mb-0 fw-bold" id="statAccessibleCount">{{ stats.pages_with_access }}</h3>
+                    </div>
+                    <div class="p-3 bg-success bg-opacity-10 rounded-3 text-success">
+                        <i class="fas fa-check-circle fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-card-custom h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small text-uppercase fw-semibold mb-1">Access Coverage</div>
+                        <h3 class="text-info mb-0 fw-bold" id="statCoverage">{{ stats.coverage }}%</h3>
+                    </div>
+                    <div class="p-3 bg-info bg-opacity-10 rounded-3 text-info">
+                        <i class="fas fa-chart-pie fa-lg"></i>
+                    </div>
+                </div>
+                <div class="progress mt-2" style="height: 4px; background: rgba(125,125,125,0.15);">
+                    <div class="progress-bar bg-info" id="statCoverageBar" role="progressbar" style="width: {{ stats.coverage }}%;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-card-custom h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small text-uppercase fw-semibold mb-1">Permission Mode</div>
+                        <div class="mt-1">
+                            {% if stats.has_custom %}
+                                <span class="badge bg-warning text-dark"><i class="fas fa-user-cog me-1"></i>Custom Overrides</span>
+                            {% else %}
+                                <span class="badge bg-success"><i class="fas fa-shield-alt me-1"></i>Role Default</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="p-3 bg-warning bg-opacity-10 rounded-3 text-warning">
+                        <i class="fas fa-user-lock fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sticky Toolbar Controls -->
+    <div class="sticky-actions-bar d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 420px;">
+            <div class="position-relative w-100">
+                <i class="fas fa-search search-perm-icon"></i>
+                <input type="text" id="permSearchInput" class="form-control search-perm-input w-100" placeholder="Filter by page or permission name...">
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="btnExpandAll" title="Expand all modules">
+                <i class="fas fa-expand-alt me-1"></i>Expand All
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="btnCollapseAll" title="Collapse all modules">
+                <i class="fas fa-compress-alt me-1"></i>Collapse All
+            </button>
+            <button type="button" class="btn btn-outline-success btn-sm" id="btnGrantAllGlobal">
+                <i class="fas fa-check-double me-1"></i>Grant All
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-sm" id="btnRevokeAllGlobal">
+                <i class="fas fa-ban me-1"></i>Revoke All
+            </button>
+            <button type="button" class="btn btn-warning btn-sm text-dark fw-semibold" id="btnResetToRole">
+                <i class="fas fa-undo-alt me-1"></i>Reset to Role
+            </button>
+            <button type="submit" form="userPermissionsForm" class="btn btn-primary btn-sm px-3 fw-bold" id="btnSavePermissions">
+                <i class="fas fa-save me-1"></i>Save Permissions
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Permissions Form -->
+    <form id="userPermissionsForm" action="{{ BASE_URL }}/admin/permissions/update" method="POST">
+        {{ csrf_field() | raw }}
+        <input type="hidden" name="user_id" value="{{ target_user.user_id }}">
+
+        {% for module, permissions in grouped_permissions %}
+            {% set module_slug = module|replace({' ': '-', '/': '-'})|lower %}
+            {% set module_icon = module_icons[module]|default('cube') %}
+            {% set module_title = module_names[module]|default(module|capitalize) %}
+
+            <div class="module-card" data-module="{{ module|lower }}">
+                <div class="module-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2 cursor-pointer" data-bs-toggle="collapse" data-bs-target="#moduleCollapse-{{ module_slug }}">
+                        <div class="p-2 rounded bg-primary bg-opacity-10 text-primary">
+                            <i class="fas fa-{{ module_icon }}"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0 module-title fw-bold h6">{{ module_title }}</h5>
+                            <span class="text-muted small">{{ permissions|length }} configurable pages</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-secondary btn-grant-module" data-target="mod-{{ module_slug }}" title="Grant all permissions in this module">
+                                <i class="fas fa-check text-success me-1"></i>Grant
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-revoke-module" data-target="mod-{{ module_slug }}" title="Revoke all permissions in this module">
+                                <i class="fas fa-times text-danger me-1"></i>Revoke
+                            </button>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-link text-muted p-1" data-bs-toggle="collapse" data-bs-target="#moduleCollapse-{{ module_slug }}">
+                            <i class="fas fa-chevron-down module-chevron"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="moduleCollapse-{{ module_slug }}" class="collapse show">
+                    <div class="table-responsive">
+                        <table class="table perm-table align-middle">
+                            <thead>
+                                <tr>
+                                    <th style="min-width: 260px;">PAGE / RESOURCE</th>
+                                    <th class="text-center" style="width: 130px;"><i class="fas fa-eye text-primary me-1"></i> VIEW</th>
+                                    <th class="text-center" style="width: 130px;"><i class="fas fa-plus text-success me-1"></i> ADD</th>
+                                    <th class="text-center" style="width: 130px;"><i class="fas fa-edit text-warning me-1"></i> EDIT</th>
+                                    <th class="text-center" style="width: 130px;"><i class="fas fa-trash text-danger me-1"></i> DELETE</th>
+                                    <th class="text-center" style="width: 130px;"><i class="fas fa-check-shield text-info me-1"></i> APPROVE</th>
+                                </tr>
+                                <tr class="column-toggle-row">
+                                    <th>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 py-1 px-2" style="font-size: 0.72rem;">
+                                                <i class="fas fa-sliders-h me-1"></i>Column Toggle
+                                            </span>
+                                            <span class="text-muted small d-none d-md-inline" style="font-size: 0.73rem;">Toggle entire column for {{ module_title }}</span>
+                                        </div>
+                                    </th>
+                                    <th class="text-center">
+                                        <div class="form-check form-switch d-inline-block">
+                                            <input class="form-check-input col-master-toggle" 
+                                                   type="checkbox" 
+                                                   data-col="view" 
+                                                   title="Toggle all VIEW in {{ module_title }}">
+                                        </div>
+                                    </th>
+                                    <th class="text-center">
+                                        <div class="form-check form-switch d-inline-block">
+                                            <input class="form-check-input col-master-toggle" 
+                                                   type="checkbox" 
+                                                   data-col="create" 
+                                                   title="Toggle all ADD in {{ module_title }}">
+                                        </div>
+                                    </th>
+                                    <th class="text-center">
+                                        <div class="form-check form-switch d-inline-block">
+                                            <input class="form-check-input col-master-toggle" 
+                                                   type="checkbox" 
+                                                   data-col="edit" 
+                                                   title="Toggle all EDIT in {{ module_title }}">
+                                        </div>
+                                    </th>
+                                    <th class="text-center">
+                                        <div class="form-check form-switch d-inline-block">
+                                            <input class="form-check-input col-master-toggle" 
+                                                   type="checkbox" 
+                                                   data-col="delete" 
+                                                   title="Toggle all DELETE in {{ module_title }}">
+                                        </div>
+                                    </th>
+                                    <th class="text-center">
+                                        <div class="form-check form-switch d-inline-block">
+                                            <input class="form-check-input col-master-toggle" 
+                                                   type="checkbox" 
+                                                   data-col="approve" 
+                                                   title="Toggle all APPROVE in {{ module_title }}">
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for perm in permissions %}
+                                    {% set p = effective_permissions[perm.permission_name] %}
+                                    <tr class="perm-row" data-perm-name="{{ perm.permission_name|lower }}" data-perm-desc="{{ perm.description|lower }}">
+                                        <td>
+                                            <div class="d-flex flex-column">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="perm-name-title">{{ perm.permission_name }}</span>
+                                                    {% if p.is_custom %}
+                                                        <span class="badge bg-warning bg-opacity-25 text-warning" style="font-size: 0.65rem;">Override</span>
+                                                    {% endif %}
+                                                </div>
+                                                <span class="perm-desc-subtitle">{{ perm.description|default('Manage access to ' ~ perm.permission_name) }}</span>
+                                            </div>
+                                        </td>
+
+                                        <!-- VIEW -->
+                                        <td class="text-center">
+                                            <div class="form-check form-switch d-inline-block">
+                                                <input class="form-check-input mod-{{ module_slug }} view-toggle col-view" 
+                                                       type="checkbox" 
+                                                       name="permissions[{{ perm.permission_name }}][can_view]" 
+                                                       value="1" 
+                                                       {{ p.can_view ? 'checked' : '' }}
+                                                       title="Grant View access">
+                                            </div>
+                                        </td>
+
+                                        <!-- CREATE / ADD -->
+                                        <td class="text-center">
+                                            <div class="form-check form-switch d-inline-block">
+                                                <input class="form-check-input mod-{{ module_slug }} action-toggle col-create" 
+                                                       type="checkbox" 
+                                                       name="permissions[{{ perm.permission_name }}][can_create]" 
+                                                       value="1" 
+                                                       {{ p.can_create ? 'checked' : '' }}
+                                                       title="Grant Create/Add access">
+                                            </div>
+                                        </td>
+
+                                        <!-- EDIT -->
+                                        <td class="text-center">
+                                            <div class="form-check form-switch d-inline-block">
+                                                <input class="form-check-input mod-{{ module_slug }} action-toggle col-edit" 
+                                                       type="checkbox" 
+                                                       name="permissions[{{ perm.permission_name }}][can_edit]" 
+                                                       value="1" 
+                                                       {{ p.can_edit ? 'checked' : '' }}
+                                                       title="Grant Edit access">
+                                            </div>
+                                        </td>
+
+                                        <!-- DELETE -->
+                                        <td class="text-center">
+                                            <div class="form-check form-switch d-inline-block">
+                                                <input class="form-check-input mod-{{ module_slug }} action-toggle col-delete" 
+                                                       type="checkbox" 
+                                                       name="permissions[{{ perm.permission_name }}][can_delete]" 
+                                                       value="1" 
+                                                       {{ p.can_delete ? 'checked' : '' }}
+                                                       title="Grant Delete access">
+                                            </div>
+                                        </td>
+
+                                        <!-- APPROVE -->
+                                        <td class="text-center">
+                                            <div class="form-check form-switch d-inline-block">
+                                                <input class="form-check-input mod-{{ module_slug }} action-toggle col-approve" 
+                                                       type="checkbox" 
+                                                       name="permissions[{{ perm.permission_name }}][can_approve]" 
+                                                       value="1" 
+                                                       {{ p.can_approve ? 'checked' : '' }}
+                                                       title="Grant Approval authority">
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const totalPagesCount = {{ stats.total_pages|default(1) }};
+
+    function recalculateStats() {
+        const viewToggles = document.querySelectorAll('.view-toggle:checked');
+        const accessible = viewToggles.length;
+        const coverage = Math.round((accessible / totalPagesCount) * 100);
+
+        const countEl = document.getElementById('statAccessibleCount');
+        const covEl = document.getElementById('statCoverage');
+        const barEl = document.getElementById('statCoverageBar');
+
+        if (countEl) countEl.textContent = accessible;
+        if (covEl) covEl.textContent = coverage + '%';
+        if (barEl) barEl.style.width = coverage + '%';
+    }
+
+    // Sync header toggle state (checked, unchecked, or indeterminate) based on row switches
+    function syncModuleColumnToggles(card) {
+        if (!card) return;
+        ['view', 'create', 'edit', 'delete', 'approve'].forEach(col => {
+            const allSwitches = card.querySelectorAll('.col-' + col);
+            const checkedSwitches = card.querySelectorAll('.col-' + col + ':checked');
+            const masterToggle = card.querySelector('.col-master-toggle[data-col="' + col + '"]');
+            if (masterToggle) {
+                if (allSwitches.length > 0 && checkedSwitches.length === allSwitches.length) {
+                    masterToggle.checked = true;
+                    masterToggle.indeterminate = false;
+                } else if (checkedSwitches.length === 0) {
+                    masterToggle.checked = false;
+                    masterToggle.indeterminate = false;
+                } else {
+                    masterToggle.checked = false;
+                    masterToggle.indeterminate = true;
+                }
+            }
+        });
+    }
+
+    // Column-wise master toggle change event
+    document.querySelectorAll('.col-master-toggle').forEach(masterToggle => {
+        masterToggle.addEventListener('change', function() {
+            const card = this.closest('.module-card');
+            if (!card) return;
+            const col = this.dataset.col;
+            const isChecked = this.checked;
+
+            // Target checkboxes in this column for this module
+            card.querySelectorAll('.col-' + col).forEach(chk => {
+                chk.checked = isChecked;
+            });
+
+            // If action column (create, edit, delete, approve) is turned ON,
+            // ensure the corresponding view checkbox in each row is also turned ON
+            if (isChecked && col !== 'view') {
+                card.querySelectorAll('.col-view').forEach(viewChk => {
+                    viewChk.checked = true;
+                });
+            }
+
+            // If VIEW is turned OFF, turn OFF all action checkboxes in this module
+            if (!isChecked && col === 'view') {
+                card.querySelectorAll('.action-toggle').forEach(actChk => {
+                    actChk.checked = false;
+                });
+            }
+
+            syncModuleColumnToggles(card);
+            recalculateStats();
+        });
+    });
+
+    // Auto-enable view toggle if any action (add, edit, delete, approve) is checked
+    document.querySelectorAll('.action-toggle').forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const row = this.closest('tr');
+            const card = this.closest('.module-card');
+            if (this.checked) {
+                const viewToggle = row.querySelector('.view-toggle');
+                if (viewToggle && !viewToggle.checked) {
+                    viewToggle.checked = true;
+                }
+            }
+            syncModuleColumnToggles(card);
+            recalculateStats();
+        });
+    });
+
+    // Auto-disable action toggles if view is unchecked
+    document.querySelectorAll('.view-toggle').forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const row = this.closest('tr');
+            const card = this.closest('.module-card');
+            if (!this.checked) {
+                row.querySelectorAll('.action-toggle').forEach(t => t.checked = false);
+            }
+            syncModuleColumnToggles(card);
+            recalculateStats();
+        });
+    });
+
+    // Grant all in a single module
+    document.querySelectorAll('.btn-grant-module').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const targetClass = this.dataset.target;
+            const card = this.closest('.module-card');
+            document.querySelectorAll('.' + targetClass).forEach(chk => chk.checked = true);
+            syncModuleColumnToggles(card);
+            recalculateStats();
+        });
+    });
+
+    // Revoke all in a single module
+    document.querySelectorAll('.btn-revoke-module').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const targetClass = this.dataset.target;
+            const card = this.closest('.module-card');
+            document.querySelectorAll('.' + targetClass).forEach(chk => chk.checked = false);
+            syncModuleColumnToggles(card);
+            recalculateStats();
+        });
+    });
+
+    // Global Grant All
+    const btnGrantAllGlobal = document.getElementById('btnGrantAllGlobal');
+    if (btnGrantAllGlobal) {
+        btnGrantAllGlobal.addEventListener('click', function() {
+            document.querySelectorAll('.form-check-input').forEach(chk => chk.checked = true);
+            document.querySelectorAll('.module-card').forEach(syncModuleColumnToggles);
+            recalculateStats();
+        });
+    }
+
+    // Global Revoke All
+    const btnRevokeAllGlobal = document.getElementById('btnRevokeAllGlobal');
+    if (btnRevokeAllGlobal) {
+        btnRevokeAllGlobal.addEventListener('click', function() {
+            document.querySelectorAll('.form-check-input').forEach(chk => chk.checked = false);
+            document.querySelectorAll('.module-card').forEach(syncModuleColumnToggles);
+            recalculateStats();
+        });
+    }
+
+    // Initial sync of column master toggles on page load
+    document.querySelectorAll('.module-card').forEach(syncModuleColumnToggles);
+    recalculateStats();
+
+    // Expand All / Collapse All
+    const btnExpandAll = document.getElementById('btnExpandAll');
+    if (btnExpandAll) {
+        btnExpandAll.addEventListener('click', function() {
+            document.querySelectorAll('.module-card .collapse').forEach(el => {
+                const bsCollapse = bootstrap.Collapse.getOrCreateInstance(el, {toggle: false});
+                bsCollapse.show();
+            });
+        });
+    }
+
+    const btnCollapseAll = document.getElementById('btnCollapseAll');
+    if (btnCollapseAll) {
+        btnCollapseAll.addEventListener('click', function() {
+            document.querySelectorAll('.module-card .collapse').forEach(el => {
+                const bsCollapse = bootstrap.Collapse.getOrCreateInstance(el, {toggle: false});
+                bsCollapse.hide();
+            });
+        });
+    }
+
+    // Live Search Filter
+    const searchInput = document.getElementById('permSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim().toLowerCase();
+            document.querySelectorAll('.module-card').forEach(card => {
+                let moduleHasMatch = false;
+                const rows = card.querySelectorAll('.perm-row');
+                rows.forEach(row => {
+                    const name = row.dataset.permName || '';
+                    const desc = row.dataset.permDesc || '';
+                    if (!query || name.includes(query) || desc.includes(query)) {
+                        row.style.display = '';
+                        moduleHasMatch = true;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                if (!query || moduleHasMatch) {
+                    card.style.display = '';
+                    if (query && moduleHasMatch) {
+                        const collapseEl = card.querySelector('.collapse');
+                        if (collapseEl) {
+                            bootstrap.Collapse.getOrCreateInstance(collapseEl, {toggle: false}).show();
+                        }
+                    }
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    }
+
+    // Save Permissions via AJAX
+    const form = document.getElementById('userPermissionsForm');
+    const saveBtn = document.getElementById('btnSavePermissions');
+
+    if (form && saveBtn) {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const origContent = saveBtn.innerHTML;
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+
+            try {
+                const formData = new FormData(form);
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-Token': csrfToken || ''
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Saved!',
+                        text: data.message || 'Permissions updated successfully.',
+                        timer: 1800,
+                        showConfirmButton: false
+                    });
+                } else {
+                    throw new Error(data.message || 'Failed to save permissions.');
+                }
+            } catch (err) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Save Failed',
+                    text: err.message || 'An error occurred while saving.'
+                });
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = origContent;
+            }
+        });
+    }
+
+    // Reset to Role Defaults Button
+    const btnResetToRole = document.getElementById('btnResetToRole');
+    if (btnResetToRole) {
+        btnResetToRole.addEventListener('click', function() {
+            Swal.fire({
+                title: 'Reset to Role Defaults?',
+                text: 'This will clear all custom permissions for {{ target_user.first_name }} {{ target_user.last_name }} and inherit permissions directly from the {{ target_user.role_name|default("Role") }} role.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f59e0b',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, reset to role'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                        const formData = new FormData();
+                        formData.append('user_id', '{{ target_user.user_id }}');
+                        formData.append('csrf_token', csrfToken || '');
+
+                        const response = await fetch('{{ BASE_URL }}/admin/permissions/reset', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-Token': csrfToken || ''
+                            }
+                        });
+
+                        const data = await response.json();
+                        if (response.ok && data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Reset Complete',
+                                text: data.message,
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            throw new Error(data.message || 'Reset failed');
+                        }
+                    } catch (e) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: e.message || 'Could not reset permissions.'
+                        });
+                    }
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

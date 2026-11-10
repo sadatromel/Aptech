@@ -829,7 +829,9 @@
             btn.addEventListener('click', async () => {
                 const style = JSON.parse(btn.closest('tr').dataset.style);
                 try {
-                    const response = await fetch(`{{ BASE_URL }}/merchandising/styles/${style.style_id}`);
+                    const response = await fetch(`{{ BASE_URL }}/merchandising/styles/${style.style_id}`, {
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                    });
                     if (!response.ok) throw new Error('Unable to load style');
                     const { data } = await response.json();
                     renderStyleDetails(data);

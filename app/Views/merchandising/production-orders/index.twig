@@ -122,6 +122,7 @@
                                     <th class="sortable" data-sort="style" style="cursor: pointer;">Style <i class="fas fa-sort text-muted ms-1 sort-icon"></i></th>
                                     <th class="sortable" data-sort="buyer" style="cursor: pointer;">Buyer <i class="fas fa-sort text-muted ms-1 sort-icon"></i></th>
                                     <th class="sortable" data-sort="quantity" style="cursor: pointer;">Quantity <i class="fas fa-sort text-muted ms-1 sort-icon"></i></th>
+                                    <th class="sortable" data-sort="unit_price" style="cursor: pointer;">Avg Unit Price <i class="fas fa-sort text-muted ms-1 sort-icon"></i></th>
                                     <th class="sortable" data-sort="date" style="cursor: pointer;">Dates <i class="fas fa-sort text-muted ms-1 sort-icon"></i></th>
                                     <th class="sortable" data-sort="priority" style="cursor: pointer;">Priority <i class="fas fa-sort text-muted ms-1 sort-icon"></i></th>
                                     <th class="sortable" data-sort="status" style="cursor: pointer;">Status <i class="fas fa-sort text-muted ms-1 sort-icon"></i></th>
@@ -143,8 +144,14 @@
                                         </td>
                                         <td>{{ po.buyer_name ?: '—' }}</td>
                                         <td>
-                                            {{ po.quantity_ordered }}
+                                            <strong>{{ po.quantity_ordered|number_format }}</strong>
                                             <div class="text-muted small">{{ po.line_items_count }} SKUs</div>
+                                        </td>
+                                        <td>
+                                            <strong class="text-primary">{{ po.currency_symbol ?: '$' }}{{ (po.avg_unit_price ?: po.unit_price)|number_format(2) }}</strong>
+                                            {% if po.total_amount > 0 %}
+                                                <div class="text-muted small">Total: {{ po.currency_symbol ?: '$' }}{{ po.total_amount|number_format(2) }}</div>
+                                            {% endif %}
                                         </td>
                                         <td>
                                             <div class="small">Order: {{ po.order_date|date('M d') }}</div>
@@ -159,7 +166,7 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <span class="badge bg-{{ po.status == 'completed' ? 'success' : (po.status == 'in_production' ? 'info text-dark' : (po.status == 'approved' ? 'primary' : 'secondary')) }} text-uppercase">
+                                            <span class="badge bg-{{ po.status == 'completed' ? 'success' : (po.status in ['in_production', 'in_progress'] ? 'info text-dark' : (po.status in ['approved', 'confirmed'] ? 'primary' : (po.status == 'cancelled' ? 'danger' : 'secondary'))) }} text-uppercase">
                                                 {{ po.status|replace({'_': ' '}) }}
                                             </span>
                                             {% if po.country_name %}
@@ -179,7 +186,7 @@
                                     </tr>
                                 {% else %}
                                     <tr id="emptyStateRow">
-                                        <td colspan="8" class="text-center py-5">
+                                        <td colspan="9" class="text-center py-5">
                                             <div class="d-flex flex-column align-items-center justify-content-center opacity-50 py-4">
                                                 <i class="fas fa-clipboard-list fa-4x mb-3 text-muted"></i>
                                                 <h5 class="text-muted">No Production Orders Found</h5>
@@ -337,7 +344,20 @@
                             </div>
                         </div>
                         <hr>
-                        <h6>Line Items (SKUs)</h6>
+                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                            <h6 class="mb-0">Line Items (SKUs)</h6>
+                            <div class="d-flex gap-2 align-items-center" id="lineItemsQuickSummary">
+                                <span class="badge bg-light text-dark border px-3 py-2">
+                                    <span class="text-muted">Total Qty:</span> <strong id="quickTotalQty">0</strong>
+                                </span>
+                                <span class="badge bg-light text-primary border px-3 py-2">
+                                    <span class="text-muted">Avg Unit Price:</span> <strong id="quickAvgPrice">$0.00</strong>
+                                </span>
+                                <span class="badge bg-light text-success border px-3 py-2">
+                                    <span class="text-muted">Total Value:</span> <strong id="quickTotalVal">$0.00</strong>
+                                </span>
+                            </div>
+                        </div>
                         <div id="lineItemsContainer">
                             <table class="table table-bordered table-hover align-middle" id="lineItemsTableInput">
                                 <thead id="lineItemsHeader" class="text-center table-light">
@@ -632,20 +652,43 @@
             if(currencySelect && currencySelect.selectedIndex > 0) {
                  symbol = currencySelect.options[currencySelect.selectedIndex].getAttribute('data-symbol') || '$';
             }
+
+            let enteredPrices = [];
+            rows.forEach(row => {
+                const pInput = row.querySelector('[name$="[unit_price]"]');
+                const p = pInput ? parseFloat(pInput.value) : 0;
+                if (!isNaN(p) && p > 0) {
+                    enteredPrices.push(p);
+                }
+            });
+            const avgPrice = qty > 0 
+                ? (val / qty) 
+                : (enteredPrices.length > 0 ? (enteredPrices.reduce((a, b) => a + b, 0) / enteredPrices.length) : 0);
             
             let convertedValHtml = '';
+            let avgConvertedHtml = '';
             if (conversionRateInput && conversionRateInput.value && !isNaN(parseFloat(conversionRateInput.value))) {
                 const rate = parseFloat(conversionRateInput.value);
                 const convertedVal = val * rate;
+                const convertedAvg = avgPrice * rate;
                 
-                convertedValHtml = `<div class="small text-muted mt-1" style="font-size:0.8rem">(Conv: <br> $${convertedVal.toFixed(2)})</div>`;
+                convertedValHtml = `<div class="small text-muted mt-1" style="font-size:0.75rem">(Conv: $${convertedVal.toFixed(2)})</div>`;
+                avgConvertedHtml = `<div class="small text-muted mt-1" style="font-size:0.75rem">(Conv: $${convertedAvg.toFixed(2)})</div>`;
             }
+
+            // Update Quick Summary Badges
+            const quickTotalQty = document.getElementById('quickTotalQty');
+            const quickAvgPrice = document.getElementById('quickAvgPrice');
+            const quickTotalVal = document.getElementById('quickTotalVal');
+            if (quickTotalQty) quickTotalQty.textContent = qty > 0 ? qty.toLocaleString() : '0';
+            if (quickAvgPrice) quickAvgPrice.textContent = avgPrice > 0 ? symbol + avgPrice.toFixed(2) : symbol + '0.00';
+            if (quickTotalVal) quickTotalVal.textContent = val > 0 ? symbol + val.toFixed(2) : symbol + '0.00';
             
             let footerHtml = '';
             if (currentStyleSizes && currentStyleSizes.length > 0) {
                 footerHtml += `
                 <tr>
-                    <td colspan="3" class="text-end align-middle pe-3">Totals:</td>
+                    <td colspan="3" class="text-end align-middle pe-3 fw-bold">Totals:</td>
                     <td class="p-2"><div class="d-flex gap-2 justify-content-center">`;
                 currentStyleSizes.forEach(size => {
                     const sizeTotal = sizeTotals[size] || 0;
@@ -655,21 +698,32 @@
                         </div>`;
                 });
                 footerHtml += `</div></td>
-                    <td class="text-center align-middle fw-bold fs-5 text-dark">${qty > 0 ? qty : ''}</td>
-                    <td colspan="2" class="text-center align-middle fw-bold text-success fs-5 pe-3">
-                       ${val > 0 ? symbol + val.toFixed(2) : ''}
-                       ${val > 0 ? convertedValHtml : ''}
+                    <td class="text-center align-middle fw-bold fs-6 text-dark">${qty > 0 ? qty : '—'}</td>
+                    <td class="text-center align-middle pe-2">
+                        <div class="small text-muted" style="font-size:0.75rem">Avg Price</div>
+                        <span class="fw-bold fs-6 text-primary">${avgPrice > 0 ? symbol + avgPrice.toFixed(2) : '—'}</span>
+                        ${avgConvertedHtml}
+                    </td>
+                    <td class="text-center align-middle pe-2">
+                        <div class="small text-muted" style="font-size:0.75rem">Total Val</div>
+                        <span class="fw-bold fs-6 text-success">${val > 0 ? symbol + val.toFixed(2) : '—'}</span>
+                        ${convertedValHtml}
                     </td>
                 </tr>`;
             } else {
                 footerHtml += `
                 <tr>
-                    <td colspan="4" class="text-end align-middle pe-3">Totals:</td>
-                    <td class="text-center align-middle fw-bold fs-5 text-dark">${qty > 0 ? qty : ''}</td>
-                    <td class="text-center align-middle fw-bold fs-5 text-dark">${qty > 0 ? qty : ''}</td>
-                    <td colspan="2" class="text-center align-middle fw-bold text-success fs-5 pe-3">
-                       ${val > 0 ? symbol + val.toFixed(2) : ''}
-                       ${val > 0 ? convertedValHtml : ''}
+                    <td colspan="4" class="text-end align-middle pe-3 fw-bold">Totals:</td>
+                    <td class="text-center align-middle fw-bold fs-6 text-dark">${qty > 0 ? qty : '—'}</td>
+                    <td class="text-center align-middle pe-2">
+                        <div class="small text-muted" style="font-size:0.75rem">Avg Price</div>
+                        <span class="fw-bold fs-6 text-primary">${avgPrice > 0 ? symbol + avgPrice.toFixed(2) : '—'}</span>
+                        ${avgConvertedHtml}
+                    </td>
+                    <td class="text-center align-middle pe-2">
+                        <div class="small text-muted" style="font-size:0.75rem">Total Val</div>
+                        <span class="fw-bold fs-6 text-success">${val > 0 ? symbol + val.toFixed(2) : '—'}</span>
+                        ${convertedValHtml}
                     </td>
                 </tr>`;
             }
@@ -677,7 +731,50 @@
             lineItemsFooterInput.innerHTML = footerHtml;
         }
 
-        function updateMatrixColumns(sizes, addDefaultRow = true, updateInput = true) {
+        function getCurrentLineItemsData() {
+            if (!lineItemsList) return [];
+            const rows = lineItemsList.querySelectorAll('.line-item-row');
+            const items = [];
+            rows.forEach(row => {
+                const colorInput = row.querySelector('[name*="[color]"]');
+                const colorTypeInput = row.querySelector('[name*="[color_type]"]');
+                const inseamInput = row.querySelector('[name*="[inseam]"]');
+                const priceInput = row.querySelector('.price-input, [name*="[unit_price]"]');
+                
+                const rowData = {
+                    color: colorInput ? colorInput.value : '',
+                    color_type: colorTypeInput ? colorTypeInput.value : '',
+                    inseam: inseamInput ? inseamInput.value : '',
+                    unit_price: priceInput ? priceInput.value : '',
+                    quantities: {}
+                };
+
+                const qtyInputs = row.querySelectorAll('.qty-input');
+                qtyInputs.forEach(input => {
+                    if (input.dataset.size) {
+                        if (input.value !== '') {
+                            rowData.quantities[input.dataset.size] = input.value;
+                        }
+                    } else {
+                        const sizeInput = row.querySelector('[name*="[size]"]');
+                        if (sizeInput && sizeInput.value) {
+                            rowData.size = sizeInput.value;
+                            if (input.value !== '') {
+                                rowData.quantities[sizeInput.value] = input.value;
+                                rowData.quantity = input.value;
+                            }
+                        }
+                    }
+                });
+
+                items.push(rowData);
+            });
+            return items;
+        }
+
+        function updateMatrixColumns(sizes, addDefaultRow = true, updateInput = true, preserveExisting = true) {
+            const existingData = preserveExisting ? getCurrentLineItemsData() : [];
+
             currentStyleSizes = sizes || [];
             const sizeDetailsInput = document.getElementById('sizeDetailsInput');
             if(sizeDetailsInput && updateInput) {
@@ -692,23 +789,34 @@
             `;
             
             if (currentStyleSizes.length > 0) {
-                 headerHtml += `<th>Size Matrix (${currentStyleSizes.join(', ')})</th>`;
+                 headerHtml += `
+                     <th>Size Matrix (${currentStyleSizes.join(', ')})</th>
+                     <th style="width: 80px;">Row Total</th>
+                 `;
             } else {
-                 headerHtml += `<th>Size</th><th>Qty</th>`;
+                 headerHtml += `
+                     <th style="width: 100px;">Size</th>
+                     <th style="width: 100px;">Qty</th>
+                 `;
             }
 
             headerHtml += `
-                <th style="width: 80px;">Row Total</th>
-                <th style="width: 100px;">Unit Price</th>
+                <th style="width: 110px;">Unit Price</th>
                 <th style="width: 100px;">Actions</th>
             `;
             lineItemsHeader.innerHTML = `<tr>${headerHtml}</tr>`;
 
-            // Reset Rows
+            // Reset and Re-render Rows preserving all entered data
             lineItemsList.innerHTML = '';
-            if (addDefaultRow) {
+            if (existingData.length > 0) {
+                existingData.forEach(itemData => {
+                    addLineItem(itemData);
+                });
+            } else if (addDefaultRow) {
                 addLineItem();
             }
+
+            updateTotals();
         }
 
         function addLineItem(data = {}, insertAfterElement = null) {
@@ -733,7 +841,7 @@
                 // MATRIX MODE
                 let matrixHtml = '<td><div class="d-flex gap-2 justify-content-center">';
                 currentStyleSizes.forEach(size => {
-                    const qtyVal = (data.quantities && data.quantities[size]) ? data.quantities[size] : '';
+                    const qtyVal = (data.quantities && data.quantities[size] !== undefined && data.quantities[size] !== null) ? data.quantities[size] : '';
                     matrixHtml += `
                         <div class="text-center" style="flex: 1; min-width: 50px;">
                             <label class="form-label mb-0 small text-muted d-block fw-bold" style="font-size: 0.75rem;">${size}</label>
@@ -757,7 +865,6 @@
                     <td>
                         <input type="number" class="form-control form-control-sm qty-input" placeholder="Qty" name="line_items[${id}][quantity]" value="${data.quantity_ordered || data.quantity || ''}" min="1" required>
                     </td>
-                    <td class="text-center fw-bold"><span class="row-total-qty">0</span></td>
                 `;
             }
 
@@ -910,8 +1017,11 @@
             sizeDetailsInput.addEventListener('input', function() {
                 const txt = this.value;
                 const sizes = txt.split(',').map(s => s.trim()).filter(s => s.length > 0);
-                currentStyleSizes = sizes;
-                updateMatrixColumns(currentStyleSizes, true, false); 
+                const isSame = sizes.length === currentStyleSizes.length && sizes.every((s, i) => s === currentStyleSizes[i]);
+                if (isSame) {
+                    return;
+                }
+                updateMatrixColumns(sizes, true, false, true); 
             });
         }
 
@@ -1104,6 +1214,8 @@
                 : `${BASE_URL}/merchandising/production-orders/store`;
             
             payload.quantity = payload.line_items.reduce((sum, item) => sum + item.quantity, 0);
+            const totalValue = payload.line_items.reduce((sum, item) => sum + (item.quantity * (item.unit_price || 0)), 0);
+            payload.unit_price = payload.quantity > 0 ? parseFloat((totalValue / payload.quantity).toFixed(4)) : 0;
 
             try {
                 const response = await fetch(endpoint, {
@@ -1140,36 +1252,16 @@
         function renderPODetails(po) {
             const container = document.getElementById('poDetails');
             container.innerHTML = '';
-            const meta = {
-                'PO Number': po.po_number,
-                'Allocation': po.allocation_number || '—',
-                'Style': `${po.style_code} - ${po.style_name}`,
-                'Buyer': po.buyer_name || '—',
-                'Factory': po.factory_name || '—',
-                'Total Quantity': po.quantity_ordered,
-                'Order Date': po.order_date,
-                'Required Date': po.required_date,
-                'Priority': po.priority,
-                'Status': po.status,
-                'Currency': po.currency_code ? `${po.currency_code} (Rate: ${po.conversion_rate})` : '—'
-            };
-            Object.entries(meta).forEach(([label, value]) => {
-                container.insertAdjacentHTML('beforeend', `<dt class="col-3">${label}</dt><dd class="col-9">${value}</dd>`);
-            });
+            const symbol = po.currency_symbol || '$';
+            const items = po.line_items || po.breakdowns || [];
+
+            let totalQty = 0;
+            let totalVal = 0;
 
             const tbody = document.getElementById('lineItemsBody');
             const tfoot = document.getElementById('lineItemsFooter');
             tbody.innerHTML = '';
             tfoot.innerHTML = '';
-            
-            const items = po.line_items || po.breakdowns || [];
-            if (!items.length) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No line items</td></tr>';
-                return;
-            }
-
-            let totalQty = 0;
-            let totalVal = 0;
 
             items.forEach(item => {
                 const qty = Number(item.quantity_ordered || item.quantity || 0);
@@ -1184,14 +1276,39 @@
                         <td>${item.color_type || '—'}</td>
                         <td>${item.inseam || '—'}</td>
                         <td>${item.size}</td>
-                        <td>${qty}</td>
+                        <td>${qty.toLocaleString()}</td>
                         <td>${symbol}${price.toFixed(2)}</td>
                         <td>${symbol}${total.toFixed(2)}</td>
                     </tr>
                 `);
             });
 
-            let symbol = po.currency_symbol || '$';
+            const avgPrice = totalQty > 0 ? (totalVal / totalQty) : Number(po.unit_price || 0);
+
+            const meta = {
+                'PO Number': po.po_number,
+                'Allocation': po.allocation_number || '—',
+                'Style': `${po.style_code} - ${po.style_name}`,
+                'Buyer': po.buyer_name || '—',
+                'Factory': po.factory_name || '—',
+                'Total Quantity': Number(po.quantity_ordered || totalQty).toLocaleString(),
+                'Avg Unit Price': `${symbol}${avgPrice.toFixed(2)}`,
+                'Total Value': `${symbol}${totalVal.toFixed(2)}`,
+                'Order Date': po.order_date,
+                'Required Date': po.required_date,
+                'Priority': po.priority,
+                'Status': po.status,
+                'Currency': po.currency_code ? `${po.currency_code} (Rate: ${po.conversion_rate})` : '—'
+            };
+            Object.entries(meta).forEach(([label, value]) => {
+                container.insertAdjacentHTML('beforeend', `<dt class="col-3">${label}</dt><dd class="col-9">${value}</dd>`);
+            });
+
+            if (!items.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No line items</td></tr>';
+                return;
+            }
+
             let convertedValHtml = '';
             if (po.conversion_rate && !isNaN(parseFloat(po.conversion_rate))) {
                 const rate = parseFloat(po.conversion_rate);
@@ -1200,11 +1317,11 @@
             }
 
             tfoot.innerHTML = `
-                <tr>
+                <tr class="fw-bold bg-light">
                     <td colspan="4" class="text-end">Totals:</td>
-                    <td>${totalQty}</td>
-                    <td></td>
-                    <td>
+                    <td>${totalQty.toLocaleString()}</td>
+                    <td class="text-primary">${symbol}${avgPrice.toFixed(2)} <span class="small text-muted fw-normal">(Avg)</span></td>
+                    <td class="text-success">
                         ${symbol}${totalVal.toFixed(2)}
                         ${convertedValHtml}
                     </td>
@@ -1315,6 +1432,7 @@
                         case 'style': valA = dataA.style_code; valB = dataB.style_code; break;
                         case 'buyer': valA = dataA.buyer_name || ''; valB = dataB.buyer_name || ''; break;
                         case 'quantity': valA = Number(dataA.quantity_ordered || 0); valB = Number(dataB.quantity_ordered || 0); break;
+                        case 'unit_price': valA = Number(dataA.avg_unit_price || dataA.unit_price || 0); valB = Number(dataB.avg_unit_price || dataB.unit_price || 0); break;
                         case 'date': valA = dataA.order_date; valB = dataB.order_date; break;
                         case 'priority': valA = dataA.priority; valB = dataB.priority; break;
                         case 'status': valA = dataA.status; valB = dataB.status; break;
@@ -1335,7 +1453,7 @@
         });
 
         document.getElementById('exportPOCsv')?.addEventListener('click', () => {
-            const rows = [['PO Number', 'Allocation', 'Style', 'Buyer', 'Quantity', 'Order Date', 'Required Date', 'Priority', 'Status']];
+            const rows = [['PO Number', 'Allocation', 'Style', 'Buyer', 'Quantity', 'Avg Unit Price', 'Order Date', 'Required Date', 'Priority', 'Status']];
             document.querySelectorAll('#poTable tbody tr').forEach(tr => {
                 if (tr.querySelector('td[colspan]')) return;
                 let po;
@@ -1346,6 +1464,7 @@
                     `${po.style_code} - ${po.style_name}`,
                     po.buyer_name || '',
                     po.quantity_ordered,
+                    Number(po.avg_unit_price || po.unit_price || 0).toFixed(2),
                     po.order_date,
                     po.required_date,
                     po.priority,

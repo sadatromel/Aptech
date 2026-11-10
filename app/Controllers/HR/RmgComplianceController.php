@@ -321,7 +321,7 @@ class RmgComplianceController extends BaseController
             'payment1_amount' => $payment1,
             'payment2_amount' => $payment2,
             'status' => 'Pending',
-            'created_by' => $this->auth->user()['id'] ?? 1
+            'created_by' => $this->auth->user()['user_id'] ?? $this->auth->user()['id'] ?? $_SESSION['user_id'] ?? 1
         ]);
 
         $_SESSION['success_message'] = 'Maternity case created successfully! Calculated benefit: BDT ' . number_format($totalBenefitAmount, 2);

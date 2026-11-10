@@ -30,6 +30,18 @@ class Style extends Model
         'updated_at'
     ];
 
+    public function findWithBuyer(int $styleId): ?array
+    {
+        $styles = $this->db->select('styles s', [
+            '[>]buyers b' => ['s.buyer_id' => 'buyer_id']
+        ], [
+            's.*',
+            'b.buyer_name'
+        ], ['s.style_id' => $styleId]);
+
+        return !empty($styles) ? $styles[0] : null;
+    }
+
     public function getAllWithBuyers(array $filters = []): array
     {
         $where = ['ORDER' => ['s.style_id' => 'DESC']];

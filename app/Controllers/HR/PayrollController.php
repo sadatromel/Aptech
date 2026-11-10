@@ -60,7 +60,7 @@ class PayrollController extends BaseController
             $start, 
             $end, 
             $payment, 
-            (int)$this->auth->user()['id']
+            (int)($this->auth->user()['user_id'] ?? $this->auth->user()['id'] ?? $_SESSION['user_id'] ?? 1)
         );
 
         if ($result['success']) {
@@ -68,7 +68,7 @@ class PayrollController extends BaseController
             if (!empty($result['errors'])) {
                 $msg .= " Errors: " . count($result['errors']);
             }
-            header('Location: ' . (defined('BASE_URL') ? BASE_URL : '/Aptech') . '/hr/payroll&success=' . urlencode($msg));
+            header('Location: ' . (defined('BASE_URL') ? BASE_URL : '/Aptech') . '/hr/payroll?success=' . urlencode($msg));
         } else {
             header('Location: ' . (defined('BASE_URL') ? BASE_URL : '/Aptech') . '/hr/payroll&error=Failed');
         }
@@ -79,7 +79,7 @@ class PayrollController extends BaseController
         $this->requireAuth();
         $this->requireRole('hr_manager');
 
-        if ($this->payrollService->approve($id, (int)$this->auth->user()['id'])) {
+        if ($this->payrollService->approve($id, (int)($this->auth->user()['user_id'] ?? $this->auth->user()['id'] ?? $_SESSION['user_id'] ?? 1))) {
             $this->json(['success' => true]);
         } else {
             $this->json(['success' => false, 'message' => 'Failed to approve'], 500);
@@ -91,7 +91,7 @@ class PayrollController extends BaseController
          $this->requireAuth();
          $this->requireRole('finance_manager'); // Or HR manager
 
-         if ($this->payrollService->pay($id, (int)$this->auth->user()['id'])) {
+         if ($this->payrollService->pay($id, (int)($this->auth->user()['user_id'] ?? $this->auth->user()['id'] ?? $_SESSION['user_id'] ?? 1))) {
              $this->json(['success' => true]);
          } else {
              $this->json(['success' => false, 'message' => 'Failed to process payment'], 500);

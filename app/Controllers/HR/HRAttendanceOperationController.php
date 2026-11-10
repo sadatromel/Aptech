@@ -125,11 +125,15 @@ class HRAttendanceOperationController extends BaseController
             $this->verifyCsrf();
             $data = $this->request->all();
 
+            $title = $data['holiday_title'] ?? $data['holiday_name'] ?? '';
+            $startDate = $data['start_date'] ?? $data['from_date'] ?? date('Y-m-d');
+            $endDate = $data['end_date'] ?? $data['to_date'] ?? $startDate;
+
             $stmt = $this->pdo->prepare("INSERT INTO factory_holidays (holiday_title, start_date, end_date, holiday_type, is_recurring, status, remarks) VALUES (?, ?, ?, ?, ?, 'active', ?)");
             $stmt->execute([
-                $data['holiday_title'],
-                $data['start_date'],
-                $data['end_date'],
+                $title,
+                $startDate,
+                $endDate,
                 $data['holiday_type'] ?? 'festival',
                 isset($data['is_recurring']) ? 1 : 0,
                 $data['remarks'] ?? ''
@@ -242,13 +246,18 @@ class HRAttendanceOperationController extends BaseController
             $this->verifyCsrf();
             $data = $this->request->all();
 
+            $date = $data['date'] ?? $data['punch_date'] ?? date('Y-m-d');
+            $checkIn = $data['check_in'] ?? $data['in_time'] ?? '08:00:00';
+            $checkOut = !empty($data['check_out']) ? $data['check_out'] : (!empty($data['out_time']) ? $data['out_time'] : null);
+            $status = $data['status'] ?? 'Present';
+
             $stmt = $this->pdo->prepare("INSERT INTO attendance (employee_id, date, check_in, check_out, status) VALUES (?, ?, ?, ?, ?)");
             $stmt->execute([
                 $data['employee_id'],
-                $data['date'],
-                $data['check_in'],
-                $data['check_out'] ?? null,
-                $data['status'] ?? 'Present'
+                $date,
+                $checkIn,
+                $checkOut,
+                $status
             ]);
 
             $_SESSION['flash_success'] = 'Manual attendance punch logged successfully.';
@@ -285,13 +294,18 @@ class HRAttendanceOperationController extends BaseController
             $this->verifyCsrf();
             $data = $this->request->all();
 
+            $reqDate = $data['requisition_date'] ?? $data['date'] ?? date('Y-m-d');
+            $otHours = (float)($data['requested_ot_hours'] ?? $data['estimated_hours'] ?? 2.0);
+            $workerCount = (int)($data['worker_count'] ?? 1);
+            $reason = $data['reason'] ?? 'Production urgency';
+
             $stmt = $this->pdo->prepare("INSERT INTO ot_requisitions (department_id, requisition_date, requested_ot_hours, worker_count, reason, status) VALUES (?, ?, ?, ?, ?, 'approved')");
             $stmt->execute([
                 $data['department_id'],
-                $data['requisition_date'],
-                $data['requested_ot_hours'],
-                $data['worker_count'],
-                $data['reason']
+                $reqDate,
+                $otHours,
+                $workerCount,
+                $reason
             ]);
 
             $_SESSION['flash_success'] = 'Overtime requisition pre-approval saved successfully.';

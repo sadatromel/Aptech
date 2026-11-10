@@ -21,7 +21,7 @@ class BulkCostingController extends BaseController
     public function index(): void
     {
         $this->requireAuth();
-        $this->requireRole('merchandising_manager');
+        $this->requireAnyRole(['merchandising_manager', 'merchandiser', 'Manager', 'admin']);
 
         $filters = [
             'style_id' => $this->request->get('style_id', ''),
@@ -42,7 +42,7 @@ class BulkCostingController extends BaseController
     {
         $this->verifyCsrf();
         $this->requireAuth();
-        $this->requireRole('merchandising_manager');
+        $this->requireAnyRole(['merchandising_manager', 'merchandiser', 'Manager', 'admin']);
 
         $data = $this->request->json();
         if (empty($data)) {
@@ -60,17 +60,17 @@ class BulkCostingController extends BaseController
         }
 
         try {
-            $costingId = $this->service->createCosting($data, (int) $this->auth->user()['id']);
+            $costingId = $this->service->createCosting($data, (int) ($this->auth->user()['user_id'] ?? $this->auth->user()['id'] ?? 0));
             $this->json(['success' => true, 'costing_id' => $costingId, 'message' => 'Bulk costing created successfully.']);
         } catch (\Throwable $e) {
             $this->json(['success' => false, 'message' => 'Failed to create bulk costing: ' . $e->getMessage()], 500);
         }
     }
 
-    public function show(int $costingId): void
+    public function show(int $id): void
     {
         $this->requireAuth();
-        $costing = $this->service->getCosting($costingId);
+        $costing = $this->service->getCosting($id);
         
         if (!$costing) {
             if ($this->request->isJson() || $this->request->isAjax()) {
@@ -92,10 +92,10 @@ class BulkCostingController extends BaseController
         ]);
     }
 
-    public function report(int $costingId): void
+    public function report(int $id): void
     {
         $this->requireAuth();
-        $costing = $this->service->getCosting($costingId);
+        $costing = $this->service->getCosting($id);
         
         if (!$costing) {
              $_SESSION['error_message'] = "Bulk Costing not found.";
@@ -111,19 +111,19 @@ class BulkCostingController extends BaseController
     public function create(): void
     {
         $this->requireAuth();
-        $this->requireRole('merchandising_manager');
+        $this->requireAnyRole(['merchandising_manager', 'merchandiser', 'Manager', 'admin']);
         
         $this->view('merchandising/bulk-costing/create', [
             'dropdowns' => $this->service->getDropdownData()
         ]);
     }
 
-    public function edit(int $costingId): void
+    public function edit(int $id): void
     {
         $this->requireAuth();
-        $this->requireRole('merchandising_manager');
+        $this->requireAnyRole(['merchandising_manager', 'merchandiser', 'Manager', 'admin']);
         
-        $costing = $this->service->getCosting($costingId);
+        $costing = $this->service->getCosting($id);
         if (!$costing) {
              $this->redirect('merchandising/bulk-costing');
              return;
@@ -135,11 +135,11 @@ class BulkCostingController extends BaseController
         ]);
     }
 
-    public function update(int $costingId): void
+    public function update(int $id): void
     {
         $this->verifyCsrf();
         $this->requireAuth();
-        $this->requireRole('merchandising_manager');
+        $this->requireAnyRole(['merchandising_manager', 'merchandiser', 'Manager', 'admin']);
 
         $data = $this->request->json();
         if (empty($data)) {
@@ -157,7 +157,7 @@ class BulkCostingController extends BaseController
         }
 
         try {
-            if ($this->service->updateCosting($costingId, $data, (int) $this->auth->user()['id'])) {
+            if ($this->service->updateCosting($id, $data, (int) ($this->auth->user()['user_id'] ?? $this->auth->user()['id'] ?? 0))) {
                 $this->json(['success' => true, 'message' => 'Bulk costing updated successfully.']);
                 return;
             }
@@ -167,11 +167,11 @@ class BulkCostingController extends BaseController
         }
     }
 
-    public function destroy(int $costingId): void
+    public function destroy(int $id): void
     {
         $this->verifyCsrf();
         $this->requireAuth();
-        $this->requireRole('merchandising_manager');
+        $this->requireAnyRole(['merchandising_manager', 'merchandiser', 'Manager', 'admin']);
 
         // Allow POST or DELETE
         if (!$this->request->isPost() && $_SERVER['REQUEST_METHOD'] !== 'DELETE') {
@@ -179,7 +179,7 @@ class BulkCostingController extends BaseController
              return;
         }
 
-        if ($this->service->deleteCosting($costingId)) {
+        if ($this->service->deleteCosting($id)) {
             $this->json(['success' => true, 'message' => 'Bulk costing deleted.']);
             return;
         }

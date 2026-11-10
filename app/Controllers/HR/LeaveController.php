@@ -90,7 +90,7 @@ class LeaveController extends BaseController
                 'end_date' => $data['end_date'],
                 'reason' => $data['reason'] ?? '',
                 'status' => 'Pending',
-                'created_by' => $this->auth->user()['id'] ?? 1 // Default to admin if session issue
+                'created_by' => $this->auth->user()['user_id'] ?? $this->auth->user()['id'] ?? $_SESSION['user_id'] ?? 1
             ]);
 
             // Success redirect
@@ -101,8 +101,40 @@ class LeaveController extends BaseController
         }
     }
 
+    public function create(): void
+    {
+        $this->entryPage();
+    }
+
+    public function updateStatus(): void
+    {
+        $this->verifyCsrf();
+        $this->requireAuth();
+
+        $leaveId = (int)$this->request->get('leave_id');
+        $status = $this->request->get('status');
+
+        if ($leaveId && in_array($status, ['Approved', 'Rejected', 'Pending'])) {
+            $this->db->update('leaves', [
+                'status' => $status,
+                'updated_at' => date('Y-m-d H:i:s')
+            ], [
+                'id' => $leaveId
+            ]);
+            $this->json(['success' => true, 'message' => "Leave application #{$leaveId} updated to {$status}."]);
+            return;
+        }
+
+        $this->json(['success' => false, 'message' => 'Invalid leave ID or status.'], 400);
+    }
+
     public function deletePage(): void
     {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->deletePerform();
+            return;
+        }
+
         $this->requireAuth();
 
         $flashSuccess = $_SESSION['flash_success'] ?? null;
@@ -296,9 +328,9 @@ class LeaveController extends BaseController
         $this->verifyCsrf();
         $this->requireAuth();
 
-        $leaveId = $this->request->get('leave_id');
-        $leaveIds = $this->request->get('leave_ids');
-        $remarks = trim($this->request->get('remarks', ''));
+        $leaveId = $this->request->input('leave_id');
+        $leaveIds = $this->request->input('leave_ids');
+        $remarks = trim((string)$this->request->input('remarks', ''));
 
         $idsToDelete = [];
         if (!empty($leaveId)) {
@@ -361,24 +393,30 @@ class LeaveController extends BaseController
             exit;
         }
 
-        $emp = $this->db->get('employees', [
-            '[>]departments' => ['department_id' => 'department_id'],
-            '[>]sections' => ['section_id' => 'section_id'],
-            '[>]positions' => ['position_id' => 'position_id']
-        ], [
-            'employees.employee_id',
-            'employees.employee_code',
-            'employees.first_name',
-            'employees.last_name',
-            'employees.department_id',
-            'employees.section_id',
-            'employees.position_id',
-            'departments.department_name',
-            'sections.section_name',
-            'positions.position_name'
-        ], [
-            'WHERE' => $where
-        ]);
+        $whereClause = !empty($empCode) ? "employees.employee_code = ?" : "employees.employee_id = ?";
+        $param = !empty($empCode) ? $empCode : (int)$empId;
+
+        $stmt = $this->db->query("
+            SELECT 
+                employees.employee_id,
+                employees.employee_code,
+                employees.first_name,
+                employees.last_name,
+                employees.department_id,
+                employees.section_id,
+                employees.position_id,
+                departments.department_name,
+                sections.section_name,
+                positions.position_name
+            FROM employees
+            LEFT JOIN departments ON employees.department_id = departments.department_id
+            LEFT JOIN sections ON employees.section_id = sections.section_id
+            LEFT JOIN positions ON employees.position_id = positions.position_id
+            WHERE {$whereClause}
+            LIMIT 1
+        ", [$param]);
+
+        $emp = $stmt ? $stmt->fetch(\PDO::FETCH_ASSOC) : null;
 
         if ($emp) {
             echo json_encode([
@@ -403,6 +441,11 @@ class LeaveController extends BaseController
 
     public function entryPage(): void
     {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->storeEntry();
+            return;
+        }
+
         $this->requireAuth();
 
         $flashSuccess = $_SESSION['flash_success'] ?? null;
@@ -674,7 +717,7 @@ class LeaveController extends BaseController
                 'job_responsible_id' => !empty($data['job_responsible_id']) ? (int)$data['job_responsible_id'] : null,
                 'special_instruction' => !empty($data['special_instruction']) ? $data['special_instruction'] : null,
                 'status' => 'Pending',
-                'created_by' => $this->auth->user()['id'] ?? 1
+                'created_by' => $this->auth->user()['user_id'] ?? $this->auth->user()['id'] ?? $_SESSION['user_id'] ?? 1
             ];
 
             $this->db->insert('leaves', $insertData);

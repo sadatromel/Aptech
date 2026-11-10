@@ -87,6 +87,18 @@
     color: #212529;
 }
 
+/* Screen Column Widths */
+.col-sl { width: 28px; }
+.col-id { width: 70px; }
+.col-name { width: 130px; text-align: left; }
+.col-jd { width: 60px; }
+.col-ld { width: 45px; }
+.col-qd { width: 45px; }
+.col-day { min-width: 32px; }
+.col-tot-ot { width: 55px; }
+.col-pay-d { width: 65px; }
+.col-hw { width: 65px; }
+
 .cell-day-block {
     display: flex;
     flex-direction: column;
@@ -140,16 +152,26 @@
 @media print {
     @page {
         size: A4 landscape;
-        margin: 4mm;
+        margin: 3mm 3mm 3mm 3mm;
     }
+
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
     html, body {
         background: #ffffff !important;
-        font-family: Arial, sans-serif !important;
+        font-family: Arial, Helvetica, sans-serif !important;
         color: #000000 !important;
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
+        min-height: auto !important;
+        height: auto !important;
     }
+
     .no-print, 
     nav, 
     .navbar, 
@@ -166,8 +188,11 @@
         opacity: 0 !important;
         height: 0 !important;
         width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
         overflow: hidden !important;
     }
+
     .container-fluid, 
     .row, 
     main, 
@@ -180,25 +205,224 @@
         flex: 0 0 100% !important;
         left: 0 !important;
         position: static !important;
+        overflow: visible !important;
+        min-height: auto !important;
+        height: auto !important;
     }
-    .card {
+
+    .card, .card-body {
         border: none !important;
         box-shadow: none !important;
         padding: 0 !important;
         margin: 0 !important;
         width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        background: transparent !important;
     }
-    .attendance-report-table {
+
+    /* Overriding table-responsive so it doesn't clip horizontally or break row pagination */
+    .table-responsive {
+        overflow: visible !important;
+        display: block !important;
         width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
+
+    /* Fixed Table Layout strictly filling 100% of printable landscape width */
+    .attendance-report-table {
+        table-layout: fixed !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        border-collapse: collapse !important;
+        page-break-inside: auto !important;
+        break-inside: auto !important;
+    }
+
+    .attendance-report-table thead {
+        display: table-header-group !important;
+    }
+
+    .attendance-report-table tfoot {
+        display: table-footer-group !important;
+    }
+
+    /* CRITICAL: Prevent any row from breaking in half across page boundaries */
+    .attendance-report-table tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        break-inside: avoid-page !important;
+    }
+
     .attendance-report-table th, 
     .attendance-report-table td {
-        border: 1px solid #000000 !important;
-        font-size: 8px !important;
-        padding: 1px 2px !important;
+        border: 0.5pt solid #000000 !important;
+        padding: 1px 0px !important;
+        font-size: 6.5px !important;
+        line-height: 1.05 !important;
+        vertical-align: middle !important;
+        text-align: center !important;
+        overflow: hidden !important;
+        min-width: 0 !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
     }
-    .status-code { font-size: 9px !important; }
-    .time-str, .ot-str { font-size: 7.5px !important; }
+
+    /* Exact Column Width Allocation for A4 Landscape (100% total) */
+    .col-sl { width: 2.0% !important; min-width: 0 !important; }
+    .col-id { width: 4.8% !important; min-width: 0 !important; }
+    .col-name { width: 9.6% !important; min-width: 0 !important; text-align: left !important; padding-left: 2px !important; }
+    .col-jd { width: 3.6% !important; min-width: 0 !important; }
+    .col-ld { width: 1.8% !important; min-width: 0 !important; }
+    .col-qd { width: 1.8% !important; min-width: 0 !important; }
+    .col-day { width: auto !important; min-width: 0 !important; }
+    .col-tot-ot { width: 3.4% !important; min-width: 0 !important; }
+    .col-pay-d { width: 4.5% !important; min-width: 0 !important; }
+    .col-hw { width: 4.5% !important; min-width: 0 !important; }
+
+    /* Day block inside cells */
+    .cell-day-block {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .status-code {
+        font-size: 7.5px !important;
+        font-weight: 800 !important;
+        line-height: 1.05 !important;
+    }
+
+    .time-str {
+        font-size: 6px !important;
+        line-height: 1.0 !important;
+        letter-spacing: -0.4px !important;
+        white-space: nowrap !important;
+        font-family: Arial, Helvetica, sans-serif !important;
+        color: #111111 !important;
+    }
+
+    .ot-str {
+        font-size: 6px !important;
+        line-height: 1.0 !important;
+        letter-spacing: -0.4px !important;
+        white-space: nowrap !important;
+        font-family: Arial, Helvetica, sans-serif !important;
+        color: #333333 !important;
+    }
+
+    .emp-name-text {
+        font-size: 7.5px !important;
+        font-weight: 700 !important;
+        line-height: 1.1 !important;
+        word-break: break-word !important;
+    }
+
+    .emp-desig-text {
+        font-size: 6px !important;
+        line-height: 1.0 !important;
+        color: #444444 !important;
+        word-break: break-word !important;
+    }
+
+    .emp-id-text {
+        font-size: 6.5px !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.3px !important;
+        white-space: nowrap !important;
+    }
+
+    .emp-jd-text {
+        font-size: 6px !important;
+        letter-spacing: -0.3px !important;
+        white-space: nowrap !important;
+    }
+
+    .metric-pay-d, .metric-hw {
+        font-size: 5.5px !important;
+        line-height: 1.05 !important;
+        letter-spacing: -0.2px !important;
+    }
+
+    /* Group headers and summary rows */
+    .group-header-row {
+        background-color: #d1e7dd !important;
+        font-weight: bold !important;
+        font-size: 8px !important;
+        padding: 2px 4px !important;
+        text-align: left !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+    }
+
+    .line-summary-row {
+        background-color: #fff3cd !important;
+        font-weight: bold !important;
+        font-size: 7px !important;
+        padding: 2px 4px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    .grand-summary-row {
+        background-color: #cff4fc !important;
+        font-weight: 800 !important;
+        font-size: 7.5px !important;
+        padding: 2px 4px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    /* Header text in print */
+    .report-print-header {
+        margin-bottom: 6px !important;
+    }
+    .report-print-header h3 {
+        font-size: 13px !important;
+        font-weight: bold !important;
+        margin: 0 !important;
+        color: #000000 !important;
+    }
+    .report-print-header p {
+        font-size: 8.5px !important;
+        margin: 0 !important;
+        color: #333333 !important;
+    }
+    .report-print-header h5 {
+        font-size: 9.5px !important;
+        font-weight: bold !important;
+        margin: 2px 0 5px 0 !important;
+        color: #0d6efd !important;
+    }
+
+    /* Signatures block in print */
+    .print-signature-block {
+        display: flex !important;
+        margin-top: 25px !important;
+        padding-top: 5px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+    .print-signature-block .sig-box {
+        flex: 1 !important;
+        text-align: center !important;
+        padding: 0 10px !important;
+    }
+    .print-signature-block .sig-line {
+        border-top: 1px solid #333333 !important;
+        padding-top: 3px !important;
+        font-size: 7.5px !important;
+        font-weight: bold !important;
+    }
 }
 </style>
 
@@ -403,7 +627,7 @@
         <div class="card-body p-3">
             
             <!-- Document Header -->
-            <div class="text-center mb-3">
+            <div class="text-center mb-3 report-print-header">
                 <h3 class="h4 font-weight-bold mb-0 text-dark">{{ companyName }}</h3>
                 <p class="small text-muted mb-0">{{ companyAddress }}</p>
                 <h5 class="h6 font-weight-bold mt-1 mb-2 text-primary">
@@ -416,20 +640,20 @@
                 <table class="attendance-report-table">
                     <thead>
                         <tr>
-                            <th style="width: 25px;">SL</th>
-                            <th style="width: 65px;">Id</th>
-                            <th style="width: 120px;">Name</th>
-                            <th style="width: 55px;">J.D</th>
-                            <th style="width: 45px;">L.D</th>
-                            <th style="width: 45px;">Q.D</th>
+                            <th class="col-sl">SL</th>
+                            <th class="col-id">Id</th>
+                            <th class="col-name">Name</th>
+                            <th class="col-jd">J.D</th>
+                            <th class="col-ld">L.D</th>
+                            <th class="col-qd">Q.D</th>
                             
                             {% for day in 1..reportData.daysInMonth %}
-                            <th style="min-width: 32px;">{{ day }}</th>
+                            <th class="col-day">{{ day }}</th>
                             {% endfor %}
 
-                            <th style="width: 50px;">Total OT</th>
-                            <th style="width: 60px;">Total Pay.D<br><span class="fw-normal">P / L / A</span></th>
-                            <th style="width: 60px;">Total HW<br><span class="fw-normal">W / OSD / Leave</span></th>
+                            <th class="col-tot-ot">Total OT</th>
+                            <th class="col-pay-d">Total Pay.D<br><span class="fw-normal">P / L / A</span></th>
+                            <th class="col-hw">Total HW<br><span class="fw-normal">W / OSD / L</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -446,12 +670,12 @@
                         {% for emp in group.employees %}
                         <tr>
                             <td>{{ emp.sl }}</td>
-                            <td class="font-monospace fw-bold">{{ emp.id }}</td>
+                            <td class="font-monospace fw-bold emp-id-text">{{ emp.id }}</td>
                             <td class="text-start">
-                                <div class="fw-bold">{{ emp.name }}</div>
-                                <div class="text-muted small" style="font-size: 8.5px;">{{ emp.designation }}</div>
+                                <div class="fw-bold emp-name-text">{{ emp.name }}</div>
+                                <div class="text-muted small emp-desig-text">{{ emp.designation }}</div>
                             </td>
-                            <td>{{ emp.jd }}</td>
+                            <td class="emp-jd-text">{{ emp.jd }}</td>
                             <td>{{ emp.ld }}</td>
                             <td>{{ emp.qd }}</td>
 
@@ -469,15 +693,15 @@
                             {% endfor %}
 
                             <!-- Summary Metrics -->
-                            <td class="fw-bold text-primary">{{ emp.total_ot|number_format(2) }}</td>
-                            <td>
+                            <td class="fw-bold text-primary emp-tot-ot-text">{{ emp.total_ot|number_format(2) }}</td>
+                            <td class="metric-pay-d">
                                 <div class="fw-bold text-dark">{{ emp.total_pay_days }}</div>
                                 <div class="small text-muted" style="font-size: 8px;">
                                     P:{{ emp.present_days }} | L:{{ emp.late_days }} | A:{{ emp.absent_days }}
                                 </div>
                             </td>
-                            <td>
-                                <div class="small">HW:{{ emp.total_hw }}</div>
+                            <td class="metric-hw">
+                                <div class="small fw-semibold">HW:{{ emp.total_hw }}</div>
                                 <div class="small text-muted" style="font-size: 8px;">
                                     W:{{ emp.weekend_days }} | OSD:{{ emp.osd_days }} | L:{{ emp.leave_days }}
                                 </div>
@@ -512,18 +736,18 @@
             </div>
 
             <!-- Footer Signatures -->
-            <div class="row mt-5 pt-3 no-print">
-                <div class="col-3 text-center">
-                    <div class="border-top pt-1 font-weight-bold small">Prepared By</div>
+            <div class="row mt-5 pt-3 print-signature-block">
+                <div class="col-3 text-center sig-box">
+                    <div class="border-top pt-1 font-weight-bold small sig-line">Prepared By</div>
                 </div>
-                <div class="col-3 text-center">
-                    <div class="border-top pt-1 font-weight-bold small">Checked By</div>
+                <div class="col-3 text-center sig-box">
+                    <div class="border-top pt-1 font-weight-bold small sig-line">Checked By</div>
                 </div>
-                <div class="col-3 text-center">
-                    <div class="border-top pt-1 font-weight-bold small">HR Manager</div>
+                <div class="col-3 text-center sig-box">
+                    <div class="border-top pt-1 font-weight-bold small sig-line">HR Manager</div>
                 </div>
-                <div class="col-3 text-center">
-                    <div class="border-top pt-1 font-weight-bold small">Authorized Signature</div>
+                <div class="col-3 text-center sig-box">
+                    <div class="border-top pt-1 font-weight-bold small sig-line">Authorized Signature</div>
                 </div>
             </div>
 

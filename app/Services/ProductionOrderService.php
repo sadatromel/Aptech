@@ -16,8 +16,8 @@ class ProductionOrderService
     {
         $total = (int) ($this->db->count('production_orders') ?? 0);
         $draft = (int) ($this->db->count('production_orders', ['status' => 'draft']) ?? 0);
-        $approved = (int) ($this->db->count('production_orders', ['status' => 'approved']) ?? 0);
-        $inProduction = (int) ($this->db->count('production_orders', ['status' => 'in_production']) ?? 0);
+        $approved = (int) ($this->db->count('production_orders', ['status' => ['approved', 'confirmed']]) ?? 0);
+        $inProduction = (int) ($this->db->count('production_orders', ['status' => ['in_production', 'in_progress']]) ?? 0);
 
         return [
             'total' => $total,
@@ -47,7 +47,7 @@ class ProductionOrderService
             $where['po.order_date[<=]'] = $filters['date_to'];
         }
 
-        return $this->db->select('production_orders po', [
+        $orders = $this->db->select('production_orders po', [
             '[>]styles s' => ['po.style_id' => 'style_id'],
             '[>]buyers b' => ['s.buyer_id' => 'buyer_id'],
             '[>]countries c' => ['po.country_id' => 'country_id'],
@@ -76,6 +76,39 @@ class ProductionOrderService
             'currency_code' => 'cur.currency_code',
             'currency_symbol' => 'cur.symbol'
         ], $where);
+
+        if (!empty($orders)) {
+            $poIds = array_column($orders, 'po_id');
+            $idList = implode(',', array_map('intval', $poIds));
+            $breakdowns = $this->db->query(
+                "SELECT order_id, 
+                        COUNT(id) as sku_count, 
+                        SUM(quantity) as total_breakdown_qty, 
+                        SUM(quantity * unit_price) as total_breakdown_val,
+                        (SUM(quantity * unit_price) / NULLIF(SUM(quantity), 0)) as avg_breakdown_price
+                 FROM order_breakdowns 
+                 WHERE order_id IN ($idList)
+                 GROUP BY order_id"
+            )->fetchAll(\PDO::FETCH_UNIQUE | \PDO::FETCH_ASSOC);
+
+            foreach ($orders as &$order) {
+                $poId = (int) $order['po_id'];
+                $bd = $breakdowns[$poId] ?? null;
+                $order['line_items_count'] = (int) ($bd['sku_count'] ?? 0);
+                $order['total_amount'] = (float) ($bd['total_breakdown_val'] ?? 0);
+                $calculatedAvg = !empty($bd['avg_breakdown_price']) 
+                    ? (float) $bd['avg_breakdown_price'] 
+                    : (float) ($order['unit_price'] ?? 0);
+                if ($order['total_amount'] <= 0 && $order['quantity_ordered'] > 0 && $calculatedAvg > 0) {
+                    $order['total_amount'] = (float) ($order['quantity_ordered'] * $calculatedAvg);
+                }
+                $order['avg_unit_price'] = $calculatedAvg;
+                $order['unit_price'] = $calculatedAvg;
+            }
+            unset($order);
+        }
+
+        return $orders;
     }
 
     public function getDropdownData(): array
@@ -94,8 +127,10 @@ class ProductionOrderService
             ],
             'statuses' => [
                 ['value' => 'draft', 'label' => 'Draft'],
+                ['value' => 'pending', 'label' => 'Pending'],
                 ['value' => 'confirmed', 'label' => 'Confirmed'],
-                ['value' => 'in_progress', 'label' => 'In Progress'],
+                ['value' => 'approved', 'label' => 'Approved'],
+                ['value' => 'in_production', 'label' => 'In Production'],
                 ['value' => 'completed', 'label' => 'Completed'],
                 ['value' => 'cancelled', 'label' => 'Cancelled']
             ],
@@ -160,6 +195,21 @@ class ProductionOrderService
             $buyerId = $style['buyer_id'] ?? null;
         }
 
+        $unitPrice = isset($data['unit_price']) ? (float)$data['unit_price'] : 0.0;
+        if (!empty($data['line_items']) && is_array($data['line_items'])) {
+            $calcQty = 0;
+            $calcVal = 0;
+            foreach ($data['line_items'] as $item) {
+                $q = (float) ($item['quantity'] ?? 0);
+                $p = (float) ($item['unit_price'] ?? 0);
+                $calcQty += $q;
+                $calcVal += ($q * $p);
+            }
+            if ($calcQty > 0) {
+                $unitPrice = round($calcVal / $calcQty, 4);
+            }
+        }
+
         $orderData = [
             'po_number' => $orderNumber,
             'order_number' => $orderNumber, // Populate required field
@@ -171,11 +221,11 @@ class ProductionOrderService
             'required_date' => $data['delivery_date'] ?? $data['required_date'],
             'quantity' => $data['quantity'] ?? 0, // Ensure int
             'quantity_ordered' => $data['quantity'] ?? 0, 
-            'unit_price' => $data['unit_price'] ?? 0, 
+            'unit_price' => $unitPrice, 
             'currency_id' => !empty($data['currency_id']) ? $data['currency_id'] : null,
             'conversion_rate' => !empty($data['conversion_rate']) ? $data['conversion_rate'] : null,
-            'priority' => $data['priority'] ?? 'medium',
-            'status' => $data['status'] ?? 'draft',
+            'priority' => !empty($data['priority']) ? strtolower(trim((string)$data['priority'])) : 'medium',
+            'status' => !empty($data['status']) ? strtolower(trim((string)$data['status'])) : 'draft',
             'created_by' => $data['created_by'] ?? 0,
             'ex_factory_date' => !empty($data['ex_factory_date']) ? $data['ex_factory_date'] : null,
             'country_id' => !empty($data['country_id']) ? $data['country_id'] : null,
@@ -250,6 +300,21 @@ class ProductionOrderService
     {
         $rangeId = $this->handleSizeRange($data);
 
+        $unitPrice = isset($data['unit_price']) ? (float)$data['unit_price'] : 0.0;
+        if (!empty($data['line_items']) && is_array($data['line_items'])) {
+            $calcQty = 0;
+            $calcVal = 0;
+            foreach ($data['line_items'] as $item) {
+                $q = (float) ($item['quantity'] ?? 0);
+                $p = (float) ($item['unit_price'] ?? 0);
+                $calcQty += $q;
+                $calcVal += ($q * $p);
+            }
+            if ($calcQty > 0) {
+                $unitPrice = round($calcVal / $calcQty, 4);
+            }
+        }
+
         $updateData = [
             'factory_id' => $data['factory_id'],
             'allocation_number' => !empty($data['allocation_number']) ? $data['allocation_number'] : null,
@@ -257,12 +322,14 @@ class ProductionOrderService
             'order_date' => $data['order_date'],
             'required_date' => $data['delivery_date'] ?? $data['required_date'],
             'quantity_ordered' => $data['quantity'], // Ensure frontend sends total
-            'unit_price' => $data['unit_price'] ?? 0,
+            'unit_price' => $unitPrice,
             'currency_id' => !empty($data['currency_id']) ? $data['currency_id'] : null,
             'conversion_rate' => !empty($data['conversion_rate']) ? $data['conversion_rate'] : null,
             'ex_factory_date' => !empty($data['ex_factory_date']) ? $data['ex_factory_date'] : null,
             'country_id' => !empty($data['country_id']) ? $data['country_id'] : null,
             'city_id' => !empty($data['city_id']) ? $data['city_id'] : null,
+            'priority' => !empty($data['priority']) ? strtolower(trim((string)$data['priority'])) : 'medium',
+            'status' => !empty($data['status']) ? strtolower(trim((string)$data['status'])) : 'draft',
             'size_range_id' => $rangeId,
             'size_range_name' => $data['size_range_name'] ?? null,
             'size_details' => $data['size_details'] ?? null,
@@ -299,8 +366,9 @@ class ProductionOrderService
 
     public function updateOrderStatus(int $id, array $data): bool
     {
+        $status = strtolower(trim((string)($data['status'] ?? 'draft')));
         $result = $this->db->update('production_orders', [
-            'status' => $data['status'],
+            'status' => $status,
             'updated_at' => date('Y-m-d H:i:s')
         ], ['po_id' => $id]);
         return $result !== null;

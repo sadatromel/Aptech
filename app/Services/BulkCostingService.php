@@ -90,7 +90,7 @@ class BulkCostingService
 
     public function createCosting(array $data, int $userId): int
     {
-        $this->db->pdo->beginTransaction();
+        $this->db->beginTransaction();
         try {
             $sheetData = [
                 'factory_id' => $data['factory_id'],
@@ -111,8 +111,8 @@ class BulkCostingService
                 'created_by' => $userId
             ];
 
-            $this->db->insert('costing_sheets', $sheetData);
-            $costingId = (int) $this->db->id();
+            $costingId = $this->db->insert('costing_sheets', $sheetData);
+            if (!$costingId) { $costingId = (int) $this->db->lastInsertId(); }
 
             // Save Style Items
             if (!empty($data['styles'])) {
@@ -130,15 +130,21 @@ class BulkCostingService
             }
 
             // Save Items (Fabric, Accs, Wash, Embl, Other)
-            $itemTypes = ['fabric', 'accessory', 'wash', 'embl', 'other'];
-            foreach ($itemTypes as $type) {
-                $key = $type . 's'; // e.g., fabrics, accessories
-                if (!empty($data[$key])) {
-                    foreach ($data[$key] as $item) {
+            $itemMap = [
+                'fabric' => $data['fabrics'] ?? $data['fabric'] ?? [],
+                'accessory' => $data['accessories'] ?? $data['accessorys'] ?? $data['accessory'] ?? [],
+                'wash' => $data['wash_costs'] ?? $data['washs'] ?? $data['washes'] ?? $data['wash'] ?? [],
+                'embl' => $data['embl_costs'] ?? $data['embls'] ?? $data['embl'] ?? [],
+                'other' => $data['other_costs'] ?? $data['others'] ?? $data['other'] ?? []
+            ];
+
+            foreach ($itemMap as $type => $itemList) {
+                if (!empty($itemList) && is_array($itemList)) {
+                    foreach ($itemList as $item) {
                         $itemData = [
                             'costing_id' => $costingId,
                             'item_type' => $type,
-                            'item_name' => $item['item_name'] ?? null,
+                            'item_name' => $item['item_name'] ?? ($item['embl_name'] ?? ($item['wash_type'] ?? null)),
                             'description' => $item['description'] ?? null,
                             'fabric_ref' => $item['fabric_ref'] ?? null,
                             'full_width' => $item['full_width'] ?? null,
@@ -159,18 +165,17 @@ class BulkCostingService
                     }
                 }
             }
-
-            $this->db->pdo->commit();
+            $this->db->commit();
             return $costingId;
         } catch (\Exception $e) {
-            $this->db->pdo->rollBack();
+            $this->db->rollBack();
             throw $e;
         }
     }
 
     public function updateCosting(int $costingId, array $data, int $userId): bool
     {
-        $this->db->pdo->beginTransaction();
+        $this->db->beginTransaction();
         try {
             $sheetData = [
                 'factory_id' => $data['factory_id'],
@@ -215,15 +220,21 @@ class BulkCostingService
             }
 
             // Re-insert Items
-            $itemTypes = ['fabric', 'accessory', 'wash', 'embl', 'other'];
-            foreach ($itemTypes as $type) {
-                $key = $type . 's';
-                if (!empty($data[$key])) {
-                    foreach ($data[$key] as $item) {
+            $itemMap = [
+                'fabric' => $data['fabrics'] ?? $data['fabric'] ?? [],
+                'accessory' => $data['accessories'] ?? $data['accessorys'] ?? $data['accessory'] ?? [],
+                'wash' => $data['wash_costs'] ?? $data['washs'] ?? $data['washes'] ?? $data['wash'] ?? [],
+                'embl' => $data['embl_costs'] ?? $data['embls'] ?? $data['embl'] ?? [],
+                'other' => $data['other_costs'] ?? $data['others'] ?? $data['other'] ?? []
+            ];
+
+            foreach ($itemMap as $type => $itemList) {
+                if (!empty($itemList) && is_array($itemList)) {
+                    foreach ($itemList as $item) {
                         $itemData = [
                             'costing_id' => $costingId,
                             'item_type' => $type,
-                            'item_name' => $item['item_name'] ?? null,
+                            'item_name' => $item['item_name'] ?? ($item['embl_name'] ?? ($item['wash_type'] ?? null)),
                             'description' => $item['description'] ?? null,
                             'fabric_ref' => $item['fabric_ref'] ?? null,
                             'full_width' => $item['full_width'] ?? null,
@@ -244,11 +255,10 @@ class BulkCostingService
                     }
                 }
             }
-
-            $this->db->pdo->commit();
+            $this->db->commit();
             return true;
         } catch (\Exception $e) {
-            $this->db->pdo->rollBack();
+            $this->db->rollBack();
             throw $e;
         }
     }

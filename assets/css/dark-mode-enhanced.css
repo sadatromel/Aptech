@@ -17,7 +17,8 @@ body.dark-mode .page-header {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.8);
 }
 
-body.dark-mode .stat-card {
+body.dark-mode .stat-card:not([style*="background"]):not([style*="linear-gradient"]):not([class*="bg-"]):not([class*="card-stat-"]),
+[data-theme='dark'] .stat-card:not([style*="background"]):not([style*="linear-gradient"]):not([class*="bg-"]):not([class*="card-stat-"]) {
     background: linear-gradient(135deg, #1a1d2e 0%, #252938 100%) !important;
     border: 1px solid #2d3748 !important;
     color: #f9fafb;
@@ -25,26 +26,30 @@ body.dark-mode .stat-card {
     transition: all 0.3s ease;
 }
 
-body.dark-mode .stat-card:hover {
+body.dark-mode .stat-card:not([style*="background"]):not([style*="linear-gradient"]):not([class*="card-stat-"]):hover,
+[data-theme='dark'] .stat-card:not([style*="background"]):not([style*="linear-gradient"]):not([class*="card-stat-"]):hover {
     border-color: #60a5fa !important;
     box-shadow: 0 10px 15px -3px rgba(96, 165, 250, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.8) !important;
     transform: translateY(-2px);
 }
 
-body.dark-mode .stat-card .number {
+body.dark-mode .stat-card:not([style*="background"]):not([style*="linear-gradient"]):not([class*="card-stat-"]) .number,
+[data-theme='dark'] .stat-card:not([style*="background"]):not([style*="linear-gradient"]):not([class*="card-stat-"]) .number {
     color: #60a5fa !important;
     text-shadow: 0 0 25px rgba(96, 165, 250, 0.5);
 }
 
-body.dark-mode .stat-card h3 {
+body.dark-mode .stat-card:not([style*="background"]):not([style*="linear-gradient"]):not([class*="card-stat-"]) h3,
+[data-theme='dark'] .stat-card:not([style*="background"]):not([style*="linear-gradient"]):not([class*="card-stat-"]) h3 {
     color: #e5e7eb !important;
 }
 
-body.dark-mode .stat-card .trend {
+body.dark-mode .stat-card:not([style*="background"]):not([style*="linear-gradient"]):not([class*="card-stat-"]) .trend,
+[data-theme='dark'] .stat-card:not([style*="background"]):not([style*="linear-gradient"]):not([class*="card-stat-"]) .trend {
     color: #9ca3af !important;
 }
 
-body.dark-mode .card {
+body.dark-mode .card:not([style*="background"]):not([style*="linear-gradient"]):not([class*="bg-"]):not([class*="card-stat-"]) {
     background: linear-gradient(135deg, #1a1d2e 0%, #252938 100%) !important;
     border: 1px solid #2d3748 !important;
     color: #f9fafb;
@@ -143,7 +148,10 @@ body.dark-mode .mini-chart-bar {
 }
 
 /* Card Headers */
-body.dark-mode .card-header {
+body.dark-mode .card:not([style*="linear-gradient"]):not(.text-white):not([class*="card-stat-"]) > .card-header,
+[data-theme='dark'] .card:not([style*="linear-gradient"]):not(.text-white):not([class*="card-stat-"]) > .card-header,
+body.dark-mode .card-header:not([style*="background"]):not([class*="bg-primary"]):not([class*="bg-success"]):not([class*="bg-danger"]):not([class*="bg-info"]):not([class*="bg-dark"]),
+[data-theme='dark'] .card-header:not([style*="background"]):not([class*="bg-primary"]):not([class*="bg-success"]):not([class*="bg-danger"]):not([class*="bg-info"]):not([class*="bg-dark"]) {
     background: #0f1117 !important;
     border-bottom-color: #2d3748 !important;
     color: #e5e7eb;
@@ -303,8 +311,8 @@ body.dark-mode .sidebar .nav-link.active,
 /* Comprehensive Component Dark Mode Overrides */
 
 /* Cards & Containers */
-body.dark-mode .card,
-[data-theme='dark'] .card {
+body.dark-mode .card:not([style*="background"]):not([style*="linear-gradient"]):not([class*="bg-"]):not([class*="card-stat-"]),
+[data-theme='dark'] .card:not([style*="background"]):not([style*="linear-gradient"]):not([class*="bg-"]):not([class*="card-stat-"]) {
     background: linear-gradient(135deg, #1a1d2e 0%, #252938 100%) !important;
     border: 1px solid #2d3748 !important;
     color: #f9fafb !important;
@@ -316,8 +324,10 @@ body.dark-mode .card-body,
     color: #f9fafb !important;
 }
 
-body.dark-mode .card-footer,
-[data-theme='dark'] .card-footer {
+body.dark-mode .card:not([style*="linear-gradient"]):not(.text-white):not([class*="card-stat-"]) > .card-footer,
+[data-theme='dark'] .card:not([style*="linear-gradient"]):not(.text-white):not([class*="card-stat-"]) > .card-footer,
+body.dark-mode .card-footer:not([style*="background"]):not([class*="bg-primary"]):not([class*="bg-success"]):not([class*="bg-danger"]):not([class*="bg-info"]):not([class*="bg-dark"]),
+[data-theme='dark'] .card-footer:not([style*="background"]):not([class*="bg-primary"]):not([class*="bg-success"]):not([class*="bg-danger"]):not([class*="bg-info"]):not([class*="bg-dark"]) {
     background-color: #0f1117 !important;
     border-top-color: #2d3748 !important;
     color: #e5e7eb !important;
@@ -489,9 +499,9 @@ body.dark-mode .toggle-form,
 
 /* Ensure table cells don't have white backgrounds */
 body.dark-mode table td,
-body.dark-mode table th,
+body.dark-mode table tbody th,
 [data-theme='dark'] table td,
-[data-theme='dark'] table th {
+[data-theme='dark'] table tbody th {
     background-color: transparent !important;
     color: inherit !important;
     border-color: #2d3748 !important;
@@ -554,4 +564,98 @@ body.dark-mode .detail-tabs,
 [data-theme='dark'] .detail-tabs {
     background-color: #0f1117 !important;
     border-bottom-color: #2d3748 !important;
+}
+
+/* ENTERPRISE DARK MODE COMPONENT HARMONIZATION */
+/* High-Contrast Table Headers in Dark Mode */
+body.dark-mode table thead,
+[data-theme="dark"] table thead,
+.dark-theme table thead {
+    background-color: #0f172a !important;
+}
+
+body.dark-mode table thead th,
+body.dark-mode thead.bg-light th,
+body.dark-mode thead.text-muted th,
+[data-theme="dark"] table thead th,
+[data-theme="dark"] thead.bg-light th,
+[data-theme="dark"] thead.text-muted th,
+.dark-theme table thead th,
+.dark-theme thead.bg-light th,
+.dark-theme thead.text-muted th {
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.025em;
+}
+
+body.dark-mode thead.text-muted,
+[data-theme="dark"] thead.text-muted,
+.dark-theme thead.text-muted {
+    color: #cbd5e1 !important;
+}
+
+/* Card Header bg-white in Dark Mode */
+body.dark-mode .card-header.bg-white,
+[data-theme="dark"] .card-header.bg-white,
+.dark-theme .card-header.bg-white {
+    background-color: #1a1d2e !important;
+    color: #f8fafc !important;
+    border-bottom: 1px solid #2d3748 !important;
+}
+
+/* Operation Hub Cards and Card Hover */
+body.dark-mode .card.card-hover,
+[data-theme="dark"] .card.card-hover,
+.dark-theme .card.card-hover {
+    background: #1a1d2e !important;
+    border: 1px solid #2d3748 !important;
+}
+
+body.dark-mode .card.card-hover:hover,
+[data-theme="dark"] .card.card-hover:hover,
+.dark-theme .card.card-hover:hover {
+    background: #252938 !important;
+    border-color: #60a5fa !important;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(96, 165, 250, 0.2) !important;
+}
+
+body.dark-mode .card.card-hover .text-dark,
+[data-theme="dark"] .card.card-hover .text-dark,
+.dark-theme .card.card-hover .text-dark {
+    color: #f1f5f9 !important;
+}
+
+/* Footers and Headers of Colored / Gradient Cards in Dark Mode */
+body.dark-mode .card.text-white > .card-footer,
+body.dark-mode .card[style*="linear-gradient"] > .card-footer,
+body.dark-mode .card[class*="card-stat-"] > .card-footer,
+body.dark-mode .card[class*="bg-"] > .card-footer,
+[data-theme="dark"] .card.text-white > .card-footer,
+[data-theme="dark"] .card[style*="linear-gradient"] > .card-footer,
+[data-theme="dark"] .card[class*="card-stat-"] > .card-footer,
+[data-theme="dark"] .card[class*="bg-"] > .card-footer {
+    background-color: rgba(0, 0, 0, 0.15) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .card.text-white > .card-footer a,
+body.dark-mode .card[style*="linear-gradient"] > .card-footer a,
+body.dark-mode .card[class*="card-stat-"] > .card-footer a,
+[data-theme="dark"] .card.text-white > .card-footer a,
+[data-theme="dark"] .card[style*="linear-gradient"] > .card-footer a,
+[data-theme="dark"] .card[class*="card-stat-"] > .card-footer a {
+    color: #ffffff !important;
+}
+
+/* Badges in Dark Mode */
+body.dark-mode .badge.bg-light,
+[data-theme="dark"] .badge.bg-light,
+.dark-theme .badge.bg-light {
+    background-color: #334155 !important;
+    color: #f8fafc !important;
+    border-color: #475569 !important;
 }

@@ -21,7 +21,10 @@ class ProductionOrderController extends BaseController
     public function index(): void
     {
         $this->requireAuth();
-        $this->requireRole('merchandising_manager');
+        if (!canView('merchandising', 'production_orders')) {
+            $this->renderErrorView(403, ['permission' => 'production_orders']);
+            return;
+        }
 
         $filters = [
             'search' => $this->request->get('search', ''),
@@ -30,11 +33,20 @@ class ProductionOrderController extends BaseController
             'priority' => $this->request->get('priority', ''),
         ];
 
+        $permissions = [
+            'view' => canView('merchandising', 'production_orders'),
+            'create' => canCreate('merchandising', 'production_orders'),
+            'edit' => canEdit('merchandising', 'production_orders'),
+            'delete' => canDelete('merchandising', 'production_orders'),
+            'approve' => canApprove('merchandising', 'production_orders'),
+        ];
+
         $this->view('merchandising/production-orders/index', [
             'production_orders' => $this->service->getOrdersWithFilters($filters),
             'stats' => $this->service->getStats(),
             'filters' => $filters,
             'dropdowns' => $this->service->getDropdownData(),
+            'permissions' => $permissions,
         ]);
     }
 
@@ -42,6 +54,10 @@ class ProductionOrderController extends BaseController
     {
         $styleId = (int) $styleId;
         $this->requireAuth();
+        if (!canView('merchandising', 'production_orders')) {
+            $this->json(['error' => 'Permission denied'], 403);
+            return;
+        }
         try {
             $styleData = $this->service->getStyleSizes($styleId);
             $this->json($styleData);
@@ -54,6 +70,10 @@ class ProductionOrderController extends BaseController
     {
         $countryId = (int) $countryId;
         $this->requireAuth();
+        if (!canView('merchandising', 'production_orders')) {
+            $this->json(['error' => 'Permission denied'], 403);
+            return;
+        }
         try {
             $cities = $this->service->getCitiesByCountry($countryId);
             $this->json($cities);
@@ -66,7 +86,10 @@ class ProductionOrderController extends BaseController
     {
         $this->verifyCsrf();
         $this->requireAuth();
-        $this->requireRole('merchandising_manager');
+        if (!canCreate('merchandising', 'production_orders')) {
+            $this->json(['success' => false, 'message' => 'Permission denied: Create Production Order'], 403);
+            return;
+        }
 
         $data = $this->request->json();
         if (empty($data)) {
@@ -105,6 +128,10 @@ class ProductionOrderController extends BaseController
     {
         $poId = (int) $poId;
         $this->requireAuth();
+        if (!canView('merchandising', 'production_orders')) {
+            $this->json(['error' => 'Production order not found'], 404);
+            return;
+        }
         $po = $this->service->getOrderWithDetails($poId);
         if (!$po) {
             $this->json(['error' => 'Production order not found'], 404);
@@ -119,7 +146,10 @@ class ProductionOrderController extends BaseController
         $this->verifyCsrf();
         $poId = (int) $poId;
         $this->requireAuth();
-        $this->requireRole('merchandising_manager');
+        if (!canEdit('merchandising', 'production_orders')) {
+            $this->json(['success' => false, 'message' => 'Permission denied: Edit Production Order'], 403);
+            return;
+        }
 
         $data = $this->request->json();
         if (empty($data)) {
@@ -157,7 +187,10 @@ class ProductionOrderController extends BaseController
         $this->verifyCsrf();
         $poId = (int) $poId;
         $this->requireAuth();
-        $this->requireRole('merchandising_manager');
+        if (!canApprove('merchandising', 'production_orders') && !canEdit('merchandising', 'production_orders')) {
+            $this->json(['success' => false, 'message' => 'Permission denied: Update Status'], 403);
+            return;
+        }
 
         $data = $this->request->json();
         if (empty($data)) {
@@ -190,7 +223,10 @@ class ProductionOrderController extends BaseController
         $this->verifyCsrf();
         $poId = (int) $poId;
         $this->requireAuth();
-        $this->requireRole('merchandising_manager');
+        if (!canDelete('merchandising', 'production_orders')) {
+            $this->json(['success' => false, 'message' => 'Permission denied: Delete Production Order'], 403);
+            return;
+        }
 
         try {
             $this->service->deleteOrder($poId);

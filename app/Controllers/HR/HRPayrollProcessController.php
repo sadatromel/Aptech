@@ -254,8 +254,9 @@ class HRPayrollProcessController extends BaseController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->verifyCsrf();
             $data = $this->request->all();
-            $stmt = $this->pdo->prepare("INSERT INTO salary_adjustments (employee_id, year_month, adjustment_type, amount, reason, status) VALUES (?, ?, ?, ?, ?, 'applied')");
-            $stmt->execute([$data['employee_id'], $data['year_month'], $data['adjustment_type'], $data['amount'], $data['reason']]);
+            $adjType = strtolower($data['adjustment_type'] ?? 'addition');
+            $stmt = $this->pdo->prepare("INSERT INTO salary_adjustments (employee_id, `year_month`, adjustment_type, amount, reason, status) VALUES (?, ?, ?, ?, ?, 'applied')");
+            $stmt->execute([$data['employee_id'], $data['year_month'], $adjType, $data['amount'], $data['reason']]);
 
             $_SESSION['flash_success'] = 'Salary adjustment entry saved successfully.';
             $this->redirect(defined('BASE_URL') ? BASE_URL . '/hr/payroll/salary-adjustment' : '/hr/payroll/salary-adjustment');
@@ -282,7 +283,7 @@ class HRPayrollProcessController extends BaseController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->verifyCsrf();
             $data = $this->request->all();
-            $stmt = $this->pdo->prepare("INSERT INTO payroll_period_locks (year_month, department_id, lock_status, remarks) VALUES (?, ?, ?, ?)");
+            $stmt = $this->pdo->prepare("INSERT INTO payroll_period_locks (`year_month`, department_id, lock_status, remarks) VALUES (?, ?, ?, ?)");
             $stmt->execute([$data['year_month'], !empty($data['department_id']) ? $data['department_id'] : null, $data['lock_status'], $data['remarks'] ?? '']);
 
             $_SESSION['flash_success'] = 'Salary period status updated successfully.';

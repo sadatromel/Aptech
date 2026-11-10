@@ -8,7 +8,6 @@ data/
 !data/.gitkeep
 
 # Configuration files with sensitive data
-config/database.php
 config/config.local.php
 
 # Uploads directory

@@ -106,7 +106,7 @@
                         <tr>
                             <td class="ps-3 fw-bold">{{ bd.breakdown_name }}</td>
                             <td><span class="badge bg-secondary-subtle text-secondary">{{ bd.color }}</span></td>
-                            <td>{{ bd.sizes }}</td>
+                            <td>{{ bd.sizes ?? bd.size_name ?? '-' }}</td>
                             <td class="fw-semibold text-primary">{{ bd.size_quantities }}</td>
                         </tr>
                         {% endfor %}

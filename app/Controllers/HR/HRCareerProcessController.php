@@ -145,10 +145,35 @@ class HRCareerProcessController extends BaseController
             $this->verifyCsrf();
             $data = $this->request->all();
 
+            $empId = (int)($data['employee_id'] ?? 0);
+            $effectiveDate = $data['effective_date'] ?? date('Y-m-d');
+            
+            // Resolve previous designation if not provided directly
+            $prevDesig = !empty($data['previous_designation']) ? trim((string)$data['previous_designation']) : '';
+            if (empty($prevDesig) && $empId > 0) {
+                $stmtEmp = $this->pdo->prepare("SELECT COALESCE(p.position_name, 'Operator') FROM employees e LEFT JOIN positions p ON e.position_id = p.position_id WHERE e.employee_id = ?");
+                $stmtEmp->execute([$empId]);
+                $prevDesig = $stmtEmp->fetchColumn() ?: 'Operator';
+            }
+            if (empty($prevDesig)) {
+                $prevDesig = 'Operator';
+            }
+
+            // Resolve new designation if passed as ID or name
+            $newDesig = !empty($data['new_designation']) ? trim((string)$data['new_designation']) : '';
+            if (empty($newDesig) && !empty($data['new_position_id'])) {
+                $stmtPos = $this->pdo->prepare("SELECT position_name FROM positions WHERE position_id = ?");
+                $stmtPos->execute([(int)$data['new_position_id']]);
+                $newDesig = $stmtPos->fetchColumn() ?: 'Senior Operator';
+            }
+            if (empty($newDesig)) {
+                $newDesig = 'Senior Operator';
+            }
+
             $stmt = $this->pdo->prepare("INSERT INTO employee_promotions (employee_id, effective_date, previous_designation, new_designation, previous_department, new_department, salary_increment, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
-                $data['employee_id'], $data['effective_date'], $data['previous_designation'],
-                $data['new_designation'], $data['previous_department'] ?? '', $data['new_department'] ?? '',
+                $empId, $effectiveDate, $prevDesig,
+                $newDesig, $data['previous_department'] ?? '', $data['new_department'] ?? '',
                 $data['salary_increment'] ?? 0, $data['remarks'] ?? ''
             ]);
 
@@ -202,10 +227,16 @@ class HRCareerProcessController extends BaseController
             $this->verifyCsrf();
             $data = $this->request->all();
 
+            $empId = (int)($data['employee_id'] ?? 0);
+            $startDate = $data['start_date'] ?? $data['layoff_start_date'] ?? date('Y-m-d');
+            $endDate = !empty($data['end_date']) ? $data['end_date'] : (!empty($data['layoff_end_date']) ? $data['layoff_end_date'] : null);
+            $reason = !empty($data['layoff_reason']) ? $data['layoff_reason'] : (!empty($data['reason']) ? $data['reason'] : 'Temporary operational layoff');
+            $comp = (float)($data['compensation_percentage'] ?? 50.00);
+
             $stmt = $this->pdo->prepare("INSERT INTO employee_layoffs (employee_id, start_date, end_date, layoff_reason, compensation_percentage, status) VALUES (?, ?, ?, ?, ?, 'active')");
             $stmt->execute([
-                $data['employee_id'], $data['start_date'], !empty($data['end_date']) ? $data['end_date'] : null,
-                $data['layoff_reason'], $data['compensation_percentage'] ?? 50.00
+                $empId, $startDate, $endDate,
+                $reason, $comp
             ]);
 
             $_SESSION['flash_success'] = 'Employee lay off record created successfully.';

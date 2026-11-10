@@ -1673,3 +1673,232 @@ html:not([data-theme="dark"]):not(.dark-theme):not(.dark-mode) .form-select opti
 
 
 
+
+/* ==========================================================================
+   PERMANENT ENTERPRISE FIX: LIGHT MODE & DARK MODE GLOBAL HARMONIZATION
+   Solves all text color, background visibility, and contrast issues project-wide
+   ========================================================================== */
+
+/* 1. Prevent Bootstrap .bg-gradient from wiping out custom inline gradients */
+.card.bg-gradient[style*="background"],
+.card.bg-gradient[style*="linear-gradient"],
+.bg-gradient[style*="background"],
+.bg-gradient[style*="linear-gradient"],
+.card[style*="linear-gradient"].bg-gradient {
+    background-image: none !important;
+}
+
+/* 2. Preserve inline gradients and custom backgrounds on cards in both themes */
+.card[style*="linear-gradient"],
+.card[style*="background:"],
+.card[style*="background-color:"] {
+    background-clip: padding-box;
+}
+
+/* 3. Text and label readability on colored, gradient, and stat cards */
+.card.text-white,
+.card[style*="linear-gradient"],
+.card[class*="bg-primary"],
+.card[class*="bg-success"],
+.card[class*="bg-danger"],
+.card[class*="bg-info"],
+.card[class*="bg-dark"],
+.card[class*="card-stat-"],
+.stat-card[style*="linear-gradient"]:not(.text-dark) {
+    color: #ffffff !important;
+}
+
+.card.text-white h1, .card.text-white h2, .card.text-white h3,
+.card.text-white h4, .card.text-white h5, .card.text-white h6,
+.card[style*="linear-gradient"] h1, .card[style*="linear-gradient"] h2,
+.card[style*="linear-gradient"] h3, .card[style*="linear-gradient"] h4,
+.card[style*="linear-gradient"] h5, .card[style*="linear-gradient"] h6,
+.card[class*="card-stat-"] h1, .card[class*="card-stat-"] h2,
+.card[class*="card-stat-"] h3, .card[class*="card-stat-"] h4,
+.card[class*="card-stat-"] h5, .card[class*="card-stat-"] h6 {
+    color: #ffffff !important;
+}
+
+.card.text-white .text-white-50,
+.card[style*="linear-gradient"] .text-white-50,
+.card[class*="card-stat-"] .text-white-50 {
+    color: rgba(255, 255, 255, 0.75) !important;
+}
+
+.card.text-white i,
+.card[style*="linear-gradient"] i,
+.card[class*="card-stat-"] i {
+    color: #ffffff !important;
+}
+
+/* 4. First-Class Stat/KPI Card Gradients */
+.card-stat-blue {
+    background: linear-gradient(135deg, #0575E6 0%, #00F260 100%) !important;
+    color: #ffffff !important;
+    border: 0 !important;
+}
+.card-stat-pink {
+    background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%) !important;
+    color: #ffffff !important;
+    border: 0 !important;
+}
+.card-stat-navy {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+    color: #ffffff !important;
+    border: 0 !important;
+}
+.card-stat-teal {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important;
+    color: #ffffff !important;
+    border: 0 !important;
+}
+
+/* 5. Button contrast in Dark Mode */
+[data-theme="dark"] .btn-outline-dark,
+.dark-theme .btn-outline-dark,
+.dark-mode .btn-outline-dark {
+    color: #e2e8f0 !important;
+    border-color: #64748b !important;
+    background-color: transparent !important;
+}
+[data-theme="dark"] .btn-outline-dark:hover,
+.dark-theme .btn-outline-dark:hover,
+.dark-mode .btn-outline-dark:hover {
+    color: #ffffff !important;
+    background-color: #334155 !important;
+    border-color: #94a3b8 !important;
+}
+[data-theme="dark"] .btn-link,
+.dark-theme .btn-link,
+.dark-mode .btn-link {
+    color: #60a5fa !important;
+}
+[data-theme="dark"] .btn-link:hover,
+.dark-theme .btn-link:hover,
+.dark-mode .btn-link:hover {
+    color: #93c5fd !important;
+}
+
+/* 6. High-Contrast Table Headers in Dark Mode */
+[data-theme="dark"] table thead,
+[data-theme="dark"] table thead tr,
+.dark-theme table thead,
+.dark-mode table thead {
+    background-color: #0f172a !important;
+}
+[data-theme="dark"] table thead th,
+[data-theme="dark"] thead.bg-light th,
+[data-theme="dark"] thead.table-light th,
+[data-theme="dark"] thead.text-muted th,
+.dark-theme table thead th,
+.dark-mode table thead th {
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.025em;
+}
+[data-theme="dark"] .table thead.text-muted,
+[data-theme="dark"] .table thead .text-muted,
+.dark-theme .table thead.text-muted,
+.dark-mode .table thead.text-muted {
+    color: #cbd5e1 !important;
+}
+
+/* 7. High-Contrast Table Headers in Light Mode */
+[data-theme="light"] table thead th,
+[data-theme="light"] table thead.text-muted th,
+[data-theme="light"] table thead.bg-light th,
+html:not([data-theme="dark"]):not(.dark-theme):not(.dark-mode) table thead th,
+html:not([data-theme="dark"]):not(.dark-theme):not(.dark-mode) table thead.text-muted th,
+html:not([data-theme="dark"]):not(.dark-theme):not(.dark-mode) table thead.bg-light th,
+html:not([data-theme="dark"]):not(.dark-theme):not(.dark-mode) thead.text-muted {
+    color: #1e293b !important;
+    font-weight: 600 !important;
+}
+
+/* 8. Badge Contrast: Ensure warning badge always has dark text */
+.badge.bg-warning,
+.badge.text-bg-warning,
+.badge.bg-warning.text-dark,
+[data-theme="dark"] .badge.bg-warning,
+.dark-theme .badge.bg-warning,
+.dark-mode .badge.bg-warning {
+    color: #0f172a !important;
+    background-color: #f59e0b !important;
+}
+
+/* 9. Light Theme Global Card & Background Guardrails */
+[data-theme="light"] body,
+html:not([data-theme="dark"]):not(.dark-theme):not(.dark-mode) body {
+    background-color: #f8fafc;
+    color: #0f172a;
+}
+[data-theme="light"] .card:not([style*="background"]):not([style*="linear-gradient"]):not([class*="bg-"]):not([class*="card-stat-"]),
+html:not([data-theme="dark"]):not(.dark-theme):not(.dark-mode) .card:not([style*="background"]):not([style*="linear-gradient"]):not([class*="bg-"]):not([class*="card-stat-"]) {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #0f172a;
+}
+[data-theme="light"] .card-header.bg-white,
+html:not([data-theme="dark"]):not(.dark-theme):not(.dark-mode) .card-header.bg-white {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+/* 10. Dark Theme Section Headers and Small Uppercase Labels */
+[data-theme="dark"] h6.text-muted,
+[data-theme="dark"] .text-uppercase.text-muted,
+.dark-theme h6.text-muted,
+.dark-mode h6.text-muted {
+    color: #cbd5e1 !important;
+}
+
+/* 11. Avatar Subtle Badges in Dark Mode */
+[data-theme="dark"] .bg-primary-subtle { background-color: rgba(59, 130, 246, 0.2) !important; color: #60a5fa !important; }
+[data-theme="dark"] .bg-success-subtle { background-color: rgba(16, 185, 129, 0.2) !important; color: #34d399 !important; }
+[data-theme="dark"] .bg-info-subtle    { background-color: rgba(6, 182, 212, 0.2) !important; color: #38bdf8 !important; }
+[data-theme="dark"] .bg-warning-subtle { background-color: rgba(245, 158, 11, 0.2) !important; color: #fbbf24 !important; }
+[data-theme="dark"] .bg-danger-subtle  { background-color: rgba(239, 68, 68, 0.2) !important; color: #f87171 !important; }
+[data-theme="dark"] .bg-secondary-subtle { background-color: rgba(148, 163, 184, 0.2) !important; color: #cbd5e1 !important; }
+
+/* 12. Breadcrumbs in Dark Mode */
+[data-theme="dark"] .breadcrumb-item,
+[data-theme="dark"] .breadcrumb-item a,
+.dark-theme .breadcrumb-item a,
+.dark-mode .breadcrumb-item a {
+    color: #94a3b8 !important;
+}
+[data-theme="dark"] .breadcrumb-item.active,
+.dark-theme .breadcrumb-item.active,
+.dark-mode .breadcrumb-item.active {
+    color: #f8fafc !important;
+}
+[data-theme="dark"] .breadcrumb-item + .breadcrumb-item::before,
+.dark-theme .breadcrumb-item + .breadcrumb-item::before {
+    color: #64748b !important;
+}
+
+
+/* 13. High-Contrast Light Mode Subtext Utilities */
+.text-white-75 {
+    color: rgba(255, 255, 255, 0.75) !important;
+}
+
+/* 14. Stat Cards with Inline Gradients (Global) */
+.stat-card[style*="linear-gradient"]:not(.text-dark),
+.stat-card[style*="linear-gradient"]:not(.text-dark) *:not(.text-dark),
+.stat-card[style*="background"]:not(.text-dark),
+.stat-card[style*="background"]:not(.text-dark) *:not(.text-dark) {
+    color: #ffffff !important;
+}
+
+/* 15. Submodule Shortcut Cards & Card Hover in Light Mode */
+.card.card-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.card.card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12) !important;
+}
