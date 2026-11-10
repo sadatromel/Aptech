@@ -41,9 +41,15 @@ class Container
                             if (!$check) {
                                 $initSql = dirname(__DIR__) . '/backups/init.sql';
                                 if (file_exists($initSql)) {
+                                    $sql = file_get_contents($initSql);
+                                    if (str_starts_with($sql, "\xFF\xFE")) {
+                                        $sql = mb_convert_encoding(substr($sql, 2), 'UTF-8', 'UTF-16LE');
+                                    } elseif (str_starts_with($sql, "\xEF\xBB\xBF")) {
+                                        $sql = substr($sql, 3);
+                                    }
                                     $pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, 0);
                                     $pdo->setAttribute(\PDO::MYSQL_ATTR_MULTI_STATEMENTS, true);
-                                    $pdo->exec(file_get_contents($initSql));
+                                    $pdo->exec($sql);
                                 }
                             }
                         } catch (\Throwable $e) {

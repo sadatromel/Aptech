@@ -53,10 +53,16 @@ if (!file_exists($sqlFile)) {
 }
 
 echo "[Migration] Initializing database from $sqlFile (" . round(filesize($sqlFile) / 1024, 1) . " KB)...\n";
-$pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, 0);
-$pdo->setAttribute(PDO::MYSQL_ATTR_MULTI_STATEMENTS, true);
 
 $sql = file_get_contents($sqlFile);
+if (str_starts_with($sql, "\xFF\xFE")) {
+    $sql = mb_convert_encoding(substr($sql, 2), 'UTF-8', 'UTF-16LE');
+} elseif (str_starts_with($sql, "\xEF\xBB\xBF")) {
+    $sql = substr($sql, 3);
+}
+
+$pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, 0);
+$pdo->setAttribute(PDO::MYSQL_ATTR_MULTI_STATEMENTS, true);
 $pdo->exec($sql);
 
 $stmt = $pdo->query("SHOW TABLES");
