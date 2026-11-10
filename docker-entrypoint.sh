@@ -6,3 +6,4 @@ php /var/www/html/bin/migrate_db.php || true
 
 # Execute main process
 exec "$@"
+
