@@ -45,8 +45,11 @@ RUN if [ ! -d "vendor" ]; then composer install --no-dev --optimize-autoloader; 
 # Create required directories if not present and adjust permissions
 RUN mkdir -p /var/www/html/uploads /var/www/html/logs /var/www/html/cache \
     && chown -R www-data:www-data /var/www/html \
-    && chmod -R 775 /var/www/html/uploads /var/www/html/logs /var/www/html/cache
+    && chmod -R 775 /var/www/html/uploads /var/www/html/logs /var/www/html/cache \
+    && cp /var/www/html/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh \
+    && chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 80
 
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["apache2-foreground"]

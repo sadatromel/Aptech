@@ -29,10 +29,29 @@ class Container
                         $dsn = "mysql:host={$config['host']};dbname={$config['database']};charset=utf8mb4";
                     }
                     
-                    return new \PDO($dsn, $config['username'], $config['password'], [
+                    $pdo = new \PDO($dsn, $config['username'], $config['password'], [
                         \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
                         \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
                     ]);
+
+                    // Auto-migrate schema and initial data if tables are missing
+                    if ($driver === 'mysql') {
+                        try {
+                            $check = $pdo->query("SHOW TABLES LIKE 'users'")->fetch();
+                            if (!$check) {
+                                $initSql = dirname(__DIR__) . '/backups/init.sql';
+                                if (file_exists($initSql)) {
+                                    $pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, 0);
+                                    $pdo->setAttribute(\PDO::MYSQL_ATTR_MULTI_STATEMENTS, true);
+                                    $pdo->exec(file_get_contents($initSql));
+                                }
+                            }
+                        } catch (\Throwable $e) {
+                            error_log('Database auto-migration note: ' . $e->getMessage());
+                        }
+                    }
+
+                    return $pdo;
                 },
 
                 // Core Services
