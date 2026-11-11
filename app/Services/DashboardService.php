@@ -177,16 +177,14 @@ class DashboardService
     /**
      * Get Buyer Monthly Orders for Chart
      */
-    /**
-     * Get Buyer Monthly Orders for Chart
-     */
     public function getBuyerMonthlyOrders(?int $factoryId = null): array
     {
         try {
             $params = [];
-            $whereClause = "WHERE po.ex_factory_date IS NOT NULL 
-                            AND po.ex_factory_date >= '2026-02-01' 
-                            AND po.ex_factory_date <= '2027-01-31' 
+            $dateExpr = "COALESCE(po.ex_factory_date, po.required_date, po.due_date)";
+            $whereClause = "WHERE {$dateExpr} IS NOT NULL 
+                            AND {$dateExpr} >= '2026-02-01' 
+                            AND {$dateExpr} <= '2027-01-31' 
                             AND po.status != 'cancelled'";
             
             if ($factoryId) {
@@ -197,18 +195,22 @@ class DashboardService
             $query = "
                 SELECT 
                     COALESCE(b.buyer_name, 'No Buyer') as buyer_name,
-                    DATE_FORMAT(po.ex_factory_date, '%Y-%m') as month_year,
-                    DATE_FORMAT(po.ex_factory_date, '%b %y') as month_year_label,
-                    SUM(po.quantity_ordered) as total_quantity
+                    DATE_FORMAT({$dateExpr}, '%Y-%m') as month_year,
+                    DATE_FORMAT({$dateExpr}, '%b %y') as month_year_label,
+                    SUM(COALESCE(po.quantity_ordered, po.quantity, 0)) as total_quantity
                 FROM production_orders po
                 LEFT JOIN buyers b ON po.buyer_id = b.buyer_id
                 $whereClause
-                GROUP BY b.buyer_id, DATE_FORMAT(po.ex_factory_date, '%Y-%m')
+                GROUP BY 
+                    COALESCE(b.buyer_name, 'No Buyer'), 
+                    DATE_FORMAT({$dateExpr}, '%Y-%m'), 
+                    DATE_FORMAT({$dateExpr}, '%b %y')
                 ORDER BY month_year ASC
             ";
             $result = $this->db->query($query, $params);
             return $result->fetchAll(\PDO::FETCH_ASSOC) ?: [];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            error_log('getBuyerMonthlyOrders error: ' . $e->getMessage());
             return [];
         }
     }
@@ -271,7 +273,7 @@ class DashboardService
                 FROM stock st
                 LEFT JOIN items i ON st.item_id = i.item_id
                 WHERE i.min_stock_level > 0
-                GROUP BY i.item_id
+                GROUP BY i.item_id, i.item_name, i.item_type, i.min_stock_level
                 HAVING total_stock <= i.min_stock_level
                 LIMIT 5
             ";
